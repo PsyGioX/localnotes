@@ -216,8 +216,6 @@ body {
     padding: 12px 20px;
     align-items: stretch; 
     box-sizing: border-box;
-    position: sticky; 
-    top: 0;
 }
 #searchInput {
     flex: 0.20;
