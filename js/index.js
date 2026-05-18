@@ -2015,7 +2015,20 @@ async function loadNotes() {
             const expBtn = document.createElement('button'); expBtn.classList.add('exportBtn');
             expBtn.innerHTML = typeof t === 'function' ? t('export') : 'Export';
             expBtn.onclick = () => showExportOptions(note.content);
-            btnRow.appendChild(editBtn); btnRow.appendChild(delBtn); btnRow.appendChild(expBtn);
+
+            // Screenshot button
+            const ssBtn = document.createElement('button'); ssBtn.classList.add('screenshotBtn');
+            const ssLabel = (typeof t === 'function' ? t('screenshotBtn') : null) || 'Screenshot';
+            ssBtn.title = ssLabel;
+            ssBtn.innerHTML = '<i class="bi bi-camera"></i>';
+            ssBtn.setAttribute('aria-label', ssLabel);
+            ssBtn.onclick = () => {
+                if (typeof takeNoteScreenshot === 'function') {
+                    takeNoteScreenshot(note);
+                }
+            };
+
+            btnRow.appendChild(editBtn); btnRow.appendChild(delBtn); btnRow.appendChild(expBtn); btnRow.appendChild(ssBtn);
             btns.appendChild(btnRow);
             noteEl.appendChild(btns);
 
@@ -3055,6 +3068,107 @@ function initializeEventListeners() {
 
     const quickEditBtn = document.getElementById('quickEditToggle');
     if (quickEditBtn) quickEditBtn.addEventListener('click', toggleQuickEditMode);
+
+    // App Lock button: tap = lock now (if enabled), hold / right-click = settings
+    const lockBtn = document.getElementById('appLockBtn');
+    if (lockBtn) {
+        const LONG_PRESS_MS = 500;
+        const HOLD_CLASS = 'ln-lock-holding';
+        const HOLD_DONE_CLASS = 'ln-lock-hold-complete';
+        lockBtn.style.setProperty('--ln-lock-hold-ms', `${LONG_PRESS_MS}ms`);
+
+        let longPressTimer = null;
+        let longPressTriggered = false;
+
+        const resetHoldVisual = () => {
+            lockBtn.classList.remove(HOLD_CLASS, HOLD_DONE_CLASS);
+        };
+
+        const startHoldVisual = () => {
+            resetHoldVisual();
+            void lockBtn.offsetWidth;
+            lockBtn.classList.add(HOLD_CLASS);
+        };
+
+        const completeHoldVisual = () => {
+            lockBtn.classList.remove(HOLD_CLASS);
+            lockBtn.classList.add(HOLD_DONE_CLASS);
+        };
+
+        const updateLockBtn = () => {
+            resetHoldVisual();
+            const enabled = window.AppLock && window.AppLock.isEnabled();
+            lockBtn.classList.toggle('ln-lock-active', !!enabled);
+            const label = (typeof t === 'function' ? t('appLockBtn') : null) || 'Lock';
+            lockBtn.innerHTML = enabled
+                ? `<i class="bi bi-shield-lock-fill"></i> ${label}`
+                : `<i class="bi bi-shield-lock"></i> ${label}`;
+            const titleHint = (typeof t === 'function' ? t('lockNowTitle') : null)
+                || 'Tap to lock. Hold or right-click for settings.';
+            lockBtn.title = enabled ? titleHint : ((typeof t === 'function' ? t('lockSettingsTitle') : null) || 'App Lock');
+        };
+        updateLockBtn();
+
+        const openLockSettings = () => {
+            if (!window.AppLock) return;
+            window.AppLock.openSettings();
+            const poll = setInterval(() => {
+                if (!document.getElementById('ln-lock-settings-modal')) {
+                    updateLockBtn();
+                    clearInterval(poll);
+                }
+            }, 300);
+        };
+
+        const clearLongPress = () => {
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+            resetHoldVisual();
+        };
+
+        lockBtn.addEventListener('pointerdown', (e) => {
+            if (e.button !== 0) return;
+            longPressTriggered = false;
+            clearLongPress();
+            if (window.AppLock?.isEnabled()) {
+                startHoldVisual();
+                longPressTimer = setTimeout(() => {
+                    longPressTriggered = true;
+                    completeHoldVisual();
+                    openLockSettings();
+                }, LONG_PRESS_MS);
+            }
+        });
+        ['pointerup', 'pointerleave', 'pointercancel'].forEach(evt => {
+            lockBtn.addEventListener(evt, clearLongPress);
+        });
+
+        lockBtn.addEventListener('click', (e) => {
+            if (longPressTriggered) {
+                longPressTriggered = false;
+                e.preventDefault();
+                return;
+            }
+            if (!window.AppLock) return;
+            if (window.AppLock.isEnabled()) {
+                window.AppLock.lockNow();
+            } else {
+                openLockSettings();
+            }
+        });
+
+        lockBtn.addEventListener('contextmenu', (e) => {
+            if (!window.AppLock?.isEnabled()) return;
+            e.preventDefault();
+            clearLongPress();
+            completeHoldVisual();
+            openLockSettings();
+        });
+
+        window._updateLockBtn = updateLockBtn;
+    }
 
     // Calendar button
     const calBtn = document.getElementById('calendarBtn');

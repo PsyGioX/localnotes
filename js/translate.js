@@ -197,6 +197,10 @@ function updateInterface(langData, language) {
     // Обновляем текст кнопок с иконками
     updateButtonTexts();
 
+    if (typeof window._updateLockBtn === 'function') {
+        window._updateLockBtn();
+    }
+
     // Обновляем метки переключателя сети
     if (typeof window.lnNetworkModeRefreshLabels === 'function') {
         window.lnNetworkModeRefreshLabels();
@@ -246,6 +250,25 @@ function updateButtonTexts() {
     const quickEditToggle = document.getElementById("quickEditToggle");
     if (quickEditToggle && !quickEditToggle.classList.contains('active')) {
         quickEditToggle.innerHTML = `<i class="bi bi-lightning-charge"></i> ${txt(quickEditToggle)}`;
+    }
+
+    // App Lock button label
+    const appLockBtn = document.getElementById("appLockBtn");
+    if (appLockBtn) {
+        const lang = window.currentLang || 'en';
+        const lockLabel = window.langData?.[lang]?.appLockBtn
+            || (typeof window.t === 'function' ? window.t('appLockBtn') : null)
+            || 'Lock';
+        const isActive = window.AppLock && window.AppLock.isEnabled();
+        appLockBtn.innerHTML = isActive
+            ? `<i class="bi bi-shield-lock-fill"></i> ${lockLabel}`
+            : `<i class="bi bi-shield-lock"></i> ${lockLabel}`;
+        const titleHint = langData.lockNowTitle
+            || (typeof window.t === 'function' ? window.t('lockNowTitle') : null);
+        const settingsTitle = langData.lockSettingsTitle
+            || (typeof window.t === 'function' ? window.t('lockSettingsTitle') : null)
+            || 'App Lock';
+        appLockBtn.title = isActive ? (titleHint || settingsTitle) : settingsTitle;
     }
     if (toggleViewButton) {
         const notesContainer = document.getElementById("notesContainer");

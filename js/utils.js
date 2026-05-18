@@ -108,20 +108,7 @@ class AppUtils {
         // Обработчик для кнопки переключения вида
         const toggleBtn = document.getElementById("toggleViewButton");
         if (toggleBtn) {
-            // Убираем все предыдущие обработчики
-            toggleBtn.removeEventListener("pointerdown", this.toggleNotesView);
-            toggleBtn.removeEventListener("click", this.toggleNotesView);
-            toggleBtn.removeEventListener("touchstart", this.toggleNotesView);
-            
-            // Простой обработчик клика без preventDefault для нормального поведения
             toggleBtn.addEventListener("click", (e) => {
-                e.stopPropagation();
-                this.toggleNotesView();
-            });
-            
-            // Обработчик для мобильных устройств
-            toggleBtn.addEventListener("touchend", (e) => {
-                e.preventDefault();
                 e.stopPropagation();
                 this.toggleNotesView();
             });

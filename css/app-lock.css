@@ -1,0 +1,786 @@
+/* ============================================================================
+   App Lock — Lock Screen & Settings Modal
+   ============================================================================ */
+
+/* ── Body lock ───────────────────────────────────────────────────────────── */
+body.ln-lock-body {
+    overflow: hidden !important;
+}
+/* Block all interaction with app content while locked */
+body.ln-lock-body > *:not(#ln-lock-screen) {
+    pointer-events: none !important;
+    user-select: none !important;
+    /* inert attribute is set via JS for full keyboard/focus blocking */
+}
+body.ln-lock-body #ln-lock-screen {
+    pointer-events: all;
+}
+
+/* ── Lock screen overlay ─────────────────────────────────────────────────── */
+.ln-lock-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: var(--bg-color, #0a0a0a);
+    animation: lnLockFadeIn 0.35s ease;
+}
+@keyframes lnLockFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+.ln-lock-overlay.ln-lock-unlocking {
+    animation: lnLockFadeOut 0.4s ease forwards;
+}
+@keyframes lnLockFadeOut {
+    from { opacity: 1; transform: scale(1); }
+    to   { opacity: 0; transform: scale(1.04); }
+}
+
+/* ── Lock panel ──────────────────────────────────────────────────────────── */
+.ln-lock-panel {
+    background: var(--modal-bg, #1a1a1a);
+    border: 1px solid var(--modal-border, #272727);
+    border-radius: 24px;
+    padding: 40px 36px 32px;
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+    position: relative;
+    overflow: hidden;
+    animation: lnLockSlideUp 0.4s cubic-bezier(0.34, 1.2, 0.64, 1);
+}
+@keyframes lnLockSlideUp {
+    from { opacity: 0; transform: translateY(30px) scale(0.96); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.ln-lock-panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--gradient-primary, linear-gradient(135deg, #aefc6e, #9ee85d));
+    border-radius: 24px 24px 0 0;
+}
+
+.ln-lock-icon {
+    font-size: 3rem;
+    color: var(--primary-color, #aefc6e);
+    margin-bottom: 16px;
+    animation: lnLockIconPulse 2.5s ease-in-out infinite;
+}
+@keyframes lnLockIconPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.7; transform: scale(0.95); }
+}
+
+.ln-lock-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-color, #fff);
+    margin: 0 0 8px;
+    font-family: 'Intro', 'Golos Text', sans-serif;
+}
+.ln-lock-subtitle {
+    font-size: 0.9rem;
+    color: var(--text-secondary, #888);
+    margin: 0 0 28px;
+    line-height: 1.5;
+}
+
+/* ── PIN dots ────────────────────────────────────────────────────────────── */
+.ln-lock-pin-dots {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.ln-lock-pin-dots span {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--border-color, #272727);
+    background: transparent;
+    transition: background 0.2s, border-color 0.2s, transform 0.15s;
+}
+.ln-lock-pin-dots span.filled {
+    background: var(--primary-color, #aefc6e);
+    border-color: var(--primary-color, #aefc6e);
+    transform: scale(1.15);
+}
+
+/* ── PIN input ───────────────────────────────────────────────────────────── */
+.ln-lock-pin-input {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid var(--border-color, #272727);
+    background: var(--input-bg, #1a1a1a);
+    color: var(--input-text, #fff);
+    border-radius: 12px;
+    font-size: 20px;
+    font-family: monospace;
+    text-align: center;
+    letter-spacing: 0.3em;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+    margin-bottom: 14px;
+}
+.ln-lock-pin-input:focus {
+    outline: none;
+    border-color: var(--primary-color, #aefc6e);
+    box-shadow: 0 0 0 3px rgba(174, 252, 110, 0.2);
+}
+.ln-lock-pin-input.ln-lock-shake {
+    animation: lnLockShake 0.4s ease;
+}
+@keyframes lnLockShake {
+    0%, 100% { transform: translateX(0); }
+    20%       { transform: translateX(-8px); }
+    40%       { transform: translateX(8px); }
+    60%       { transform: translateX(-5px); }
+    80%       { transform: translateX(5px); }
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.ln-lock-btn {
+    width: 100%;
+    height: 48px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+.ln-lock-btn-primary {
+    background: var(--primary-color, #aefc6e);
+    color: #000;
+}
+.ln-lock-btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.ln-lock-btn-primary:active { transform: translateY(0); }
+
+/* ── File upload label ───────────────────────────────────────────────────── */
+.ln-lock-file-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    height: 48px;
+    border: 2px dashed var(--border-color, #272727);
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary, #888);
+    transition: border-color 0.2s, color 0.2s, background 0.2s;
+    box-sizing: border-box;
+}
+.ln-lock-file-label:hover {
+    border-color: var(--primary-color, #aefc6e);
+    color: var(--primary-color, #aefc6e);
+    background: rgba(174, 252, 110, 0.05);
+}
+.ln-lock-file-input {
+    position: absolute;
+    width: 1px; height: 1px;
+    opacity: 0; overflow: hidden;
+    clip: rect(0,0,0,0);
+    white-space: nowrap;
+}
+
+/* ── Divider ─────────────────────────────────────────────────────────────── */
+.ln-lock-or {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 16px 0;
+    color: var(--text-secondary, #888);
+    font-size: 13px;
+}
+.ln-lock-or::before,
+.ln-lock-or::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-color, #272727);
+}
+
+/* ── Error message ───────────────────────────────────────────────────────── */
+.ln-lock-error {
+    margin-top: 14px;
+    font-size: 13px;
+    color: #f44336;
+    min-height: 20px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+.ln-lock-error.visible { opacity: 1; }
+
+/* ── Section spacing ─────────────────────────────────────────────────────── */
+.ln-lock-section { margin-bottom: 4px; }
+
+/* ── Light theme ─────────────────────────────────────────────────────────── */
+[data-theme="light"] .ln-lock-overlay { background: #f8f9fa; }
+[data-theme="light"] .ln-lock-panel { background: #ffffff; border-color: #dee2e6; }
+[data-theme="light"] .ln-lock-pin-input { background: #ffffff; border-color: #dee2e6; color: #212529; }
+[data-theme="light"] .ln-lock-pin-dots span { border-color: #dee2e6; }
+[data-theme="light"] .ln-lock-file-label { border-color: #dee2e6; }
+[data-theme="light"] .ln-lock-file-label:hover { background: rgba(40, 167, 69, 0.05); border-color: #28a745; color: #28a745; }
+
+/* ── Mobile ──────────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+    .ln-lock-panel {
+        padding: 32px 24px 28px;
+        border-radius: 20px;
+    }
+    .ln-lock-title { font-size: 1.3rem; }
+}
+
+/* ============================================================================
+   App Lock Settings Modal
+   ============================================================================ */
+
+.ln-lock-settings-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 15000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+}
+.ln-lock-settings-overlay.ln-lock-settings-visible {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.ln-lock-settings-panel {
+    background: var(--modal-bg, #1a1a1a);
+    border: 1px solid var(--modal-border, #272727);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+    transform: translateY(20px) scale(0.97);
+    transition: transform 0.28s cubic-bezier(0.34, 1.2, 0.64, 1);
+    position: relative;
+}
+.ln-lock-settings-overlay.ln-lock-settings-visible .ln-lock-settings-panel {
+    transform: translateY(0) scale(1);
+}
+.ln-lock-settings-panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--gradient-primary, linear-gradient(135deg, #aefc6e, #9ee85d));
+    border-radius: 20px 20px 0 0;
+}
+
+.ln-lock-settings-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--border-color, #272727);
+    flex-shrink: 0;
+}
+.ln-lock-settings-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--primary-color, #aefc6e);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.ln-lock-settings-close {
+    background: none;
+    border: none;
+    color: var(--text-secondary, #888);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: color 0.15s, background 0.15s;
+    line-height: 1;
+}
+.ln-lock-settings-close:hover {
+    color: var(--text-color, #fff);
+    background: var(--button-hover, #272727);
+}
+
+.ln-lock-settings-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* ── Settings mode tabs ──────────────────────────────────────────────────── */
+.ln-lss-tabs {
+    display: flex;
+    gap: 6px;
+    padding: 4px;
+    background: var(--bg-secondary, #111);
+    border: 1px solid var(--border-color, #272727);
+    border-radius: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+.ln-lss-tab {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 10px 8px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-secondary, #888);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+.ln-lss-tab i { font-size: 1rem; }
+.ln-lss-tab:hover {
+    color: var(--text-color, #fff);
+    background: var(--button-hover, #272727);
+}
+.ln-lss-tab.active {
+    background: rgba(174, 252, 110, 0.15);
+    color: var(--primary-color, #aefc6e);
+    box-shadow: 0 0 0 1px var(--primary-color, #aefc6e);
+}
+.ln-lss-tab:focus-visible {
+    outline: 2px solid var(--primary-color, #aefc6e);
+    outline-offset: 2px;
+}
+
+/* Lock screen unlock tabs (PIN + file mode) */
+.ln-lock-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+    padding: 4px;
+    background: var(--bg-secondary, #111);
+    border-radius: 10px;
+    border: 1px solid var(--border-color, #272727);
+}
+.ln-lock-tab {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-secondary, #888);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+.ln-lock-tab.active {
+    background: rgba(174, 252, 110, 0.12);
+    color: var(--primary-color, #aefc6e);
+}
+.ln-lock-tab-panel { display: none; }
+.ln-lock-tab-panel.active { display: block; }
+
+/* ── Mode grid (legacy) ──────────────────────────────────────────────────── */
+.ln-lss-mode-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 4px;
+}
+.ln-lss-mode-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 10px;
+    border: 2px solid var(--border-color, #272727);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s, transform 0.15s;
+    background: var(--button-bg, #1a1a1a);
+    text-align: center;
+    user-select: none;
+}
+.ln-lss-mode-card input[type=radio] {
+    position: absolute;
+    opacity: 0;
+    width: 0; height: 0;
+}
+.ln-lss-mode-card i {
+    font-size: 1.6rem;
+    color: var(--text-secondary, #888);
+    transition: color 0.2s;
+}
+.ln-lss-mode-card span {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary, #888);
+    transition: color 0.2s;
+}
+.ln-lss-mode-card:hover {
+    border-color: var(--primary-color, #aefc6e);
+    background: var(--button-hover, #272727);
+    transform: translateY(-2px);
+}
+.ln-lss-mode-card.active {
+    border-color: var(--primary-color, #aefc6e);
+    background: rgba(174, 252, 110, 0.08);
+}
+.ln-lss-mode-card.active i,
+.ln-lss-mode-card.active span {
+    color: var(--primary-color, #aefc6e);
+}
+
+/* ── Sections ────────────────────────────────────────────────────────────── */
+.ln-lss-section {
+    margin-top: 20px;
+    padding: 16px;
+    background: var(--bg-secondary, #111);
+    border: 1px solid var(--border-color, #272727);
+    border-radius: 12px;
+}
+.ln-lss-field { margin-bottom: 14px; }
+.ln-lss-field:last-child { margin-bottom: 0; }
+.ln-lss-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary, #888);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+}
+.ln-lss-input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid var(--border-color, #272727);
+    background: var(--input-bg, #1a1a1a);
+    color: var(--input-text, #fff);
+    border-radius: 10px;
+    font-size: 16px;
+    font-family: monospace;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+}
+.ln-lss-input:focus {
+    outline: none;
+    border-color: var(--primary-color, #aefc6e);
+    box-shadow: 0 0 0 3px rgba(174, 252, 110, 0.15);
+}
+.ln-lss-file-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px dashed var(--border-color, #272727);
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-secondary, #888);
+    transition: border-color 0.2s, color 0.2s, background 0.2s;
+    box-sizing: border-box;
+}
+.ln-lss-file-label:hover {
+    border-color: var(--primary-color, #aefc6e);
+    color: var(--primary-color, #aefc6e);
+    background: rgba(174, 252, 110, 0.05);
+}
+.ln-lss-hint {
+    margin: 10px 0 0;
+    font-size: 12px;
+    color: var(--text-secondary, #888);
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    line-height: 1.5;
+}
+.ln-lss-hint i { flex-shrink: 0; margin-top: 2px; color: #f59e0b; }
+
+/* ── Generate access file button ─────────────────────────────────────────── */
+.ln-lss-generate-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--primary-color, #aefc6e);
+    color: #000;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: filter 0.2s, transform 0.15s;
+}
+.ln-lss-generate-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.ln-lss-generate-btn:active { transform: translateY(0); }
+[data-theme="light"] .ln-lss-generate-btn { background: #28a745; color: #fff; }
+
+/* ── Error ───────────────────────────────────────────────────────────────── */
+.ln-lss-error {
+    margin-top: 14px;
+    font-size: 13px;
+    color: #f44336;
+    min-height: 18px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+.ln-lss-error.visible { opacity: 1; }
+
+/* ── Footer buttons ──────────────────────────────────────────────────────── */
+.ln-lock-settings-footer {
+    display: flex;
+    gap: 10px;
+    padding: 14px 20px 18px;
+    border-top: 1px solid var(--border-color, #272727);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+.ln-lss-btn {
+    flex: 1 1 auto;
+    min-width: 4.5rem;
+    min-height: 42px;
+    height: auto;
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    white-space: normal;
+    line-height: 1.25;
+    text-align: center;
+    box-sizing: border-box;
+}
+.ln-lss-btn i { flex-shrink: 0; }
+.ln-lss-btn-primary {
+    background: var(--primary-color, #aefc6e);
+    color: #000;
+}
+.ln-lss-btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.ln-lss-btn-cancel {
+    background: var(--button-bg, #1a1a1a);
+    color: var(--text-secondary, #888);
+    border: 1px solid var(--border-color, #272727);
+}
+.ln-lss-btn-cancel:hover { background: var(--button-hover, #272727); color: var(--text-color, #fff); }
+.ln-lss-btn-danger {
+    background: rgba(244, 67, 54, 0.1);
+    color: #f44336;
+    border: 1px solid rgba(244, 67, 54, 0.3);
+}
+.ln-lss-btn-danger:hover { background: rgba(244, 67, 54, 0.2); border-color: #f44336; }
+.ln-lss-btn-lock-now {
+    background: rgba(174, 252, 110, 0.12);
+    color: var(--primary-color, #aefc6e);
+    border: 1px solid rgba(174, 252, 110, 0.45);
+}
+.ln-lss-btn-lock-now:hover {
+    background: rgba(174, 252, 110, 0.2);
+    border-color: var(--primary-color, #aefc6e);
+}
+
+/* ── Lock button (bottom bar, next to view toggle) ─────────────────────── */
+@keyframes ln-lock-hold-fill {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+}
+
+#appLockBtn {
+    flex: 0 0 auto;
+    height: 50px;
+    margin: 0;
+    transform: none;
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    border: 2px solid rgba(174, 252, 110, 0.25);
+    background: linear-gradient(135deg, var(--button-bg, #1a1a1a) 0%, rgba(174, 252, 110, 0.05) 100%);
+    color: var(--button-text, #fff);
+    border-radius: 16px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 16px;
+    white-space: nowrap;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease, color 0.3s ease, transform 0.3s ease;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    user-select: none;
+}
+
+#appLockBtn::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, rgba(174, 252, 110, 0.38) 0%, rgba(174, 252, 110, 0.22) 100%);
+    transform: scaleX(0);
+    transform-origin: left center;
+    z-index: 0;
+    pointer-events: none;
+    will-change: transform;
+}
+
+#appLockBtn.ln-lock-holding::before {
+    animation: ln-lock-hold-fill var(--ln-lock-hold-ms, 500ms) linear forwards;
+}
+
+#appLockBtn.ln-lock-hold-complete::before {
+    animation: none;
+    transform: scaleX(1);
+}
+
+#appLockBtn > * {
+    position: relative;
+    z-index: 1;
+}
+
+[data-theme="light"] #appLockBtn::before {
+    background: linear-gradient(90deg, rgba(40, 167, 69, 0.35) 0%, rgba(40, 167, 69, 0.18) 100%);
+}
+.btn_view_div #appLockBtn:hover {
+    border-color: rgba(174, 252, 110, 0.5);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(174, 252, 110, 0.12);
+}
+#appLockBtn:hover {
+    border-color: rgba(174, 252, 110, 0.5);
+    box-shadow: 0 6px 20px rgba(174, 252, 110, 0.12);
+}
+#appLockBtn.ln-lock-active {
+    border-color: var(--primary-color, #aefc6e);
+    color: var(--primary-color, #aefc6e);
+}
+
+@media (max-width: 768px) {
+    .ln-lss-mode-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .ln-lss-mode-card { padding: 12px 8px; }
+    .ln-lss-mode-card i { font-size: 1.3rem; }
+}
+
+@media (max-width: 520px) {
+    .ln-lock-settings-footer {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+    .ln-lss-btn {
+        flex: none !important;
+        width: 100%;
+        min-height: 44px;
+        font-size: 13px;
+        padding: 10px 14px;
+    }
+}
+
+/* ── Mobile bottom sheet ─────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+    .ln-lock-settings-overlay {
+        align-items: flex-end;
+        padding: 0;
+    }
+    .ln-lock-settings-panel {
+        border-radius: 20px 20px 0 0;
+        max-width: 100%;
+        max-height: 95vh;
+    }
+    .ln-lock-settings-footer {
+        padding-bottom: max(18px, env(safe-area-inset-bottom, 0px));
+    }
+    #appLockBtn {
+        height: 42px;
+        font-size: 13px;
+        padding: 0 14px;
+        border-radius: 12px;
+    }
+}
+
+/* ── Toast ───────────────────────────────────────────────────────────────── */
+.ln-lock-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--modal-bg, #1a1a1a);
+    border: 1px solid var(--border-color, #272727);
+    border-radius: 40px;
+    padding: 10px 20px;
+    font-size: 14px;
+    color: var(--text-color, #fff);
+    z-index: 20001;
+    opacity: 0;
+    transition: opacity 0.25s, transform 0.25s;
+    pointer-events: none;
+    white-space: nowrap;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+.ln-lock-toast.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* ── Light theme ─────────────────────────────────────────────────────────── */
+[data-theme="light"] .ln-lock-settings-panel { background: #ffffff; border-color: #dee2e6; }
+[data-theme="light"] .ln-lss-section { background: #f8f9fa; border-color: #dee2e6; }
+[data-theme="light"] .ln-lss-input { background: #ffffff; border-color: #dee2e6; color: #212529; }
+[data-theme="light"] .ln-lss-mode-card { background: #f8f9fa; border-color: #dee2e6; }
+[data-theme="light"] .ln-lss-mode-card.active { background: rgba(40, 167, 69, 0.08); border-color: #28a745; }
+[data-theme="light"] .ln-lss-mode-card.active i,
+[data-theme="light"] .ln-lss-mode-card.active span { color: #28a745; }
+[data-theme="light"] .ln-lss-mode-card:hover { border-color: #28a745; background: #e9ecef; }
+[data-theme="light"] .ln-lss-file-label { border-color: #dee2e6; }
+[data-theme="light"] .ln-lss-file-label:hover { border-color: #28a745; color: #28a745; background: rgba(40, 167, 69, 0.05); }
+[data-theme="light"] .ln-lss-btn-cancel { background: #f8f9fa; color: #6c757d; border-color: #dee2e6; }
+[data-theme="light"] .ln-lss-btn-cancel:hover { background: #e9ecef; color: #212529; }
+[data-theme="light"] .ln-lock-toast { background: #ffffff; border-color: #dee2e6; color: #212529; }

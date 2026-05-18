@@ -18,15 +18,15 @@ function loadScriptsSequentially(scripts, index) {
 
 // Load scripts after DOM is ready
 var scripts = [
-    '/js/magicurl.js?v=1.6.8',
-    '/js/highlight.min.js?v=1.6.8',
-    '/js/translations.js?v=1.6.8',
-    '/js/img.js?v=1.6.8',
-    '/js/date-utils.js?v=1.6.8',
-    '/js/editor-integration.js?v=1.6.8',
-    '/js/markdown.js?v=1.6.8',
-    '/js/tags-calendar.js?v=1.6.8',
-    '/js/index.js?v=1.6.8'
+    '/js/magicurl.js?v=1.7.0',
+    '/js/highlight.min.js?v=1.7.0',
+    '/js/translations.js?v=1.7.0',
+    '/js/img.js?v=1.7.0',
+    '/js/date-utils.js?v=1.7.0',
+    '/js/editor-integration.js?v=1.7.0',
+    '/js/markdown.js?v=1.7.0',
+    '/js/tags-calendar.js?v=1.7.0',
+    '/js/index.js?v=1.7.0'
 ];
 
 if (document.readyState === 'loading') {
