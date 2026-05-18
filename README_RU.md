@@ -2,7 +2,7 @@
 
 ![Local Notes Screenshot](https://github.com/SerGioPlay01/localnotes/blob/main/sccc.png?raw=true)
 
-[![Version](https://img.shields.io/badge/Version-1.6.8-brightgreen.svg)](https://github.com/SerGioPlay01/localnotes/releases)
+[![Version](https://img.shields.io/badge/Version-1.7.0-brightgreen.svg)](https://github.com/SerGioPlay01/localnotes/releases)
 [![Security](https://img.shields.io/badge/Security-AES--256--GCM%20%2B%20HMAC--SHA--512-blue.svg)](https://github.com/SerGioPlay01/localnotes)
 [![DOMPurify](https://img.shields.io/badge/XSS-DOMPurify-red.svg)](https://github.com/cure53/DOMPurify)
 [![PWA](https://img.shields.io/badge/PWA-Enabled-purple.svg)](https://github.com/SerGioPlay01/localnotes)
@@ -267,7 +267,7 @@ python -m http.server 8000
 
 ## 📋 История изменений
 
-### v1.6.8 (текущая)
+### v1.7.0 (текущая)
 - **🛡️ Ужесточение CSP** — `unsafe-inline` удалён из `script-src`; все инлайн-скрипты вынесены во внешние файлы (`ga-init.js`, `script-loader.js`, `lang-redirect.js`, `page-init.js`)
 - **🔒 DOMPurify hard-fail** — `index.js` бросает исключение при старте если DOMPurify не загружен; все небезопасные fallback удалены
 - **✅ Переработанный чеклист** — плоский дизайн `checkbox + input` без блоков-обёрток; панель кастомизации каждого пункта: цвет (7 вариантов), приоритет (низкий/средний/высокий), текстовая метка; навигация Enter/Backspace
