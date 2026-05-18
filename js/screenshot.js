@@ -184,8 +184,6 @@
         const LINE_H   = Math.round(BASE * 1.75);  // line-box height (top-based)
         const CELL_H   = Math.round(BASE * 2.0);
         const META_SZ  = 17;
-        const TITLE_SZ = 32;
-        const TITLE_LH = Math.round(TITLE_SZ * 1.5);
         const HEADER_H = 80;
         const FOOTER_H = 72;
         const MARGIN   = 40;
@@ -204,28 +202,11 @@
         const segs = domToSegments(parser, mctx, CONTENT_W, BASE, FONT);
         document.body.removeChild(parser);
 
-        // Title wrap
-        const title = note.title || '';
-        mctx.font = `700 ${TITLE_SZ}px ${FONT}`;
-        const titleLines = [];
-        if (title) {
-            const words = title.split(' ');
-            let line = '';
-            for (const w of words) {
-                const t = line ? line + ' ' + w : w;
-                if (mctx.measureText(t).width > CONTENT_W && line) {
-                    titleLines.push(line); line = w;
-                } else line = t;
-            }
-            if (line) titleLines.push(line);
-        }
-
         const contentH = calcContentHeight(segs, LINE_H, CELL_H);
-        const TITLE_H  = titleLines.length ? titleLines.length * TITLE_LH + 16 : 0;
         // Divider gap: 16px above line + 24px below line before first text top
         const DIV_GAP  = 40;
         const META_H   = 56;
-        const TOTAL_H  = MARGIN + PAD + HEADER_H + TITLE_H + DIV_GAP + contentH + META_H + FOOTER_H + PAD + MARGIN;
+        const TOTAL_H  = MARGIN + PAD + HEADER_H + DIV_GAP + contentH + META_H + FOOTER_H + PAD + MARGIN;
 
         const canvas = document.createElement('canvas');
         canvas.width  = CARD_W * SCALE;
@@ -284,18 +265,6 @@
             ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
         }
         y += HEADER_H;
-
-        // Title
-        if (titleLines.length) {
-            ctx.fillStyle = TEXT; ctx.font = `700 ${TITLE_SZ}px ${FONT}`;
-            ctx.textBaseline = 'top';
-            for (const ln of titleLines) {
-                ctx.fillText(ln, conX, y);
-                y += TITLE_LH;
-            }
-            ctx.textBaseline = 'alphabetic';
-            y += 16;
-        }
 
         // Divider — 16px gap above, draw line, 24px gap below
         y += 16;
