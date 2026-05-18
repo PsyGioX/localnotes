@@ -22,10 +22,14 @@
         } catch { return ''; }
     }
 
+    const CL_PRIO = { high: '#f87171', mid: '#fbbf24', low: '#60a5fa' };
+    const CL_CB_INDENT = 28;
+
     // ── DOM → segment list ────────────────────────────────────────────────────
     // Each segment: { kind, text, bold, italic, underline, strike,
     //                 code, heading(1-6), quote, listItem, fontSize, indentPx,
     //                 tableRow:[{text,bold}] }
+    // checklistItem: { text, checked, color, priority, tag, showCheckbox, showTag }
     function domToSegments(root, ctx, contentW, baseSize, font) {
 
         const segs = [];
@@ -76,6 +80,69 @@
             }
         }
 
+        function parseChecklistItem(el) {
+            const isLegacy = el.classList.contains('checklist-item-wrapper');
+            let text = '', checked = false, color = '', priority = '', tag = '';
+
+            if (isLegacy) {
+                const cb = el.querySelector('.checklist-checkbox-ios, input[type="checkbox"]');
+                const span = el.querySelector('.checklist-text-content, .checklist-text-ios');
+                text = span ? span.textContent.trim() : '';
+                checked = !!(cb && (cb.checked || cb.getAttribute('data-checked') === 'true'))
+                    || el.classList.contains('checklist-item-done');
+            } else {
+                const inp = el.querySelector('.cl-text');
+                const cb = el.querySelector('.cl-cb');
+                text = inp ? (inp.value || inp.getAttribute('value') || '').trim() : '';
+                checked = !!(cb && (cb.checked || cb.hasAttribute('checked')
+                    || cb.getAttribute('data-checked') === 'true'))
+                    || el.classList.contains('cl-item-done')
+                    || inp?.classList.contains('cl-done');
+                color = el.dataset.clColor || '';
+                priority = el.dataset.clPriority || '';
+                tag = el.dataset.clTag || '';
+            }
+            return { text, checked, color, priority, tag };
+        }
+
+        function pushChecklistSegments(item) {
+            if (!item.text) return;
+            const fSize = baseSize;
+            ctx.font = `400 ${fSize}px ${font}`;
+            let tagW = 0;
+            if (item.tag) {
+                ctx.font = `500 ${Math.round(fSize * 0.72)}px ${font}`;
+                tagW = ctx.measureText(item.tag).width + 16;
+                ctx.font = `400 ${fSize}px ${font}`;
+            }
+            const avail = contentW - CL_CB_INDENT - tagW;
+            const words = item.text.replace(/\s+/g, ' ').trim().split(' ');
+            let line = '';
+            const lines = [];
+            for (const word of words) {
+                const candidate = line ? line + ' ' + word : word;
+                if (measure(candidate, fSize, false, false, false) > avail && line) {
+                    lines.push(line);
+                    line = word;
+                } else {
+                    line = candidate;
+                }
+            }
+            if (line) lines.push(line);
+            lines.forEach((ln, i) => {
+                segs.push({
+                    kind: 'checklistItem',
+                    text: ln,
+                    checked: item.checked,
+                    color: item.color,
+                    priority: item.priority,
+                    tag: i === 0 ? item.tag : '',
+                    showCheckbox: i === 0,
+                    showTag: i === 0 && !!item.tag,
+                });
+            });
+        }
+
         function walk(node, st) {
             if (node.nodeType === Node.TEXT_NODE) {
                 st.buf += node.textContent;
@@ -83,6 +150,19 @@
             }
             if (node.nodeType !== Node.ELEMENT_NODE) return;
             const tag = node.tagName.toLowerCase();
+
+            // Skip editor-only checklist UI
+            if (node.classList?.contains('cl-opts-btn')
+                || node.classList?.contains('cl-opts-panel')
+                || node.classList?.contains('checklist-add-desc')) return;
+
+            // Checklist item — atomic block (text lives in <input value>, not textContent)
+            if (node.classList?.contains('cl-item')
+                || node.classList?.contains('checklist-item-wrapper')) {
+                flush(st);
+                pushChecklistSegments(parseChecklistItem(node));
+                return;
+            }
 
             if (tag === 'br') { flush(st); segs.push({ kind:'br' }); return; }
             if (tag === 'hr') { flush(st); segs.push({ kind:'hr' }); return; }
@@ -149,6 +229,7 @@
             if (s.kind === 'hr')     { h += 24; continue; }
             if (s.kind === 'spacer') { h += lineH * 0.45; continue; }
             if (s.kind === 'br')     { h += lineH * 0.6; continue; }
+            if (s.kind === 'checklistItem') { h += lineH; continue; }
             if (s.kind === 'table') {
                 h += s.rows.length * cellH + 8;
                 continue;
@@ -285,6 +366,84 @@
             }
             if (seg.kind === 'spacer') { y += Math.round(LINE_H * 0.45); continue; }
             if (seg.kind === 'br')     { y += Math.round(LINE_H * 0.6);  continue; }
+
+            // ── Checklist item ────────────────────────────────────────────────
+            if (seg.kind === 'checklistItem') {
+                const fSize  = BASE;
+                const lh     = LINE_H;
+                const CB     = 16;
+                const baseline = y + Math.round(fSize * 0.82) + Math.round((lh - fSize) / 2);
+                const cbY    = y + Math.round((lh - CB) / 2);
+                const accent = seg.priority ? (CL_PRIO[seg.priority] || ACCENT)
+                    : (seg.color || '');
+                const cbX    = conX + (accent ? 6 : 0);
+                const textX  = conX + CL_CB_INDENT;
+
+                if (accent) {
+                    ctx.fillStyle = accent;
+                    ctx.fillRect(conX, y + 3, 3, lh - 6);
+                }
+                if (seg.color && !seg.priority) {
+                    ctx.fillStyle = dark ? 'rgba(174,252,110,0.06)' : 'rgba(40,167,69,0.06)';
+                    ctx.fillRect(conX, y + 1, rightEdge - conX, lh - 2);
+                }
+
+                if (seg.showCheckbox) {
+                    const cbCol = seg.color || ACCENT;
+                    if (seg.checked) {
+                        ctx.fillStyle = cbCol;
+                        ctx.fillRect(cbX, cbY, CB, CB);
+                        ctx.strokeStyle = dark ? '#000' : '#fff';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.moveTo(cbX + 4, cbY + 9);
+                        ctx.lineTo(cbX + 7, cbY + 12);
+                        ctx.lineTo(cbX + 12, cbY + 5);
+                        ctx.stroke();
+                    } else {
+                        ctx.strokeStyle = cbCol;
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(cbX + 1, cbY + 1, CB - 2, CB - 2);
+                    }
+                }
+
+                ctx.font = `400 ${fSize}px ${FONT}`;
+                ctx.textBaseline = 'alphabetic';
+                ctx.fillStyle = seg.checked
+                    ? (dark ? 'rgba(240,240,240,0.42)' : 'rgba(58,66,80,0.45)')
+                    : SUBTEXT;
+                ctx.fillText(seg.text, textX, baseline);
+
+                if (seg.checked) {
+                    const tw = ctx.measureText(seg.text).width;
+                    ctx.strokeStyle = dark ? 'rgba(174,252,110,0.45)' : 'rgba(40,167,69,0.45)';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(textX, baseline - fSize * 0.35);
+                    ctx.lineTo(textX + Math.min(tw, rightEdge - textX), baseline - fSize * 0.35);
+                    ctx.stroke();
+                }
+
+                if (seg.showTag && seg.tag) {
+                    const tagSz = Math.round(fSize * 0.72);
+                    ctx.font = `500 ${tagSz}px ${FONT}`;
+                    const tw = ctx.measureText(seg.tag).width;
+                    const pillX = rightEdge - tw - 14;
+                    const pillY = y + Math.round((lh - tagSz - 6) / 2);
+                    ctx.fillStyle = dark ? 'rgba(174,252,110,0.1)' : 'rgba(40,167,69,0.1)';
+                    ctx.fillRect(pillX, pillY, tw + 12, tagSz + 6);
+                    ctx.strokeStyle = dark ? 'rgba(174,252,110,0.25)' : 'rgba(40,167,69,0.25)';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(pillX + 0.5, pillY + 0.5, tw + 11, tagSz + 5);
+                    ctx.fillStyle = dark ? 'rgba(174,252,110,0.75)' : 'rgba(40,167,69,0.85)';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(seg.tag, pillX + 6, pillY + (tagSz + 6) / 2);
+                    ctx.textBaseline = 'alphabetic';
+                }
+
+                y += lh;
+                continue;
+            }
 
             // ── Table ─────────────────────────────────────────────────────────
             if (seg.kind === 'table') {
