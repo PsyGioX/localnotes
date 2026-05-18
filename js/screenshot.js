@@ -25,11 +25,27 @@
     const CL_PRIO = { high: '#f87171', mid: '#fbbf24', low: '#60a5fa' };
     const CL_CB_INDENT = 28;
 
-    /** Only accept explicit #rgb / #rrggbb from data-cl-color (ignore garbage attrs). */
+    /** Only accept explicit #rgb / #rrggbb (ignore garbage attrs). */
     function parseClColor(raw) {
         if (!raw || typeof raw !== 'string') return '';
         const c = raw.trim();
         return /^#[0-9a-f]{3}([0-9a-f]{3})?$/i.test(c) ? c : '';
+    }
+
+    function readClItemColor(el) {
+        let c = parseClColor(el.getAttribute('data-cl-color'));
+        if (!c && el.dataset?.clColor) c = parseClColor(el.dataset.clColor);
+        if (!c && el.style) {
+            c = parseClColor(el.style.getPropertyValue('--cl-accent'));
+        }
+        return c;
+    }
+
+    /** Row tint: only when a custom color is set; priority overrides accent (matches editor CSS). */
+    function checklistRowColor(seg) {
+        if (!seg.color) return '';
+        if (seg.priority && CL_PRIO[seg.priority]) return CL_PRIO[seg.priority];
+        return seg.color;
     }
 
     function hexToRgba(hex, alpha) {
@@ -118,16 +134,19 @@
                 const span = el.querySelector('.checklist-text-content, .checklist-text-ios');
                 text = span ? span.textContent.trim() : '';
                 checked = isCheckboxChecked(cb, el, span, 'checklist-item-done', 'checklist-done');
+                color = readClItemColor(el);
+                priority = el.dataset.clPriority || '';
+                tag = el.dataset.clTag || '';
             } else {
                 const inp = el.querySelector('.cl-text');
                 const cb = el.querySelector('.cl-cb');
                 text = inp ? (inp.value || inp.getAttribute('value') || '').trim() : '';
                 checked = isCheckboxChecked(cb, el, inp, 'cl-item-done', 'cl-done');
-                color = parseClColor(el.getAttribute('data-cl-color'));
+                color = readClItemColor(el);
                 priority = el.dataset.clPriority || '';
                 tag = el.dataset.clTag || '';
             }
-            return { text, checked, color, priority, tag };
+            return { text, checked, color, priority, tag, legacy: isLegacy };
         }
 
         function pushChecklistSegments(item) {
@@ -161,6 +180,7 @@
                     checked: item.checked,
                     color: item.color,
                     priority: item.priority,
+                    legacy: item.legacy,
                     tag: i === 0 ? item.tag : '',
                     showCheckbox: i === 0,
                     showTag: i === 0 && !!item.tag,
@@ -184,6 +204,8 @@
             // Checklist item — atomic block (text lives in <input value>, not textContent)
             if (node.classList?.contains('cl-item')
                 || node.classList?.contains('checklist-item-wrapper')) {
+                // Skip nested items (only process outermost checklist row)
+                if (node.parentElement?.closest('.cl-item, .checklist-item-wrapper')) return;
                 flush(st);
                 pushChecklistSegments(parseChecklistItem(node));
                 return;
@@ -408,8 +430,12 @@
                     ctx.fillStyle = accent;
                     ctx.fillRect(conX, y + 3, 3, lh - 6);
                 }
-                if (seg.color && !seg.priority) {
-                    ctx.fillStyle = hexToRgba(seg.color, dark ? 0.06 : 0.08);
+                const rowColor = checklistRowColor(seg);
+                if (rowColor) {
+                    ctx.fillStyle = hexToRgba(rowColor, dark ? 0.06 : 0.08);
+                    ctx.fillRect(conX, y + 1, rightEdge - conX, lh - 2);
+                } else if (seg.legacy) {
+                    ctx.fillStyle = dark ? 'rgba(174,252,110,0.05)' : 'rgba(40,167,69,0.05)';
                     ctx.fillRect(conX, y + 1, rightEdge - conX, lh - 2);
                 }
 
