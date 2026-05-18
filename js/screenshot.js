@@ -25,6 +25,22 @@
     const CL_PRIO = { high: '#f87171', mid: '#fbbf24', low: '#60a5fa' };
     const CL_CB_INDENT = 28;
 
+    /** Only accept explicit #rgb / #rrggbb from data-cl-color (ignore garbage attrs). */
+    function parseClColor(raw) {
+        if (!raw || typeof raw !== 'string') return '';
+        const c = raw.trim();
+        return /^#[0-9a-f]{3}([0-9a-f]{3})?$/i.test(c) ? c : '';
+    }
+
+    function hexToRgba(hex, alpha) {
+        let h = hex.replace('#', '');
+        if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+        const r = parseInt(h.slice(0, 2), 16);
+        const g = parseInt(h.slice(2, 4), 16);
+        const b = parseInt(h.slice(4, 6), 16);
+        return `rgba(${r},${g},${b},${alpha})`;
+    }
+
     // ── DOM → segment list ────────────────────────────────────────────────────
     // Each segment: { kind, text, bold, italic, underline, strike,
     //                 code, heading(1-6), quote, listItem, fontSize, indentPx,
@@ -107,7 +123,7 @@
                 const cb = el.querySelector('.cl-cb');
                 text = inp ? (inp.value || inp.getAttribute('value') || '').trim() : '';
                 checked = isCheckboxChecked(cb, el, inp, 'cl-item-done', 'cl-done');
-                color = el.dataset.clColor || '';
+                color = parseClColor(el.getAttribute('data-cl-color'));
                 priority = el.dataset.clPriority || '';
                 tag = el.dataset.clTag || '';
             }
@@ -393,7 +409,7 @@
                     ctx.fillRect(conX, y + 3, 3, lh - 6);
                 }
                 if (seg.color && !seg.priority) {
-                    ctx.fillStyle = dark ? 'rgba(174,252,110,0.06)' : 'rgba(40,167,69,0.06)';
+                    ctx.fillStyle = hexToRgba(seg.color, dark ? 0.06 : 0.08);
                     ctx.fillRect(conX, y + 1, rightEdge - conX, lh - 2);
                 }
 
@@ -425,7 +441,8 @@
 
                 if (seg.checked) {
                     const tw = ctx.measureText(seg.text).width;
-                    ctx.strokeStyle = dark ? 'rgba(174,252,110,0.45)' : 'rgba(40,167,69,0.45)';
+                    const strikeCol = seg.color || ACCENT;
+                    ctx.strokeStyle = hexToRgba(strikeCol, 0.45);
                     ctx.lineWidth = 1.5;
                     ctx.beginPath();
                     ctx.moveTo(textX, baseline - fSize * 0.35);
@@ -439,12 +456,13 @@
                     const tw = ctx.measureText(seg.tag).width;
                     const pillX = rightEdge - tw - 14;
                     const pillY = y + Math.round((lh - tagSz - 6) / 2);
-                    ctx.fillStyle = dark ? 'rgba(174,252,110,0.1)' : 'rgba(40,167,69,0.1)';
+                    const tagAccent = seg.color || ACCENT;
+                    ctx.fillStyle = hexToRgba(tagAccent, dark ? 0.1 : 0.12);
                     ctx.fillRect(pillX, pillY, tw + 12, tagSz + 6);
-                    ctx.strokeStyle = dark ? 'rgba(174,252,110,0.25)' : 'rgba(40,167,69,0.25)';
+                    ctx.strokeStyle = hexToRgba(tagAccent, dark ? 0.25 : 0.3);
                     ctx.lineWidth = 1;
                     ctx.strokeRect(pillX + 0.5, pillY + 0.5, tw + 11, tagSz + 5);
-                    ctx.fillStyle = dark ? 'rgba(174,252,110,0.75)' : 'rgba(40,167,69,0.85)';
+                    ctx.fillStyle = hexToRgba(tagAccent, dark ? 0.75 : 0.85);
                     ctx.textBaseline = 'middle';
                     ctx.fillText(seg.tag, pillX + 6, pillY + (tagSz + 6) / 2);
                     ctx.textBaseline = 'alphabetic';
