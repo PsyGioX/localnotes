@@ -848,6 +848,8 @@ class LocalNotesEditor {
         // Toggle check
         var toggleCheck = function() {
             cb.setAttribute('data-checked', cb.checked ? 'true' : 'false');
+            if (cb.checked) cb.setAttribute('checked', '');
+            else cb.removeAttribute('checked');
             inp.classList.toggle('cl-done', cb.checked);
             item.classList.toggle('cl-item-done', cb.checked);
         };
@@ -2222,12 +2224,20 @@ class LocalNotesEditor {
             // Restore checked state
             if (cb.getAttribute('data-checked') === 'true') {
                 cb.checked = true;
+                cb.setAttribute('checked', '');
                 if (inp) inp.classList.add('cl-done');
                 item.classList.add('cl-item-done');
+            } else if (cb.getAttribute('data-checked') === 'false') {
+                cb.checked = false;
+                cb.removeAttribute('checked');
+                if (inp) inp.classList.remove('cl-done');
+                item.classList.remove('cl-item-done');
             }
 
             var toggleCheck = function() {
                 cb.setAttribute('data-checked', cb.checked ? 'true' : 'false');
+                if (cb.checked) cb.setAttribute('checked', '');
+                else cb.removeAttribute('checked');
                 if (inp) inp.classList.toggle('cl-done', cb.checked);
                 item.classList.toggle('cl-item-done', cb.checked);
             };

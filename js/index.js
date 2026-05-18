@@ -815,6 +815,13 @@ function fixChecklistStructure(content) {
     return d.innerHTML;
 }
 
+function isClCheckboxChecked(cb) {
+    const dc = cb.getAttribute('data-checked');
+    if (dc === 'true') return true;
+    if (dc === 'false') return false;
+    return cb.checked;
+}
+
 function getChecklistProgress(content) {
     if (!content) return null;
     const safe = DOMPurify.sanitize(content);
@@ -822,13 +829,13 @@ function getChecklistProgress(content) {
     // New .cl-item structure
     const newItems = d.querySelectorAll('.cl-item .cl-cb');
     if (newItems.length > 0) {
-        const checked = [...newItems].filter(cb => cb.checked || cb.getAttribute('data-checked') === 'true').length;
+        const checked = [...newItems].filter(isClCheckboxChecked).length;
         return { total: newItems.length, checked };
     }
     // Legacy .checklist-item-wrapper
     const all = d.querySelectorAll('.checklist-checkbox-ios, input[type="checkbox"]:not([data-md-checkbox])');
     if (all.length === 0) return null;
-    const checked = [...all].filter(cb => cb.checked || cb.getAttribute('data-checked') === 'true').length;
+    const checked = [...all].filter(isClCheckboxChecked).length;
     return { total: all.length, checked };
 }
 
@@ -1925,8 +1932,14 @@ async function loadNotes() {
 
                 if (cb.getAttribute('data-checked') === 'true') {
                     cb.checked = true;
+                    cb.setAttribute('checked', '');
                     if (textEl) textEl.classList.add(isNew ? 'cl-done' : 'checklist-done');
                     if (item)   item.classList.add(isNew ? 'cl-item-done' : 'checklist-item-done');
+                } else if (cb.getAttribute('data-checked') === 'false') {
+                    cb.checked = false;
+                    cb.removeAttribute('checked');
+                    if (textEl) textEl.classList.remove(isNew ? 'cl-done' : 'checklist-done');
+                    if (item)   item.classList.remove(isNew ? 'cl-item-done' : 'checklist-item-done');
                 }
 
                 // Restore color accent for new items
@@ -1944,6 +1957,7 @@ async function loadNotes() {
                     const ts = Date.now();
                     try {
                         await notesDB.saveNote({ id: note.id, content: updContent, creationTime: note.creationTime, lastModified: ts, title: notesDB.extractTitle(updContent) });
+                        note.content = updContent;
                         const np = getChecklistProgress(updContent);
                         if (np) {
                             const pctNew = Math.round(np.checked / np.total * 100);
@@ -2024,7 +2038,8 @@ async function loadNotes() {
             ssBtn.setAttribute('aria-label', ssLabel);
             ssBtn.onclick = () => {
                 if (typeof takeNoteScreenshot === 'function') {
-                    takeNoteScreenshot(note);
+                    syncClInputs(notePreview);
+                    takeNoteScreenshot({ ...note, content: notePreview.innerHTML });
                 }
             };
 
@@ -2591,6 +2606,8 @@ function syncClInputs(container) {
     });
     container.querySelectorAll('.cl-item .cl-cb').forEach(cb => {
         cb.setAttribute('data-checked', cb.checked ? 'true' : 'false');
+        if (cb.checked) cb.setAttribute('checked', '');
+        else cb.removeAttribute('checked');
     });
 }
 

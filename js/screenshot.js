@@ -80,6 +80,19 @@
             }
         }
 
+        function isCheckboxChecked(cb, el, textEl, doneClass, textDoneClass) {
+            if (!cb) {
+                return el.classList.contains(doneClass)
+                    || (textEl && textEl.classList.contains(textDoneClass));
+            }
+            const dc = cb.getAttribute('data-checked');
+            if (dc === 'true') return true;
+            if (dc === 'false') return false;
+            return cb.checked
+                || el.classList.contains(doneClass)
+                || (textEl && textEl.classList.contains(textDoneClass));
+        }
+
         function parseChecklistItem(el) {
             const isLegacy = el.classList.contains('checklist-item-wrapper');
             let text = '', checked = false, color = '', priority = '', tag = '';
@@ -88,16 +101,12 @@
                 const cb = el.querySelector('.checklist-checkbox-ios, input[type="checkbox"]');
                 const span = el.querySelector('.checklist-text-content, .checklist-text-ios');
                 text = span ? span.textContent.trim() : '';
-                checked = !!(cb && (cb.checked || cb.getAttribute('data-checked') === 'true'))
-                    || el.classList.contains('checklist-item-done');
+                checked = isCheckboxChecked(cb, el, span, 'checklist-item-done', 'checklist-done');
             } else {
                 const inp = el.querySelector('.cl-text');
                 const cb = el.querySelector('.cl-cb');
                 text = inp ? (inp.value || inp.getAttribute('value') || '').trim() : '';
-                checked = !!(cb && (cb.checked || cb.hasAttribute('checked')
-                    || cb.getAttribute('data-checked') === 'true'))
-                    || el.classList.contains('cl-item-done')
-                    || inp?.classList.contains('cl-done');
+                checked = isCheckboxChecked(cb, el, inp, 'cl-item-done', 'cl-done');
                 color = el.dataset.clColor || '';
                 priority = el.dataset.clPriority || '';
                 tag = el.dataset.clTag || '';
