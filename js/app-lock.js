@@ -1,7 +1,7 @@
 /**
  * Local Notes — App Lock
  * PIN and file are configured on separate settings tabs.
- * If both are set, the lock screen shows tabs so the user picks how to unlock.
+ * If both are set, the lock screen uses tabs; otherwise only PIN or only file.
  */
 
 (function () {
@@ -114,6 +114,9 @@
         const FB = {
             lockTitle: 'App Locked',
             lockSubtitle: 'Enter PIN or upload access file',
+            lockSubtitlePin: 'Enter your PIN to unlock',
+            lockSubtitleFile: 'Upload your access file to unlock',
+            lockConfigured: 'Active unlock methods:',
             lockPinPlaceholder: 'Enter PIN',
             lockUnlock: 'Unlock',
             lockFileBtn: 'Upload access file',
@@ -128,9 +131,8 @@
             lockTabPin: 'PIN',
             lockUnlockChoose: 'Choose how to unlock',
             lockTabFile: 'File',
+            lockOr: 'or',
             lockPinNew: 'New PIN (4-8 digits)',
-            lockPinConfirm: 'Confirm PIN',
-            lockPinMismatch: 'PINs do not match',
             lockPinTooShort: 'PIN must be 4-8 digits',
             lockFileSelect: 'Select access file',
             lockFileHint: "Any file becomes your key. Don't lose it!",
@@ -139,8 +141,6 @@
             lockSaved: 'Lock settings saved',
             lockDisabled: 'Lock disabled',
             cancel: 'Cancel',
-            lockCurrentPin: 'Current PIN (to confirm)',
-            lockCurrentFile: 'Current access file (to confirm)',
             lockGenerateFile: 'Generate & Download access file',
             lockGenerateHint: 'A unique key file will be generated and downloaded. Use it to unlock the app.',
             lockGenerateDownloaded: 'File downloaded! Now select it below to set as your key.',
@@ -176,43 +176,6 @@
         localStorage.removeItem(KEY_FILE_HASH);
     }
 
-    async function verifyPinInput(overlay, inputId) {
-        const stored = localStorage.getItem(KEY_PIN_HASH);
-        if (!stored) return true;
-        const input = overlay.querySelector(inputId);
-        if (!input?.value) return false;
-        return (await sha256hex(input.value)) === stored;
-    }
-
-    async function verifyFileInput(overlay, inputId) {
-        const stored = localStorage.getItem(KEY_FILE_HASH);
-        if (!stored) return true;
-        const input = overlay.querySelector(inputId);
-        if (!input?.files?.[0]) return false;
-        const buf = await input.files[0].arrayBuffer();
-        return (await sha256hex(new Uint8Array(buf))) === stored;
-    }
-
-    /** Verify stored lock before disable or mode switch (checks OLD mode only). */
-    async function verifyBeforeChange(overlay, storedMode) {
-        if (!storedMode) return true;
-        if (storedMode === 'pin') return verifyPinInput(overlay, '#ln-lss-current-pin');
-        if (storedMode === 'file') return verifyFileInput(overlay, '#ln-lss-current-file');
-        if (storedMode === 'both') {
-            const pinOk = !hasPinConfigured() || await verifyPinInput(overlay, '#ln-lss-current-pin');
-            const fileOk = !hasFileConfigured() || await verifyFileInput(overlay, '#ln-lss-current-file');
-            return pinOk && fileOk;
-        }
-        return true;
-    }
-
-    function verifyErrorForMode(mode) {
-        if (mode === 'pin') return tr('lockWrongPin');
-        if (mode === 'file') return tr('lockWrongFile');
-        if (mode === 'both') return tr('lockWrongPin') + ' / ' + tr('lockWrongFile');
-        return tr('lockWrongPin');
-    }
-
     /** Settings UI: configTab is which panel to edit — '', 'pin', or 'file' (not 'both'). */
     function applySettingsTab(overlay, configTab) {
         overlay.querySelector('#ln-lss-selected-mode').value = configTab;
@@ -226,11 +189,6 @@
         const fileSec = overlay.querySelector('#ln-lss-file-section');
         if (pinSec) pinSec.style.display = configTab === 'pin' ? '' : 'none';
         if (fileSec) fileSec.style.display = configTab === 'file' ? '' : 'none';
-
-        const curPin = overlay.querySelector('#ln-lss-current-pin-field');
-        const curFile = overlay.querySelector('#ln-lss-current-file-field');
-        if (curPin) curPin.style.display = (configTab === 'pin' && hasPinConfigured()) ? '' : 'none';
-        if (curFile) curFile.style.display = (configTab === 'file' && hasFileConfigured()) ? '' : 'none';
     }
 
     function getSelectedSettingsMode(overlay) {
@@ -244,7 +202,30 @@
         return sha256hex(new Uint8Array(buf));
     }
 
+    function getLockScreenSubtitle(useTabs, showPin, showFile) {
+        if (useTabs) return tr('lockUnlockChoose');
+        if (showPin && !showFile) return tr('lockSubtitlePin');
+        if (showFile && !showPin) return tr('lockSubtitleFile');
+        return tr('lockSubtitle');
+    }
+
+    function refreshSettingsStatus(overlay) {
+        const el = overlay.querySelector('#ln-lss-status');
+        if (!el) return;
+        const parts = [];
+        if (hasPinConfigured()) parts.push(tr('lockModePin'));
+        if (hasFileConfigured()) parts.push(tr('lockModeFile'));
+        el.textContent = parts.length
+            ? `${tr('lockConfigured')} ${parts.join(' + ')}`
+            : '';
+        el.style.display = parts.length ? '' : 'none';
+    }
+
     // ── Lock screen ───────────────────────────────────────────────────────────
+
+    function isCoarsePointer() {
+        return window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+    }
 
     function buildLockScreen() {
         const showPin = hasPinConfigured();
@@ -262,7 +243,7 @@
             <div class="ln-lock-panel">
                 <div class="ln-lock-icon"><i class="bi bi-lock-fill"></i></div>
                 <h2 class="ln-lock-title">${tr('lockTitle')}</h2>
-                <p class="ln-lock-subtitle">${useTabs ? tr('lockUnlockChoose') : tr('lockSubtitle')}</p>
+                <p class="ln-lock-subtitle">${getLockScreenSubtitle(useTabs, showPin, showFile)}</p>
 
                 ${useTabs ? `
                 <div class="ln-lock-tabs" role="tablist">
@@ -275,7 +256,7 @@
                 </div>` : ''}
 
                 ${showPin ? `
-                <div class="ln-lock-section ln-lock-tab-panel ${useTabs ? 'active' : ''}" data-panel="pin">
+                <div class="ln-lock-section${useTabs ? ' ln-lock-tab-panel active' : ''}" data-panel="pin">
                     <div class="ln-lock-pin-dots" id="ln-lock-pin-dots">
                         <span></span><span></span><span></span><span></span>
                     </div>
@@ -289,13 +270,13 @@
                 </div>` : ''}
 
                 ${showFile ? `
-                <div class="ln-lock-section ln-lock-tab-panel ${useTabs ? '' : 'active'}" data-panel="file">
-                    <label class="ln-lock-file-label" for="ln-lock-file-input">
+                <div class="ln-lock-section${useTabs ? ' ln-lock-tab-panel' : ''}" data-panel="file">
+                    <input type="file" id="ln-lock-file-input" class="ln-lock-file-input-hidden"
+                           tabindex="-1" aria-hidden="true" />
+                    <button type="button" class="ln-lock-file-label" id="ln-lock-file-btn">
                         <i class="bi bi-file-earmark-lock"></i>
                         <span id="ln-lock-file-name">${tr('lockFileBtn')}</span>
-                    </label>
-                    <input type="file" id="ln-lock-file-input" class="ln-lock-file-input"
-                           aria-label="${tr('lockFileBtn')}" />
+                    </button>
                 </div>` : ''}
 
                 <div class="ln-lock-error" id="ln-lock-error" aria-live="polite"></div>
@@ -322,11 +303,14 @@
                     });
                     const err = overlay.querySelector('#ln-lock-error');
                     if (err) { err.textContent = ''; err.classList.remove('visible'); }
-                    if (tabId === 'pin') {
-                        setTimeout(() => overlay.querySelector('#ln-lock-pin-input')?.focus(), 50);
-                    }
                 });
             });
+        }
+
+        const fileBtn = overlay.querySelector('#ln-lock-file-btn');
+        const fileInput = overlay.querySelector('#ln-lock-file-input');
+        if (fileBtn && fileInput) {
+            fileBtn.addEventListener('click', () => fileInput.click());
         }
 
         const pinInput = overlay.querySelector('#ln-lock-pin-input');
@@ -339,7 +323,14 @@
             pinInput.addEventListener('keydown', e => {
                 if (e.key === 'Enter') overlay.querySelector('#ln-lock-pin-btn')?.click();
             });
-            setTimeout(() => pinInput.focus(), 300);
+            pinInput.addEventListener('focus', () => {
+                requestAnimationFrame(() => {
+                    try { pinInput.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (_) {}
+                });
+            });
+            if (!isCoarsePointer()) {
+                setTimeout(() => pinInput.focus(), 300);
+            }
         }
 
         overlay.querySelector('#ln-lock-pin-btn')?.addEventListener('click', async () => {
@@ -455,35 +446,15 @@
                     </div>
 
                     <div class="ln-lss-section ln-lss-pin-section" id="ln-lss-pin-section">
-                        <div class="ln-lss-field" id="ln-lss-current-pin-field" style="display:none">
-                            <label class="ln-lss-label">${tr('lockCurrentPin')}</label>
-                            <input type="password" inputmode="numeric" pattern="[0-9]*"
-                                   id="ln-lss-current-pin" class="ln-lss-input"
-                                   maxlength="8" autocomplete="current-password" />
-                        </div>
                         <div class="ln-lss-field">
                             <label class="ln-lss-label">${tr('lockPinNew')}</label>
                             <input type="password" inputmode="numeric" pattern="[0-9]*"
                                    id="ln-lss-new-pin" class="ln-lss-input"
                                    maxlength="8" autocomplete="new-password" />
                         </div>
-                        <div class="ln-lss-field">
-                            <label class="ln-lss-label">${tr('lockPinConfirm')}</label>
-                            <input type="password" inputmode="numeric" pattern="[0-9]*"
-                                   id="ln-lss-confirm-pin" class="ln-lss-input"
-                                   maxlength="8" autocomplete="new-password" />
-                        </div>
                     </div>
 
                     <div class="ln-lss-section ln-lss-file-section" id="ln-lss-file-section">
-                        <div class="ln-lss-field" id="ln-lss-current-file-field" style="display:none">
-                            <label class="ln-lss-label">${tr('lockCurrentFile')}</label>
-                            <label class="ln-lss-file-label" for="ln-lss-current-file">
-                                <i class="bi bi-file-earmark-check"></i>
-                                <span id="ln-lss-current-file-name">${tr('lockFileSelect')}</span>
-                            </label>
-                            <input type="file" id="ln-lss-current-file" class="ln-lock-file-input" />
-                        </div>
                         <div class="ln-lss-field">
                             <label class="ln-lss-label">${tr('lockFileSelect')}</label>
                             <button type="button" class="ln-lss-generate-btn" id="ln-lss-generate-file">
@@ -493,16 +464,20 @@
                                 <i class="bi bi-info-circle"></i> ${tr('lockGenerateHint')}
                             </p>
                             <label class="ln-lss-label" style="margin-top:12px">${tr('lockFileOrExisting')}</label>
-                            <label class="ln-lss-file-label" for="ln-lss-new-file">
-                                <i class="bi bi-file-earmark-lock"></i>
-                                <span id="ln-lss-new-file-name">${tr('lockFileSelect')}</span>
-                            </label>
-                            <input type="file" id="ln-lss-new-file" class="ln-lock-file-input" />
+                            <div class="ln-lss-file-field">
+                                <input type="file" id="ln-lss-new-file" class="ln-lock-file-input" />
+                                <label class="ln-lss-file-label" for="ln-lss-new-file">
+                                    <i class="bi bi-file-earmark-lock"></i>
+                                    <span id="ln-lss-new-file-name">${tr('lockFileSelect')}</span>
+                                </label>
+                            </div>
                             <p class="ln-lss-hint">
                                 <i class="bi bi-info-circle"></i> ${tr('lockFileHint')}
                             </p>
                         </div>
                     </div>
+
+                    <p class="ln-lss-status" id="ln-lss-status" aria-live="polite"></p>
 
                     <div class="ln-lss-error" id="ln-lss-error" aria-live="polite"></div>
                 </div>
@@ -528,6 +503,7 @@
         requestAnimationFrame(() => overlay.classList.add('ln-lock-settings-visible'));
 
         applySettingsTab(overlay, initialTab);
+        refreshSettingsStatus(overlay);
 
         const close = () => {
             overlay.classList.remove('ln-lock-settings-visible');
@@ -544,6 +520,7 @@
         overlay.querySelectorAll('.ln-lss-tab').forEach(tab => {
             tab.addEventListener('click', () => {
                 applySettingsTab(overlay, tab.dataset.mode);
+                refreshSettingsStatus(overlay);
                 const err = overlay.querySelector('#ln-lss-error');
                 if (err) { err.textContent = ''; err.classList.remove('visible'); }
             });
@@ -552,10 +529,6 @@
         overlay.querySelector('#ln-lss-new-file')?.addEventListener('change', e => {
             const f = e.target.files?.[0];
             if (f) overlay.querySelector('#ln-lss-new-file-name').textContent = f.name;
-        });
-        overlay.querySelector('#ln-lss-current-file')?.addEventListener('change', e => {
-            const f = e.target.files?.[0];
-            if (f) overlay.querySelector('#ln-lss-current-file-name').textContent = f.name;
         });
 
         overlay.querySelector('#ln-lss-generate-file')?.addEventListener('click', () => {
@@ -577,11 +550,7 @@
             lockNow();
         });
 
-        overlay.querySelector('#ln-lss-disable')?.addEventListener('click', async () => {
-            if (!(await verifyBeforeChange(overlay, storedMode))) {
-                showError(verifyErrorForMode(storedMode));
-                return;
-            }
+        overlay.querySelector('#ln-lss-disable')?.addEventListener('click', () => {
             clearLockStorage();
             clearSession();
             close();
@@ -593,12 +562,6 @@
             const configTab = getSelectedSettingsMode(overlay);
 
             if (!configTab) {
-                if (storedMode) {
-                    if (!(await verifyBeforeChange(overlay, storedMode))) {
-                        showError(verifyErrorForMode(storedMode));
-                        return;
-                    }
-                }
                 clearLockStorage();
                 clearSession();
                 close();
@@ -608,18 +571,20 @@
             }
 
             if (configTab === 'pin') {
-                if (hasPinConfigured()) {
-                    if (!(await verifyPinInput(overlay, '#ln-lss-current-pin'))) {
+                const newPin = overlay.querySelector('#ln-lss-new-pin')?.value || '';
+                if (newPin) {
+                    if (!/^\d{4,8}$/.test(newPin)) { showError(tr('lockPinTooShort')); return; }
+                    try {
+                        localStorage.setItem(KEY_PIN_HASH, await sha256hex(newPin));
+                    } catch {
                         showError(tr('lockWrongPin'));
                         return;
                     }
+                } else if (!hasPinConfigured()) {
+                    showError(tr('lockPinTooShort'));
+                    return;
                 }
-                const newPin = overlay.querySelector('#ln-lss-new-pin')?.value || '';
-                const confirmPin = overlay.querySelector('#ln-lss-confirm-pin')?.value || '';
-                if (!/^\d{4,8}$/.test(newPin)) { showError(tr('lockPinTooShort')); return; }
-                if (newPin !== confirmPin) { showError(tr('lockPinMismatch')); return; }
                 try {
-                    localStorage.setItem(KEY_PIN_HASH, await sha256hex(newPin));
                     syncEnabledMode();
                     markUnlocked();
                     close();
@@ -632,12 +597,6 @@
             }
 
             if (configTab === 'file') {
-                if (hasFileConfigured()) {
-                    if (!(await verifyFileInput(overlay, '#ln-lss-current-file'))) {
-                        showError(tr('lockWrongFile'));
-                        return;
-                    }
-                }
                 const fileHash = await readNewFileHash(overlay);
                 if (!fileHash && !hasFileConfigured()) {
                     showError(tr('lockFileSelect'));
@@ -690,7 +649,6 @@
         if (!getLockMode()) return;
         clearSession();
         showLockScreen();
-        showToast(tr('lockNowDone'));
     }
 
     window.AppLock = {

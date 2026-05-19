@@ -2,6 +2,9 @@
 'use strict';
 
 var _pwaNewWorker = null;
+var _pwaReloading = false;
+var PWA_DISMISS_KEY = 'pwa_sw_dismissed';
+var PWA_UPDATE_KEY = 'pwa_update_pending';
 
 function _pwaGetText() {
     try {
@@ -12,11 +15,39 @@ function _pwaGetText() {
                 dismiss: '✕'
             };
         }
-    } catch(e) {}
+    } catch (e) {}
     return { msg: 'Update available', update: 'Update', dismiss: '✕' };
 }
 
-// Создаём тост-баннер об обновлении
+function _pwaWaitingId(worker) {
+    return worker ? worker.scriptURL : '';
+}
+
+function _pwaIsDismissed(worker) {
+    if (!worker) return false;
+    return sessionStorage.getItem(PWA_DISMISS_KEY) === _pwaWaitingId(worker);
+}
+
+function _pwaMarkDismissed(worker) {
+    if (worker) sessionStorage.setItem(PWA_DISMISS_KEY, _pwaWaitingId(worker));
+}
+
+function _pwaClearDismissed() {
+    sessionStorage.removeItem(PWA_DISMISS_KEY);
+}
+
+function _pwaHideToast() {
+    var toast = document.getElementById('pwaUpdateToast');
+    if (toast) toast.classList.remove('pwa-toast-visible');
+}
+
+function _pwaApplyUpdate(worker) {
+    if (!worker) return;
+    sessionStorage.setItem(PWA_UPDATE_KEY, '1');
+    _pwaHideToast();
+    worker.postMessage({ type: 'SKIP_WAITING' });
+}
+
 function _pwaCreateToast() {
     if (document.getElementById('pwaUpdateToast')) return;
     var txt = _pwaGetText();
@@ -30,52 +61,78 @@ function _pwaCreateToast() {
     document.body.appendChild(toast);
 
     document.getElementById('pwaToastUpdate').addEventListener('click', function() {
-        if (_pwaNewWorker) _pwaNewWorker.postMessage({ type: 'SKIP_WAITING' });
-        window.location.reload();
+        _pwaApplyUpdate(_pwaNewWorker);
     });
 
     document.getElementById('pwaToastDismiss').addEventListener('click', function() {
-        var t = document.getElementById('pwaUpdateToast');
-        if (t) t.classList.remove('pwa-toast-visible');
+        _pwaMarkDismissed(_pwaNewWorker);
+        _pwaHideToast();
     });
 }
 
-function _pwaShowUpdateToast() {
+function _pwaShowUpdateToast(worker) {
+    if (!worker || _pwaIsDismissed(worker)) return;
+    _pwaNewWorker = worker;
     _pwaCreateToast();
     setTimeout(function() {
         var toast = document.getElementById('pwaUpdateToast');
-        if (toast) toast.classList.add('pwa-toast-visible');
+        if (toast && _pwaNewWorker === worker && !_pwaIsDismissed(worker)) {
+            toast.classList.add('pwa-toast-visible');
+        }
     }, 300);
+}
+
+function _pwaTrackWorker(worker) {
+    if (!worker) return;
+    worker.addEventListener('statechange', function() {
+        if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+            _pwaShowUpdateToast(worker);
+        }
+        if (worker.state === 'activated') {
+            _pwaClearDismissed();
+            sessionStorage.removeItem(PWA_UPDATE_KEY);
+        }
+    });
+    if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+        _pwaShowUpdateToast(worker);
+    }
+}
+
+function _pwaResumePendingUpdate(registration) {
+    if (!sessionStorage.getItem(PWA_UPDATE_KEY)) return;
+    var waiting = registration.waiting;
+    if (waiting) {
+        _pwaNewWorker = waiting;
+        _pwaApplyUpdate(waiting);
+        return;
+    }
+    sessionStorage.removeItem(PWA_UPDATE_KEY);
 }
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
+        var hadController = !!navigator.serviceWorker.controller;
+
         navigator.serviceWorker.register('/sw.js')
             .then(function(registration) {
-                // Не вызываем registration.update() при каждой загрузке —
-                // браузер сам проверяет обновления SW каждые 24ч.
-                // Принудительный update() при каждом load + skipWaiting в install
-                // создавал бесконечный цикл перезагрузок.
+                _pwaResumePendingUpdate(registration);
 
                 registration.addEventListener('updatefound', function() {
                     var newWorker = registration.installing;
-                    if (!newWorker) return;
-                    newWorker.addEventListener('statechange', function() {
-                        if (newWorker.state === 'installed') {
-                            _pwaNewWorker = newWorker;
-                            // Show toast whether or not there's an existing controller
-                            // (controller is null on first install — skip toast then)
-                            if (navigator.serviceWorker.controller) {
-                                _pwaShowUpdateToast();
-                            }
-                        }
-                    });
+                    if (newWorker) _pwaTrackWorker(newWorker);
                 });
 
-                // Если SW уже ожидает (страница была открыта раньше) — показываем тост
                 if (registration.waiting && navigator.serviceWorker.controller) {
-                    _pwaNewWorker = registration.waiting;
-                    _pwaShowUpdateToast();
+                    if (sessionStorage.getItem(PWA_UPDATE_KEY)) {
+                        _pwaNewWorker = registration.waiting;
+                        _pwaApplyUpdate(registration.waiting);
+                    } else {
+                        _pwaShowUpdateToast(registration.waiting);
+                    }
+                }
+
+                if (registration.installing) {
+                    _pwaTrackWorker(registration.installing);
                 }
 
                 navigator.serviceWorker.ready.then(function(reg) {
@@ -94,13 +151,11 @@ if ('serviceWorker' in navigator) {
             }
         });
 
-        // Перезагружаем только если контроллер уже был (реальное обновление SW),
-        // но не при первой установке (clients.claim() на новой вкладке без контроллера)
-        var _hadController = !!navigator.serviceWorker.controller;
-        var _reloading = false;
         navigator.serviceWorker.addEventListener('controllerchange', function() {
-            if (!_hadController || _reloading) return;
-            _reloading = true;
+            if (_pwaReloading) return;
+            if (!hadController) return;
+            _pwaReloading = true;
+            sessionStorage.removeItem(PWA_UPDATE_KEY);
             window.location.reload();
         });
     });

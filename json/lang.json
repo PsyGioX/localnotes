@@ -214,6 +214,9 @@
     "appLockBtn": "Lock",
     "lockTitle": "App Locked",
     "lockSubtitle": "Enter PIN or upload access file",
+    "lockSubtitlePin": "Enter your PIN to unlock",
+    "lockSubtitleFile": "Upload your access file to unlock",
+    "lockConfigured": "Active unlock methods:",
     "lockPinPlaceholder": "Enter PIN",
     "lockUnlock": "Unlock",
     "lockFileBtn": "Upload access file",
@@ -228,8 +231,8 @@
     "lockModeBoth": "PIN + file",
     "lockTabPin": "PIN",
     "lockTabFile": "File",
+    "lockOr": "or",
     "lockPinNew": "New PIN (4-8 digits)",
-    "lockPinConfirm": "Confirm PIN",
     "lockPinMismatch": "PINs do not match",
     "lockPinTooShort": "PIN must be 4-8 digits",
     "lockFileSelect": "Select access file",
@@ -244,7 +247,7 @@
     "lockGenerateHint": "A unique key file will be generated and downloaded. Use it to unlock the app.",
     "lockGenerateDownloaded": "File downloaded! Now select it below to set as your key.",
     "lockFileOrExisting": "Or use an existing file",
-    "lockUnlockChoose": "Choose how to unlock",
+    "lockUnlockChoose": "Enter your PIN and/or upload your access file below",
     "lockNow": "Lock now",
     "lockNowTitle": "Tap to lock. Hold or right-click for settings.",
     "lockNowDone": "App locked"
@@ -464,6 +467,9 @@
     "appLockBtn": "Блокировка",
     "lockTitle": "Приложение заблокировано",
     "lockSubtitle": "Введите PIN или загрузите файл доступа",
+    "lockSubtitlePin": "Введите PIN для разблокировки",
+    "lockSubtitleFile": "Загрузите файл доступа для разблокировки",
+    "lockConfigured": "Активные способы разблокировки:",
     "lockPinPlaceholder": "Введите PIN-код",
     "lockUnlock": "Разблокировать",
     "lockFileBtn": "Загрузить файл доступа",
@@ -494,6 +500,7 @@
     "lockModeBoth": "PIN + файл",
     "lockTabPin": "PIN",
     "lockTabFile": "Файл",
+    "lockOr": "или",
     "lockUnlockChoose": "Выберите способ разблокировки",
     "lockNow": "Заблокировать",
     "lockNowTitle": "Нажмите для блокировки. Удерживайте или ПКМ — настройки.",
@@ -747,7 +754,11 @@
     "lockUnlockChoose": "Оберіть спосіб розблокування",
     "lockNow": "Заблокувати",
     "lockNowTitle": "Натисніть для блокування. Утримуйте або ПКМ — налаштування.",
-    "lockNowDone": "Додаток заблоковано"
+    "lockNowDone": "Додаток заблоковано",
+    "lockSubtitlePin": "Введіть PIN для розблокування",
+    "lockSubtitleFile": "Завантажте файл доступу для розблокування",
+    "lockConfigured": "Активні способи розблокування:",
+    "lockOr": "або"
   },
   "pl": {
     "appName": "Lokalne Notatki",
@@ -997,7 +1008,11 @@
     "lockUnlockChoose": "Wybierz sposób odblokowania",
     "lockNow": "Zablokuj teraz",
     "lockNowTitle": "Dotknij, aby zablokowac. Przytrzymaj lub PPM — ustawienia.",
-    "lockNowDone": "Aplikacja zablokowana"
+    "lockNowDone": "Aplikacja zablokowana",
+    "lockSubtitlePin": "Wprowadź PIN, aby odblokować",
+    "lockSubtitleFile": "Prześlij plik dostępu, aby odblokować",
+    "lockConfigured": "Aktywne metody odblokowania:",
+    "lockOr": "lub"
   },
   "cs": {
     "appName": "Lokální poznámky",
@@ -1247,7 +1262,11 @@
     "lockUnlockChoose": "Zvolte způsob odemčení",
     "lockNow": "Zamknout nyni",
     "lockNowTitle": "Klepněte pro zamčení. Podržte nebo pravé tlačítko — nastavení.",
-    "lockNowDone": "Aplikace zamčena"
+    "lockNowDone": "Aplikace zamčena",
+    "lockSubtitlePin": "Zadejte PIN pro odemčení",
+    "lockSubtitleFile": "Nahrajte přístupový soubor pro odemčení",
+    "lockConfigured": "Aktivní způsoby odemčení:",
+    "lockOr": "nebo"
   },
   "sk": {
     "appName": "Lokálne poznámky",
@@ -1497,7 +1516,11 @@
     "lockUnlockChoose": "Vyberte spôsob odomknutia",
     "lockNow": "Zamknúť teraz",
     "lockNowTitle": "Klepnite pre zamknutie. Podržte alebo PPM — nastavenia.",
-    "lockNowDone": "Aplikácia zamknutá"
+    "lockNowDone": "Aplikácia zamknutá",
+    "lockSubtitlePin": "Zadajte PIN na odomknutie",
+    "lockSubtitleFile": "Nahrajte prístupový súbor na odomknutie",
+    "lockConfigured": "Aktívne spôsoby odomknutia:",
+    "lockOr": "alebo"
   },
   "bg": {
     "appName": "Локални бележки",
@@ -1747,7 +1770,11 @@
     "lockUnlockChoose": "Изберете начин за отключване",
     "lockNow": "Заключи сега",
     "lockNowTitle": "Докоснете за заключване. Задръжте или десен бутон — настройки.",
-    "lockNowDone": "Приложението е заключено"
+    "lockNowDone": "Приложението е заключено",
+    "lockSubtitlePin": "Въведете PIN за отключване",
+    "lockSubtitleFile": "Качете файл за достъп за отключване",
+    "lockConfigured": "Активни начини за отключване:",
+    "lockOr": "или"
   },
   "hr": {
     "appName": "Lokalne bilješke",
@@ -1997,7 +2024,11 @@
     "lockUnlockChoose": "Odaberite način otključavanja",
     "lockNow": "Zaključaj sada",
     "lockNowTitle": "Dodirnite za zaključavanje. Držite ili desni klik — postavke.",
-    "lockNowDone": "Aplikacija je zaključana"
+    "lockNowDone": "Aplikacija je zaključana",
+    "lockSubtitlePin": "Unesite PIN za otključavanje",
+    "lockSubtitleFile": "Učitajte pristupnu datoteku za otključavanje",
+    "lockConfigured": "Aktivne metode otključavanja:",
+    "lockOr": "ili"
   },
   "sr": {
     "appName": "Локалне белешке",
@@ -2247,7 +2278,11 @@
     "lockUnlockChoose": "Изаберите начин откључавања",
     "lockNow": "Закључај одмах",
     "lockNowTitle": "Додирните за закључавање. Држите или десни клик — подешавања.",
-    "lockNowDone": "Апликација је закључана"
+    "lockNowDone": "Апликација је закључана",
+    "lockSubtitlePin": "Унесите PIN за откључавање",
+    "lockSubtitleFile": "Учитајте приступну датотеку за откључавање",
+    "lockConfigured": "Активни начини откључавања:",
+    "lockOr": "или"
   },
   "bs": {
     "appName": "Lokalne bilješke",
@@ -2497,7 +2532,11 @@
     "lockUnlockChoose": "Odaberite način otključavanja",
     "lockNow": "Zaključaj sada",
     "lockNowTitle": "Dodirnite za zaključavanje. Držite ili desni klik — postavke.",
-    "lockNowDone": "Aplikacija je zaključana"
+    "lockNowDone": "Aplikacija je zaključana",
+    "lockSubtitlePin": "Unesite PIN za otključavanje",
+    "lockSubtitleFile": "Učitajte pristupnu datoteku za otključavanje",
+    "lockConfigured": "Aktivne metode otključavanja:",
+    "lockOr": "ili"
   },
   "mk": {
     "appName": "Локални белешки",
@@ -2747,7 +2786,11 @@
     "lockUnlockChoose": "Изберете начин за отклучување",
     "lockNow": "Заклучи сега",
     "lockNowTitle": "Допрете за заклучување. Задржете или десен клик — поставки.",
-    "lockNowDone": "Апликацијата е заклучена"
+    "lockNowDone": "Апликацијата е заклучена",
+    "lockSubtitlePin": "Внесете PIN за отклучување",
+    "lockSubtitleFile": "Прикачете пристапна датотека за отклучување",
+    "lockConfigured": "Активни начини за отклучување:",
+    "lockOr": "или"
   },
   "sl": {
     "appName": "Lokalne opombe",
@@ -2997,6 +3040,10 @@
     "lockUnlockChoose": "Izberite način odklepanja",
     "lockNow": "Zakleni zdaj",
     "lockNowTitle": "Dotaknite za zaklepanje. Držite ali desni klik — nastavitve.",
-    "lockNowDone": "Aplikacija je zaklenjena"
+    "lockNowDone": "Aplikacija je zaklenjena",
+    "lockSubtitlePin": "Vnesite PIN za odklepanje",
+    "lockSubtitleFile": "Naložite dostopno datoteko za odklepanje",
+    "lockConfigured": "Aktivni načini odklepanja:",
+    "lockOr": "ali"
   }
 }
