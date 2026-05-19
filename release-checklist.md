@@ -1,4 +1,4 @@
-# Release Checklist — Local Notes v1.7.0
+# Release Checklist — Local Notes v1.9.5
 
 ## ✅ Security / CSP
 - [x] `unsafe-inline` removed from `script-src` and `script-src-elem`

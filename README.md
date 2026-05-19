@@ -2,7 +2,7 @@
 
 ![Local Notes Screenshot](https://github.com/SerGioPlay01/localnotes/blob/main/sccc.png?raw=true)
 
-[![Version](https://img.shields.io/badge/Version-1.7.0-brightgreen.svg)](https://github.com/SerGioPlay01/localnotes/releases)
+[![Version](https://img.shields.io/badge/Version-1.9.5-brightgreen.svg)](https://github.com/SerGioPlay01/localnotes/releases)
 [![Security](https://img.shields.io/badge/Security-AES--256--GCM%20%2B%20HMAC--SHA--512-blue.svg)](https://github.com/SerGioPlay01/localnotes)
 [![DOMPurify](https://img.shields.io/badge/XSS-DOMPurify-red.svg)](https://github.com/cure53/DOMPurify)
 [![PWA](https://img.shields.io/badge/PWA-Enabled-purple.svg)](https://github.com/SerGioPlay01/localnotes)
@@ -38,18 +38,249 @@
 
 **Local Notes** is a modern, secure web application for creating and organizing notes directly in your browser. All data stays on your device — no server, no tracking, no accounts.
 
+### Mission
+
+Give everyone a **private, fast, multilingual notebook** that works like a native app in the browser: write rich notes, organize them with tags and workspaces, export encrypted backups, and stay productive offline — without signing up or sending data anywhere.
+
+### Project Goals
+
+| Goal | What it means in practice |
+|------|---------------------------|
+| **Privacy by default** | Notes live in IndexedDB on your device. No backend, no analytics until consent, no cloud sync unless you export files yourself. |
+| **Security you can verify** | Open-source client-side encryption (AES-256-GCM v4/v5), DOMPurify sanitization, strict CSP, domain-bound `.note` files. |
+| **Works everywhere** | PWA install, offline Service Worker cache, 12 UI languages, mobile keyboard handling, iOS safe-area support. |
+| **Lightweight & fast** | Custom editor (~15 KB) instead of heavy WYSIWYG bundles; crypto runs in a Web Worker so the UI stays responsive. |
+| **Organize your way** | Tags, colors, due dates, calendar, pinned notes, workspaces (tabs), grid/list views, instant search with transliteration. |
+| **Portable data** | Export/import HTML, Markdown, encrypted `.note` — your notes are never locked to one browser tab. |
+| **Accessible & extensible** | Stable `window.*` APIs for integrations, scripts, and future plugins without a build step. |
+
+### Design Principles
+
+1. **Local-first** — the network is optional; offline mode is a first-class feature.
+2. **Explicit user control** — encryption passwords, app lock, cookie consent, and network mode are always user-driven.
+3. **Minimal dependencies** — vanilla JS, no React/Vue, DOMPurify and icons bundled locally.
+4. **Progressive enhancement** — works in a tab; better as an installed PWA.
+
 ### Key Features
 
 - **🔒 Max-2026 encryption** — AES-256-GCM + HMAC-SHA-512 + PBKDF2-SHA-512 (600k iterations) + domain binding
+- **🔐 App Lock** — optional PIN and/or access file; idle timeout (10 min); lock screen on new session
 - **🛡️ DOMPurify XSS protection** — all note content sanitized before rendering
 - **🌍 12 languages** — full UI localization including all modals, buttons and error messages
-- **📱 PWA** — install as a native app on any device
+- **📱 PWA** — install as a native app on any device; safe update flow without reload loops
 - **⚡ LocalNotesEditor** — custom lightweight editor (~15KB), no external dependencies
+- **🗂️ Workspaces** — separate note collections in tabs (see [WORKSPACES_README.md](WORKSPACES_README.md))
 - **🏷️ Tags & colors** — organize notes by topic with color labels
 - **📅 Built-in calendar** — view notes by date (month / week / agenda)
-- **🔄 Offline** — Service Worker caching for full offline use
+- **🔄 Offline** — Service Worker caching + manual offline network mode toggle
+- **📸 Note screenshots** — export a note card as PNG for sharing
 - **✅ Smart checklists** — flat checkbox + input design, per-item customization (color, priority, label)
 - **📋 11 editor templates** — meeting, project, report, brainstorm, lecture, flashcard, research, daily planner, weekly review, OKR goals, habit tracker
+
+---
+
+## 🔌 JavaScript API
+
+Local Notes exposes a **browser-global API** (`window.*`) for scripting, automation, and integrations. All APIs are available after scripts load on the main app page (`index.html` or `/[lang]/index.html`). There is no REST server — everything runs client-side.
+
+> **Tip:** Open DevTools on [localnotes-three.vercel.app](https://localnotes-three.vercel.app/) and call APIs from the console.
+
+### Core — notes & UI (`js/index.js`)
+
+| API | Type | Description |
+|-----|------|-------------|
+| `window.notesDB` | `NotesDatabase` | IndexedDB access layer |
+| `window.loadNotes()` | `async function` | Reload and render all notes from DB |
+| `window.openModal(id, content, creationTime)` | `function` | Open editor modal for new/existing note |
+| `window.closeModal()` | `function` | Close editor modal |
+| `window.filterNotes(query)` | `function` | Filter visible notes by search string |
+| `window.exportNote(content, password)` | `async function` | Export single note as encrypted `.note` |
+| `window.importNotesWithFormat(files, format)` | `async function` | Import HTML / Markdown / `.note` files |
+| `window.showCustomAlert(title, msg, type)` | `function` | Toast-style alert (`success` / `error` / `warning`) |
+| `window.showCustomPrompt(title, defaultVal)` | `Promise<string>` | Text prompt dialog |
+| `window.showExportOptions(noteContent)` | `function` | Open export format picker |
+| `window.toggleQuickEditMode()` | `function` | Toggle inline quick-edit in note list |
+| `window.updateButtonTexts()` | `function` | Refresh all UI strings after language change |
+
+#### `NotesDatabase` methods
+
+```javascript
+await notesDB.init();
+await notesDB.saveNote(note);      // { id, content, creationTime, lastModified, title, tags?, dueDate?, color?, pinned?, workspaceId? }
+await notesDB.getAllNotes();
+await notesDB.getNote(id);
+await notesDB.deleteNote(id);
+await notesDB.saveSetting(key, value);
+await notesDB.getSetting(key);
+await notesDB.migrateFromLocalStorage();
+```
+
+**IndexedDB schema:** database `LocalNotesDB` v1 — object stores `notes` (keyPath: `id`) and `settings`.
+
+### Encryption (`window.encryption`)
+
+Instance of `AdvancedEncryption` — Max-2026 pipeline with Web Worker fallback.
+
+```javascript
+// Encrypt / decrypt text (returns base64 payload or plaintext)
+const encrypted = await encryption.encrypt(plainText, password);
+const decrypted = await encryption.decrypt(encrypted, password);
+```
+
+- **Formats:** v5 (current), v4, v3, v2 (legacy decrypt supported)
+- **Domain binding:** decryption only works on `localnotes-three.vercel.app` (HKDF `info` includes origin)
+- **Worker:** heavy KDF/AES runs in `js/crypto-worker.js`; main thread fallback if worker fails
+
+### Editor (`window.localNotesEditorAPI`)
+
+Wrapper around `LocalNotesEditor` (`localnoteseditor/core.js`).
+
+```javascript
+localNotesEditorAPI.getContent();     // HTML string
+localNotesEditorAPI.setContent(html);
+localNotesEditorAPI.getText();        // plain text
+localNotesEditorAPI.clear();
+localNotesEditorAPI.focus();
+localNotesEditorAPI.undo();
+localNotesEditorAPI.redo();
+localNotesEditorAPI.isInitialized();
+localNotesEditorAPI.getInstance();    // raw LocalNotesEditor instance
+```
+
+### App Lock (`window.AppLock`)
+
+Optional PIN and/or access-file lock (`js/app-lock.js`). Settings stored in `localStorage`; session unlock in `sessionStorage`.
+
+```javascript
+AppLock.isEnabled();      // true if PIN or file lock configured
+AppLock.isUnlocked();     // true if current tab session passed unlock
+AppLock.lockNow();        // lock immediately (shows lock screen)
+AppLock.openSettings();   // open lock settings modal
+AppLock.init();           // called automatically on load
+```
+
+| Storage key | Purpose |
+|-------------|---------|
+| `ln_lock_pin_hash` | SHA-256 hash of PIN |
+| `ln_lock_file_hash` | SHA-256 hash of access file bytes |
+| `ln_lock_enabled` | Mode: `pin`, `file`, or `both` |
+| `ln_lock_session` | Session unlock flag (`sessionStorage`) |
+| `ln_lock_last_activity` | Idle timer anchor |
+
+### Tags & Calendar (`window.TagsCalendar`)
+
+```javascript
+TagsCalendar.getTags();
+TagsCalendar.saveTags(tags);
+TagsCalendar.createTag(name, color);
+TagsCalendar.deleteTag(id);
+TagsCalendar.addTagToNote(noteId, tagId);
+TagsCalendar.removeTagFromNote(noteId, tagId);
+TagsCalendar.applyTagFilter(tagId);
+TagsCalendar.openCalendar();
+TagsCalendar.getNoteMetaFromModal();  // { tags, dueDate, color, pinned }
+TagsCalendar.TAG_COLORS;              // preset palette
+window.showTagsPanel();               // open tag manager sidebar
+```
+
+### i18n (`window.t`, `window.translations`)
+
+```javascript
+window.t('addNoteButton');           // translated string for current language
+window.t('decryptOriginError', { allowed, current });  // with placeholders
+window.translations['ru']['lockTitle'];
+window.changeLanguage('ru');         // switch UI language
+window.currentLang;                  // active language code
+```
+
+Sources: `js/translations.js` (runtime) + `json/lang.json` (static fetch).
+
+### Themes (`window.themeManager`)
+
+```javascript
+themeManager.applyTheme('dark' | 'light' | 'auto');
+themeManager.getStoredTheme();
+themeManager.getSystemTheme();
+```
+
+Persists to `localStorage` key `theme`; sets `data-theme` on `<html>`.
+
+### Screenshots (`window.takeNoteScreenshot`)
+
+```javascript
+await takeNoteScreenshot(noteObject);  // renders note card → PNG preview modal
+```
+
+Requires a note object with `content`, `title`, etc. (same shape as IndexedDB record).
+
+### Security (`window.SecurityManager`)
+
+```javascript
+const sm = new SecurityManager();
+sm.getSecurityReport();  // { https, csp, frameBusting, userAgent, timestamp }
+```
+
+Also includes **SecureStorage** (encrypted localStorage wrapper) — used internally for sensitive prefs.
+
+### Performance (`window.PerformanceMonitor`)
+
+Core Web Vitals monitoring and lazy-loading helpers (`js/performance.js`):
+
+```javascript
+PerformanceMonitor.getMetrics();
+LazyLoader.observe(element, callback);
+```
+
+### Markdown import
+
+```javascript
+await importNotesMarkdownAdvanced(files);  // extended MD import with images
+```
+
+### Network mode
+
+Footer toggle (`js/network-mode.js`) — forces Service Worker into cache-only mode:
+
+```javascript
+localStorage.getItem('ln_network_mode');  // 'online' | 'offline'
+window.lnNetworkModeRefreshLabels();      // refresh toggle labels after language change
+```
+
+SW message: `{ type: 'SET_NETWORK_MODE', mode: 'online' | 'offline' }`.
+
+### Service Worker messages (`sw.js`)
+
+Send via `navigator.serviceWorker.controller.postMessage(...)`:
+
+| Message | Description |
+|---------|-------------|
+| `{ type: 'SKIP_WAITING' }` | Activate waiting SW (PWA update) |
+| `{ type: 'GET_VERSION' }` | Returns `{ version: 'static-vX.Y.Z' }` via MessagePort |
+| `{ type: 'SET_NETWORK_MODE', mode }` | Switch online/offline fetch strategy |
+| `{ type: 'PRECACHE_ALL' }` | Re-cache all static assets; responds with `{ type: 'PRECACHE_DONE' }` to clients |
+
+### Note object schema
+
+```javascript
+{
+  id: 'note_<timestamp>_<random>',  // string, IndexedDB key
+  content: '<p>HTML from editor</p>',
+  title: 'Extracted title',
+  creationTime: 1710000000000,       // ms epoch
+  lastModified: 1710000000000,
+  tags: ['tagId1'],                  // optional
+  dueDate: '2026-05-20',             // optional ISO date string
+  color: '#aefc6e',                  // optional accent
+  pinned: false,
+  workspaceId: 'ws_...'              // optional, see WORKSPACES_README.md
+}
+```
+
+### Temporary editor state
+
+```javascript
+window._noteMeta;  // { tags, dueDate, color, pinned } while Note Settings modal is open
+```
 
 ---
 
@@ -185,20 +416,28 @@ localnotes/
 │
 ├── css/
 │   ├── index.css                 # Main styles
+│   ├── app-lock.css              # App lock screen & settings modal
 │   ├── editor-modal.css          # Editor modal styles
 │   ├── tags-calendar.css         # Tags, calendar, decrypt modal
+│   ├── workspaces.css            # Workspaces tabs UI
 │   └── img.css / highlight.css / print.css / page.css / apple.css
 │
 ├── js/
-│   ├── index.js                  # App logic, encryption v4, import/export
+│   ├── index.js                  # App logic, encryption v4/v5, import/export
+│   ├── app-lock.js               # App Lock (PIN / file / idle timeout)
 │   ├── purify.min.js             # DOMPurify — XSS sanitization (local, no CDN)
-│   ├── translations.js           # 12 languages, 300+ keys
+│   ├── translations.js           # 12 languages, 400+ keys
 │   ├── translate.js              # Language detection & switching
 │   ├── tags-calendar.js          # Tags system + calendar
+│   ├── screenshot.js             # Note card → PNG screenshot
+│   ├── workspaces.js             # Workspaces manager
+│   ├── workspaces-integration.js # Workspaces hooks into index.js
+│   ├── workspaces-translations.js
 │   ├── security.js               # SecurityManager (clickjacking) + SecureStorage
+│   ├── network-mode.js           # Online/offline toggle → Service Worker
 │   ├── themes.js / utils.js / selectors.js
 │   ├── performance.js / editor-integration.js
-│   └── date-utils.js / img.js / preloader.js / magicurl.js / pwa.js
+│   └── date-utils.js / img.js / preloader.js / magicurl.js / pwa.js / crypto-worker.js
 │
 ├── json/lang.json                # Static UI translations (all 12 languages)
 │
@@ -267,7 +506,13 @@ Click the install icon in Chrome/Edge address bar and confirm.
 
 ## 🆕 Changelog
 
-### v1.7.0 (current)
+### v1.9.5 (current)
+- **🔐 App Lock** — PIN and/or access file, idle lock (10 min), lock screen with mobile-friendly layout
+- **🔌 API documentation** — full `window.*` API reference in README (notesDB, encryption, AppLock, TagsCalendar, SW messages)
+- **🔔 PWA update flow fixed** — no infinite “Update available” toast; `SKIP_WAITING` before reload
+- **🎨 Lock screen UI** — green top accent clipped to panel border-radius; removed redundant “App locked” toast
+
+### v1.9.5
 - **🛡️ CSP hardened** — `unsafe-inline` removed from `script-src`; all inline scripts extracted to external files (`ga-init.js`, `script-loader.js`, `lang-redirect.js`, `page-init.js`)
 - **🔒 DOMPurify hard-fail** — `index.js` throws on startup if DOMPurify is missing; all unsafe fallbacks removed
 - **✅ Checklist redesigned** — flat `checkbox + input` layout, no wrapper blocks; customization panel per item: color (7 swatches), priority (low/mid/high), text label; Enter/Backspace keyboard navigation
@@ -314,6 +559,12 @@ Export to `.note` file, then import at [localnotes-three.vercel.app](https://loc
 
 **How to add a new language?**
 Add a language block in `js/translations.js`, create a `[lang]/` folder with HTML pages, add the language to `js/translate.js`.
+
+**How does App Lock work?**
+Optional PIN (4–8 digits) and/or access file. Lock triggers on new browser session or after 10 minutes idle. Unlock methods are configured separately — only one active method is shown unless both were saved historically.
+
+**Is there a public API?**
+Yes — see [JavaScript API](#-javascript-api). All major features expose `window.*` globals for scripting and integrations.
 
 **Does it work offline?**
 Yes — Service Worker caches all resources after first load.
