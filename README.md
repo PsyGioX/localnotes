@@ -593,7 +593,7 @@ MIT — see [LICENSE](LICENSE).
 
 ## 👨‍💻 Author
 
-**SerGio Play** — [GitHub](https://github.com/SerGioPlay01) | [Website](https://sergioplay-dev.vercel.app/)
+**SerGioPlay01** — [GitHub](https://github.com/SerGioPlay01) | [Website](https://sergioplay-dev.vercel.app/)
 
 ---
 

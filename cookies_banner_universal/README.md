@@ -259,6 +259,6 @@ For issues or questions:
 
 ---
 
-**Author:** SerGio Play  
+**Author:** SerGioPlay01  
 **Version:** 1.0.0  
 **Compatible with:** Local Notes v1.0.3+

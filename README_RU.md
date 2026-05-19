@@ -554,7 +554,7 @@ MIT — подробности в файле [LICENSE](LICENSE).
 
 ## 👨‍💻 Автор
 
-**SerGio Play** — [GitHub](https://github.com/SerGioPlay01) | [Website](https://sergioplay-dev.vercel.app/)
+**SerGioPlay01** — [GitHub](https://github.com/SerGioPlay01) | [Website](https://sergioplay-dev.vercel.app/)
 
 ---
 

@@ -208,12 +208,12 @@
             },
             "author": {
                 "@type": "Person",
-                "name": "SerGio Play",
+                "name": "SerGioPlay01",
                 "url": "https://sergioplay-dev.vercel.app/"
             },
             "publisher": {
                 "@type": "Person",
-                "name": "SerGio Play"
+                "name": "SerGioPlay01"
             },
             "datePublished": "2024-01-01",
             "dateModified": new Date().toISOString().split('T')[0],
