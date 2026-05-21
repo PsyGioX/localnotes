@@ -596,9 +596,3 @@ MIT — see [LICENSE](LICENSE).
 **SerGioPlay01** — [GitHub](https://github.com/SerGioPlay01) | [Website](https://sergioplay-dev.vercel.app/)
 
 ---
-
-[![GitHub stars](https://img.shields.io/github/stars/SerGioPlay01/localnotes?style=social)](https://github.com/SerGioPlay01/localnotes)
-
-**🌐 [Try Local Notes now!](https://localnotes-three.vercel.app/)**
-
-</div>
