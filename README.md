@@ -597,10 +597,6 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-<div align="center">
-
-**⭐ If you like the project, give it a star! ⭐**
-
 [![GitHub stars](https://img.shields.io/github/stars/SerGioPlay01/localnotes?style=social)](https://github.com/SerGioPlay01/localnotes)
 
 **🌐 [Try Local Notes now!](https://localnotes-three.vercel.app/)**
