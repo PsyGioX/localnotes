@@ -662,11 +662,13 @@ body {
     margin: 0;
     scroll-snap-align: start;
 }
+.btn_view_div #toggleTaskBoardButton,
 .btn_view_div #appLockBtn {
     flex: 0 0 auto;
     scroll-snap-align: end;
     transform: none;
-    height: 50px;
+    min-width: 200px;
+    height: 40px;
     font-size: 16px;
     font-weight: 600;
     letter-spacing: 0.5px;
@@ -1890,9 +1892,9 @@ footer a:hover { color: var(--primary-color); }
     border: none;
     transition: all 0.2s;
 }
-#ok, #confirmYes { background: var(--primary-color); color: #000; }
+#ok, #confirmYes { background: var(--primary-color); color: #000; border: none; min-width: 100%; margin-bottom: 20px;}
 #ok:hover, #confirmYes:hover { background: var(--primary-hover); transform: translateY(-2px); }
-#confirmNo, .cancel-btn { background: #6c757d; color: white; }
+#confirmNo, .cancel-btn { background: #6c757d; color: white; border: none; min-width: 100%; }
 #confirmNo:hover, .cancel-btn:hover { background: #5a6268; transform: translateY(-2px); }
 .modal-buttons-container {
     display: flex;

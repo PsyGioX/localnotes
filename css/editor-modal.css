@@ -39,11 +39,67 @@
     flex-shrink: 0;
 }
 
+/* ── EDITOR MODAL — Firefox-safe layout (desktop + mobile) ─────────────────── */
+#editModal.modal {
+    overflow: auto;
+    overscroll-behavior: contain;
+}
+
+#editModal .modal-content {
+    display: grid !important;
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas: "editor" "actions";
+    box-sizing: border-box !important;
+    overflow: hidden;
+    max-height: min(88dvh, calc(100vh - 24px));
+    height: min(88dvh, calc(100vh - 24px));
+    padding: 0 !important;
+    gap: 0;
+}
+
+#editModal .modal-content .lne-editor-wrapper {
+    grid-area: editor;
+    flex: none;
+    width: 100%;
+    min-height: 0;
+    max-height: 100%;
+    overflow: hidden;
+}
+
+#editModal .modal-content .modal-buttons-container {
+    grid-area: actions;
+    flex: none;
+    flex-shrink: 0;
+    width: 100%;
+    margin: 0;
+    padding: 12px 16px 16px;
+    gap: 10px;
+    border-top: 1px solid var(--border-color, #272727);
+    background: var(--modal-bg, #1a1a1a);
+    box-sizing: border-box;
+    overflow: visible;
+    position: relative;
+    z-index: 5;
+}
+
+#editModal .modal-content .modal-buttons-container button {
+    min-height: 44px;
+    box-sizing: border-box;
+}
+
+#editModal .modal-content #noteSettingsBtn {
+    flex: 0 0 44px;
+    width: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+}
+
 /* ── MOBILE FULL-SCREEN EDITOR ─────────────────────────────────────────────── */
 @media (max-width: 768px) {
     #editModal .modal-content {
-        display: flex;
-        flex-direction: column;
+        display: grid !important;
+        grid-template-rows: minmax(0, 1fr) auto;
 
         /* Height stack — from least to most capable browser:
            1. 100vh        — Samsung Internet < 14, UC Browser, Opera Mini
@@ -61,7 +117,7 @@
 
         /* Safe-area: notch / Dynamic Island / Android cutout */
         padding-top:    env(safe-area-inset-top,    0px) !important;
-        padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+        padding-bottom: 0 !important;
         padding-left:   0 !important;
         padding-right:  0 !important;
 
@@ -69,6 +125,12 @@
         border-radius: 0 !important;
         overflow: hidden;
         box-sizing: border-box !important;
+    }
+
+    #editModal .modal-content .modal-buttons-container {
+        padding: 8px max(12px, env(safe-area-inset-right, 0px))
+                 max(12px, env(safe-area-inset-bottom, 0px))
+                 max(12px, env(safe-area-inset-left, 0px));
     }
 
     #editModal .modal-content .lne-editor-wrapper {
@@ -149,26 +211,22 @@
     }
 
     /* Bottom action bar */
-    .modal-buttons-container {
+    #editModal .modal-buttons-container {
         flex-shrink: 0;
         flex-direction: row !important;
         flex-wrap: nowrap;
-        padding: 6px max(10px, env(safe-area-inset-right, 0px))
-                 max(6px,  env(safe-area-inset-bottom, 0px))
-                 max(10px, env(safe-area-inset-left,   0px));
-        gap: 6px;
-        border-top: 1px solid var(--border-color, #272727);
-        background: var(--modal-bg, #1a1a1a);
+        gap: 8px;
     }
-    .modal-buttons-container button {
+    #editModal .modal-buttons-container button {
         flex: 1;
-        height: 42px;
+        min-height: 44px;
+        height: auto;
         font-size: 13px;
     }
-    #noteSettingsBtn {
-        flex: 0 0 42px;
-        width: 42px;
-        height: 42px;
+    #editModal #noteSettingsBtn {
+        flex: 0 0 44px;
+        width: 44px;
+        min-height: 44px;
     }
 }
 
@@ -177,8 +235,12 @@
     .modal-content {
         width: 98% !important;
         margin: 2vh auto !important;
-        height: 94vh;
-        height: 94dvh;
+    }
+    #editModal .modal-content {
+        width: 98% !important;
+        margin: 2vh auto !important;
+        height: min(94dvh, calc(100vh - 20px));
+        max-height: min(94dvh, calc(100vh - 20px));
     }
 }
 
@@ -187,8 +249,12 @@
     .modal-content {
         width: 96% !important;
         margin: 2vh auto !important;
-        height: 92vh;
-        height: 92dvh;
+    }
+    #editModal .modal-content {
+        width: 96% !important;
+        margin: 2vh auto !important;
+        height: min(92dvh, calc(100vh - 24px));
+        max-height: min(92dvh, calc(100vh - 24px));
     }
 }
 
@@ -208,12 +274,12 @@
         height: 34px !important;
     }
     #editModal .modal-content .lne-statusbar { display: none; }
-    .modal-buttons-container {
-        padding-top:    4px !important;
-        padding-bottom: max(4px, env(safe-area-inset-bottom, 0px)) !important;
+    #editModal .modal-buttons-container {
+        padding-top:    6px !important;
+        padding-bottom: max(8px, env(safe-area-inset-bottom, 0px)) !important;
     }
-    .modal-buttons-container button { height: 36px !important; font-size: 12px !important; }
-    #noteSettingsBtn { flex: 0 0 36px !important; width: 36px !important; height: 36px !important; }
+    #editModal .modal-buttons-container button { min-height: 40px !important; font-size: 12px !important; }
+    #editModal #noteSettingsBtn { flex: 0 0 40px !important; width: 40px !important; min-height: 40px !important; }
 }
 
 /* ── NOTE SETTINGS MODAL — MOBILE ──────────────────────────────────────────── */
@@ -252,12 +318,35 @@
 /* Samsung Internet < 14 doesn't support dvh — vh fallback is first in the stack above */
 /* Samsung Internet < 12 doesn't support env() — 0px defaults handle this */
 
-/* ── FIREFOX ANDROID ────────────────────────────────────────────────────────── */
-/* Firefox supports dvh since v110, env() since v65, no -webkit-fill-available */
-@-moz-document url-prefix() {
-    #editModal .modal-content {
-        /* Firefox: dvh works, skip -webkit-fill-available */
-        height: 100dvh !important;
-        max-height: 100dvh !important;
+/* ── FIREFOX (desktop + mobile) ─────────────────────────────────────────────── */
+/* @-moz-document applied 100dvh on all viewports and clipped the action bar.     */
+@supports (-moz-appearance: none) {
+    #editModal .modal-content .lne-wrapper {
+        min-height: 0;
+        max-height: 100%;
+    }
+
+    #editModal .modal-content .lne-body {
+        min-height: 0;
+        overflow-y: auto;
+        scrollbar-width: thin;
+    }
+
+    #editModal .modal-content .modal-buttons-container {
+        flex-shrink: 0;
+        transform: none;
+    }
+
+    #editModal .modal-content .modal-buttons-container button:hover {
+        transform: none;
+    }
+}
+
+@media (max-width: 768px) {
+    @supports (-moz-appearance: none) {
+        #editModal .modal-content {
+            height: 100dvh;
+            max-height: 100dvh;
+        }
     }
 }

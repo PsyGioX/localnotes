@@ -1267,7 +1267,7 @@ async function clearAllNotes() {
 // ============================================================================
 
 // In-memory settings while editing — persisted only on Save
-window._noteMeta = { tags: [], dueDate: null, color: '', pinned: false };
+window._noteMeta = { tags: [], dueDate: null, color: '', pinned: false, taskStatus: 'todo', taskPriority: '' };
 
 function openNoteSettings(noteId) {
     // Snapshot original state so cancel can restore it
@@ -1276,7 +1276,9 @@ function openNoteSettings(noteId) {
         tags:    (_orig.tags || []).slice(),
         dueDate: _orig.dueDate,
         color:   _orig.color,
-        pinned:  _orig.pinned
+        pinned:  _orig.pinned,
+        taskStatus: _orig.taskStatus || 'todo',
+        taskPriority: _orig.taskPriority || ''
     };
     const meta = window._noteMeta;
 
@@ -1362,6 +1364,23 @@ function openNoteSettings(noteId) {
                             ${meta.pinned ? (window.t ? window.t('pinned') : 'Pinned') : (window.t ? window.t('pin') : 'Pin')}
                         </button>
                     </section>
+                    <section class="nsm-section">
+                        <div class="nsm-section-title"><i class="bi bi-kanban"></i> ${window.t ? window.t('taskStatus') : 'Task status'}</div>
+                        <div class="nsm-task-status-row" id="nsm-task-status">
+                            <button type="button" class="nsm-status-btn${(meta.taskStatus || 'todo') === 'todo' ? ' active' : ''}" data-status="todo"><i class="bi bi-circle"></i> ${window.t ? window.t('taskStatusTodo') : 'To do'}</button>
+                            <button type="button" class="nsm-status-btn${meta.taskStatus === 'in_progress' ? ' active' : ''}" data-status="in_progress"><i class="bi bi-arrow-repeat"></i> ${window.t ? window.t('taskStatusInProgress') : 'In progress'}</button>
+                            <button type="button" class="nsm-status-btn${meta.taskStatus === 'done' ? ' active' : ''}" data-status="done"><i class="bi bi-check-circle"></i> ${window.t ? window.t('taskStatusDone') : 'Done'}</button>
+                        </div>
+                    </section>
+                    <section class="nsm-section">
+                        <div class="nsm-section-title"><i class="bi bi-flag"></i> ${window.t ? window.t('taskPriority') : 'Priority'}</div>
+                        <div class="nsm-priority-row" id="nsm-priority">
+                            <button type="button" class="nsm-pri-btn${!meta.taskPriority ? ' active' : ''}" data-pri="">${window.t ? window.t('taskPriorityNone') : 'None'}</button>
+                            <button type="button" class="nsm-pri-btn${meta.taskPriority === 'low' ? ' active' : ''}" data-pri="low">${window.t ? window.t('taskPriorityLow') : 'Low'}</button>
+                            <button type="button" class="nsm-pri-btn${meta.taskPriority === 'medium' ? ' active' : ''}" data-pri="medium">${window.t ? window.t('taskPriorityMid') : 'Medium'}</button>
+                            <button type="button" class="nsm-pri-btn${meta.taskPriority === 'high' ? ' active' : ''}" data-pri="high">${window.t ? window.t('taskPriorityHigh') : 'High'}</button>
+                        </div>
+                    </section>
                 </div>
                 <div class="nsm-footer">
                     <button class="nsm-btn nsm-btn-sec" id="nsm-cancel"><i class="bi bi-x-lg"></i> ${window.t ? window.t('cancel') : 'Cancel'}</button>
@@ -1383,10 +1402,12 @@ function openNoteSettings(noteId) {
         };
         const cancelOv = () => {
             // Restore original state on cancel
-            window._noteMeta.tags    = _snapshot.tags;
-            window._noteMeta.dueDate = _snapshot.dueDate;
-            window._noteMeta.color   = _snapshot.color;
-            window._noteMeta.pinned  = _snapshot.pinned;
+            window._noteMeta.tags        = _snapshot.tags;
+            window._noteMeta.dueDate     = _snapshot.dueDate;
+            window._noteMeta.color       = _snapshot.color;
+            window._noteMeta.pinned      = _snapshot.pinned;
+            window._noteMeta.taskStatus  = _snapshot.taskStatus;
+            window._noteMeta.taskPriority = _snapshot.taskPriority;
             closeOv();
         };
         ov.querySelector('#nsm-close').addEventListener('click', cancelOv);
@@ -1560,6 +1581,20 @@ function openNoteSettings(noteId) {
             btn.innerHTML = `<i class="bi bi-pin-angle${meta.pinned ? '-fill' : ''}"></i> ${meta.pinned ? (window.t ? window.t('pinned') : 'Pinned') : (window.t ? window.t('pin') : 'Pin')}`;
         });
 
+        ov.querySelectorAll('#nsm-task-status .nsm-status-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                meta.taskStatus = btn.dataset.status || 'todo';
+                ov.querySelectorAll('#nsm-task-status .nsm-status-btn').forEach(b => b.classList.toggle('active', b === btn));
+            });
+        });
+
+        ov.querySelectorAll('#nsm-priority .nsm-pri-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                meta.taskPriority = btn.dataset.pri || '';
+                ov.querySelectorAll('#nsm-priority .nsm-pri-btn').forEach(b => b.classList.toggle('active', b === btn));
+            });
+        });
+
         // Apply
         ov.querySelector('#nsm-apply').addEventListener('click', () => {
             const dueVal = ov.querySelector('#nsm-due').value;
@@ -1600,12 +1635,14 @@ function openModal(noteId, noteContent, noteCreationTime) {
                     tags:   note.tags   || [],
                     dueDate: note.dueDate || null,
                     color:  note.color  || '',
-                    pinned: note.pinned || false
+                    pinned: note.pinned || false,
+                    taskStatus: note.taskStatus || 'todo',
+                    taskPriority: note.taskPriority || ''
                 };
             }
         }).catch(() => {});
     } else {
-        window._noteMeta = { tags: [], dueDate: window._currentNoteDueDate || null, color: '', pinned: false };
+        window._noteMeta = { tags: [], dueDate: window._currentNoteDueDate || null, color: '', pinned: false, taskStatus: 'todo', taskPriority: '' };
         window._currentNoteDueDate = null;
     }
 
@@ -1680,7 +1717,9 @@ function openModal(noteId, noteContent, noteCreationTime) {
                 tags:    meta.tags    || [],
                 dueDate: meta.dueDate || null,
                 color:   meta.color   || '',
-                pinned:  meta.pinned  || false
+                pinned:  meta.pinned  || false,
+                taskStatus: meta.taskStatus || 'todo',
+                taskPriority: meta.taskPriority || ''
             };
             await notesDB.saveNote(note);
             modal.style.display = 'none';
@@ -1694,7 +1733,7 @@ function openModal(noteId, noteContent, noteCreationTime) {
                 if (typeof localNotesEditorInstance._removeCtx === 'function') localNotesEditorInstance._removeCtx();
                 localNotesEditorInstance.setContent('');
             }
-            window._noteMeta = { tags: [], dueDate: null, color: '', pinned: false };
+            window._noteMeta = { tags: [], dueDate: null, color: '', pinned: false, taskStatus: 'todo', taskPriority: '' };
             await loadNotes();
         } catch (e) {
             console.error('Save error:', e);
@@ -1727,8 +1766,47 @@ function closeModal() {
 async function loadNotes() {
     const viewer = document.querySelector('.btn_view_div');
     const notesContainer = document.getElementById('notesContainer');
+    const notesCenter = document.querySelector('.notes_center');
     if (!notesContainer) return;
+
+    const tbToolbar = document.getElementById('taskBoardToolbar');
+    if (tbToolbar) tbToolbar.remove();
+    if (notesCenter) notesCenter.classList.remove('task-board-center');
+
+    if (window.taskBoard && window.taskBoard.isActive()) {
+        try {
+            const allNotes = await notesDB.getAllNotes();
+            const notes = typeof applyTagFilter === 'function' ? applyTagFilter(allNotes) : allNotes;
+            notes.sort((a, b) => {
+                if (a.pinned && !b.pinned) return -1;
+                if (!a.pinned && b.pinned) return 1;
+                return b.lastModified - a.lastModified;
+            });
+            await window.taskBoard.render(notes);
+            if (viewer) viewer.style.display = notes.length ? '' : '';
+            return;
+        } catch (e) {
+            console.error('Task board render error:', e);
+        }
+    }
+
     notesContainer.innerHTML = '';
+    notesContainer.classList.remove('task-board-view');
+    
+    // Восстанавливаем правильный режим отображения (сетка или список)
+    const savedViewMode = localStorage.getItem('viewMode');
+    if (savedViewMode === 'list') {
+        notesContainer.classList.add('full-width-view');
+        notesContainer.classList.remove('default-view');
+    } else {
+        notesContainer.classList.add('default-view');
+        notesContainer.classList.remove('full-width-view');
+    }
+    
+    // Обновляем текст кнопки переключения вида
+    if (window.appUtils && typeof window.appUtils.updateToggleViewButton === 'function') {
+        window.appUtils.updateToggleViewButton();
+    }
 
     try {
         const allNotes = await notesDB.getAllNotes();
@@ -2710,6 +2788,7 @@ function updateButtonTexts() {
         ['calendarBtn', `<i class="bi bi-calendar3"></i> ${fn('calendar') || 'Calendar'}`]
     ].forEach(([id, html]) => { const el = document.getElementById(id); if (el) el.innerHTML = html; });
     if (window.appUtils) window.appUtils.updateToggleViewButton();
+    if (window.taskBoard) window.taskBoard.updateToggleButton();
     // Re-apply quick edit button text after language is ready
     applyQuickEditMode();
 }
@@ -3245,6 +3324,7 @@ function initializeEventListeners() {
         await loadNotes();
         restoreViewMode();
         restoreQuickEditMode();
+        if (window.taskBoard) window.taskBoard.restore();
         initializeEventListeners();
         updateFooterTexts();
         updateButtonTexts();

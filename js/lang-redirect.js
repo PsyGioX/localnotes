@@ -141,7 +141,7 @@ function showMainPage() {
     originalLog('%c   ✓ Search with transliteration', 'color: #666; font-size: 12px;');
 
     originalLog('%c\n📊 INFORMATION', 'color: #9C27B0; font-size: 16px; font-weight: bold;');
-    originalLog('%c   Version:  1.9.5', 'color: #666; font-size: 12px;');
+    originalLog('%c   Version:  1.9.6', 'color: #666; font-size: 12px;');
     originalLog('%c   Author:   SerGioPlay01', 'color: #666; font-size: 12px;');
     originalLog('%c   Website:  https://localnotes-three.vercel.app/', 'color: #666; font-size: 12px;');
     originalLog('%c   GitHub:   https://github.com/SerGioPlay01/localnotes', 'color: #666; font-size: 12px;');

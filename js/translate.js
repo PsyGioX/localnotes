@@ -139,6 +139,28 @@ function updateInterface(langData, language) {
         clearAllButton.innerHTML = `<i class="bi bi-trash3"></i> ${langData.clearAllButton}`;
     }
 
+    const toggleViewButton = document.getElementById('toggleViewButton');
+    if (toggleViewButton && langData.viewModeGrid && langData.viewModeList) {
+        const notesContainer = document.getElementById('notesContainer');
+        const isFullWidth = notesContainer && notesContainer.classList.contains('full-width-view');
+        toggleViewButton.innerHTML = isFullWidth
+            ? `<i class="bi bi-grid"></i> ${langData.viewModeGrid}`
+            : `<i class="bi bi-list-ul"></i> ${langData.viewModeList}`;
+    }
+
+    const toggleTaskBoardButton = document.getElementById('toggleTaskBoardButton');
+    if (toggleTaskBoardButton && langData.taskBoardOn) {
+        const tbOn = window.taskBoard && window.taskBoard.isActive();
+        toggleTaskBoardButton.classList.toggle('active', !!tbOn);
+        if (tbOn) {
+            toggleTaskBoardButton.innerHTML = `<i class="bi bi-kanban-fill"></i> ${langData.taskBoardOff || langData.taskBoardOn}`;
+            toggleTaskBoardButton.title = langData.taskBoardOffTitle || '';
+        } else {
+            toggleTaskBoardButton.innerHTML = `<i class="bi bi-kanban"></i> ${langData.taskBoardOn}`;
+            toggleTaskBoardButton.title = langData.taskBoardOnTitle || '';
+        }
+    }
+
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
         searchInput.placeholder = langData.searchPlaceholder;
@@ -271,12 +293,20 @@ function updateButtonTexts() {
         appLockBtn.title = isActive ? (titleHint || settingsTitle) : settingsTitle;
     }
     if (toggleViewButton) {
+        const lang = window.currentLang || 'en';
+        const ld = window.langData?.[lang];
         const notesContainer = document.getElementById("notesContainer");
         const isFullWidth = notesContainer && notesContainer.classList.contains("full-width-view");
-        const label = txt(toggleViewButton);
-        toggleViewButton.innerHTML = isFullWidth
-            ? `<i class="bi bi-grid"></i> ${label}`
-            : `<i class="bi bi-list-ul"></i> ${label}`;
+        if (ld && ld.viewModeGrid && ld.viewModeList) {
+            toggleViewButton.innerHTML = isFullWidth
+                ? `<i class="bi bi-grid"></i> ${ld.viewModeGrid}`
+                : `<i class="bi bi-list-ul"></i> ${ld.viewModeList}`;
+        } else {
+            const label = txt(toggleViewButton);
+            toggleViewButton.innerHTML = isFullWidth
+                ? `<i class="bi bi-grid"></i> ${label}`
+                : `<i class="bi bi-list-ul"></i> ${label}`;
+        }
 
         if (window.appUtils && typeof window.appUtils.forceUpdateToggleButton === 'function') {
             setTimeout(() => {
@@ -284,6 +314,11 @@ function updateButtonTexts() {
             }, 50);
         }
     }
+
+    if (window.taskBoard && typeof window.taskBoard.updateToggleButton === 'function') {
+        window.taskBoard.updateToggleButton();
+    }
+
     if (saveNoteButton) {
         saveNoteButton.innerHTML = `<i class="bi bi-floppy"></i> ${txt(saveNoteButton)}`;
     }
