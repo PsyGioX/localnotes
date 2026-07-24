@@ -1,7 +1,7 @@
 /**
  * Universal Cookies Banner for Local Notes
  * Supports all 12 languages with GDPR compliance
- * Author: SerGioPlay01
+ * Author: PsyGioX
  * Version: 1.0.0
  */
 

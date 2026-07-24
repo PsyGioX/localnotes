@@ -259,6 +259,6 @@ For issues or questions:
 
 ---
 
-**Author:** SerGioPlay01  
+**Author:** PsyGioX  
 **Version:** 1.0.0  
 **Compatible with:** Local Notes v1.0.3+

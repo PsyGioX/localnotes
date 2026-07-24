@@ -208,12 +208,12 @@
             },
             "author": {
                 "@type": "Person",
-                "name": "SerGioPlay01",
-                "url": "https://sergioplay-dev.vercel.app/"
+                "name": "PsyGioX",
+                "url": "https://psygiox-dev.vercel.app/"
             },
             "publisher": {
                 "@type": "Person",
-                "name": "SerGioPlay01"
+                "name": "PsyGioX"
             },
             "datePublished": "2024-01-01",
             "dateModified": new Date().toISOString().split('T')[0],

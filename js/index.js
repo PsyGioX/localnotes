@@ -2180,7 +2180,7 @@ function showWelcomeMessage() {
                 <li>${gt('welcomeGoal6','Convenience - intuitive interface')}</li>
             </ul></div>
         <div class="welcome-section"><h2 class="welcome-section-title">${gt('welcomeDeveloper','Developer')}</h2>
-            <p class="welcome-developer-info">${gt('welcomeDeveloperInfo','Developed by SerGioPlay01. Open source project focused on privacy and security.')}</p></div>
+            <p class="welcome-developer-info">${gt('welcomeDeveloperInfo','Developed by PsyGioX. Open source project focused on privacy and security.')}</p></div>
         <div class="welcome-section"><h2 class="welcome-section-title">${gt('welcomeGetStarted','Get Started')}</h2>
             <p class="welcome-get-started">${gt('welcomeGetStartedText','Click Add Note to create your first note.')}</p></div>
         <div class="welcome-actions">

@@ -1,13 +1,13 @@
 # 📝 Local Notes — Локальные Заметки
 
-![Local Notes Screenshot](https://github.com/SerGioPlay01/localnotes/blob/main/sccc.png?raw=true)
+![Local Notes Screenshot](https://github.com/PsyGioX/localnotes/blob/main/sccc.png?raw=true)
 
-[![Version](https://img.shields.io/badge/Version-1.9.6-brightgreen.svg)](https://github.com/SerGioPlay01/localnotes/releases)
-[![Security](https://img.shields.io/badge/Security-AES--256--GCM%20%2B%20HMAC--SHA--512-blue.svg)](https://github.com/SerGioPlay01/localnotes)
+[![Version](https://img.shields.io/badge/Version-1.9.6-brightgreen.svg)](https://github.com/PsyGioX/localnotes/releases)
+[![Security](https://img.shields.io/badge/Security-AES--256--GCM%20%2B%20HMAC--SHA--512-blue.svg)](https://github.com/PsyGioX/localnotes)
 [![DOMPurify](https://img.shields.io/badge/XSS-DOMPurify-red.svg)](https://github.com/cure53/DOMPurify)
-[![PWA](https://img.shields.io/badge/PWA-Enabled-purple.svg)](https://github.com/SerGioPlay01/localnotes)
-[![Offline](https://img.shields.io/badge/Offline-Supported-orange.svg)](https://github.com/SerGioPlay01/localnotes)
-[![Languages](https://img.shields.io/badge/Languages-12-yellow.svg)](https://github.com/SerGioPlay01/localnotes)
+[![PWA](https://img.shields.io/badge/PWA-Enabled-purple.svg)](https://github.com/PsyGioX/localnotes)
+[![Offline](https://img.shields.io/badge/Offline-Supported-orange.svg)](https://github.com/PsyGioX/localnotes)
+[![Languages](https://img.shields.io/badge/Languages-12-yellow.svg)](https://github.com/PsyGioX/localnotes)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 
@@ -30,7 +30,7 @@
 [![SL](https://img.shields.io/badge/🇸🇮_Slovenščina-lime)](https://localnotes-three.vercel.app/sl/)
 
 [![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-Открыть_сайт-brightgreen)](https://localnotes-three.vercel.app/)
-[![GitHub](https://img.shields.io/badge/GitHub-Репозиторий-black)](https://github.com/SerGioPlay01/localnotes)
+[![GitHub](https://img.shields.io/badge/GitHub-Репозиторий-black)](https://github.com/PsyGioX/localnotes)
 
 ---
 
@@ -448,7 +448,7 @@ localnotes/
 ### 💻 Локально
 
 ```bash
-git clone https://github.com/SerGioPlay01/localnotes.git
+git clone https://github.com/PsyGioX/localnotes.git
 cd localnotes
 python -m http.server 8000
 # или: npx serve .
@@ -554,7 +554,7 @@ MIT — подробности в файле [LICENSE](LICENSE).
 
 ## 👨‍💻 Автор
 
-**SerGioPlay01** — [GitHub](https://github.com/SerGioPlay01) | [Website](https://sergioplay-dev.vercel.app/)
+**PsyGioX** — [GitHub](https://github.com/PsyGioX) | [Website](https://psygiox-dev.vercel.app/)
 
 ---
 
@@ -562,7 +562,7 @@ MIT — подробности в файле [LICENSE](LICENSE).
 
 **⭐ Если проект понравился — поставьте звезду! ⭐**
 
-[![GitHub stars](https://img.shields.io/github/stars/SerGioPlay01/localnotes?style=social)](https://github.com/SerGioPlay01/localnotes)
+[![GitHub stars](https://img.shields.io/github/stars/PsyGioX/localnotes?style=social)](https://github.com/PsyGioX/localnotes)
 
 **🌐 [Попробуйте Local Notes прямо сейчас!](https://localnotes-three.vercel.app/)**
 
