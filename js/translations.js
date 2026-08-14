@@ -6193,8 +6193,10 @@ function t(key, params = {}) {
         if (translation == null) translation = window.langData['en']?.[key];
     }
 
+    if (translation == null) return key;
+
     // Если значение — массив или объект (например months, weekdays), возвращаем как есть
-    if (typeof translation !== 'string') return key;
+    if (typeof translation !== 'string') return translation;
 
     // Заменяем параметры в тексте
     return translation.replace(/\{(\w+)\}/g, (match, param) => params[param] || match);

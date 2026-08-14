@@ -1763,7 +1763,19 @@ function closeModal() {
 // ============================================================================
 // LOAD NOTES (from backup, adapted - using notesDB not notesDatabase)
 // ============================================================================
-async function loadNotes() {
+// loadNotes() может вызываться параллельно из нескольких мест (инициализация
+// приложения, патч workspaces-integration.js и т.д.). Без сериализации два
+// одновременных вызова могут оба очистить #notesContainer, а затем оба
+// дописать в него заметки — на экране появляются дубликаты при каждой
+// перезагрузке страницы. Оборачиваем реализацию в очередь промисов, чтобы
+// вызовы всегда выполнялись строго друг за другом.
+let _loadNotesQueue = Promise.resolve();
+function loadNotes() {
+    _loadNotesQueue = _loadNotesQueue.then(() => _loadNotesImpl(), () => _loadNotesImpl());
+    return _loadNotesQueue;
+}
+
+async function _loadNotesImpl() {
     const viewer = document.querySelector('.btn_view_div');
     const notesContainer = document.getElementById('notesContainer');
     const notesCenter = document.querySelector('.notes_center');
