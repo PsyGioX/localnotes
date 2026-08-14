@@ -5,6 +5,9 @@
  *   drag-drop, floating toolbar on selection, history, i18n
  */
 
+/** Storage key for user-created (custom) templates — shared across all editor instances */
+var LNE_CUSTOM_TPL_KEY = 'lne_custom_templates_v1';
+
 /** Clipboard fallback for browsers without navigator.clipboard */
 function _fallbackCopy(text) {
     try {
@@ -49,6 +52,7 @@ class LocalNotesEditor {
         this._buildDOM();
         this._buildToolbar();
         this._wireEditor();
+        this._ctplUpdateBadge();
         // Start with clean history
         this.undoStack = []; this.redoStack = []; this.lastSnap = null;
         this._saveSnap();
@@ -199,6 +203,11 @@ class LocalNotesEditor {
         '<button class="lne-btn lne-tpl-btn" data-cmd="tplWeekly"        title="' + _('tplWeekly','Weekly review') + '"><i class="bi bi-calendar-week"></i><span class="lne-btn-label">' + _('tplWeekly','Weekly') + '</span></button>' +
         '<button class="lne-btn lne-tpl-btn" data-cmd="tplGoals"         title="' + _('tplGoals','Goals & OKR') + '"><i class="bi bi-trophy"></i><span class="lne-btn-label">' + _('tplGoals','Goals') + '</span></button>' +
         '<button class="lne-btn lne-tpl-btn" data-cmd="tplHabit"         title="' + _('tplHabit','Habit tracker') + '"><i class="bi bi-check2-all"></i><span class="lne-btn-label">' + _('tplHabit','Habits') + '</span></button>' +
+        '<div class="lne-sep"></div>' +
+
+        /* Custom (user-created) */
+        '<span class="lne-tpl-group-label"><i class="bi bi-bookmark-star"></i></span>' +
+        '<button class="lne-btn lne-tpl-btn lne-tpl-btn-custom" data-cmd="tplCustomManage" title="' + _('tplCustomManage','My templates') + '"><i class="bi bi-collection"></i><span class="lne-btn-label">' + _('tplCustom','My') + '</span><span class="lne-tpl-count" style="display:none">0</span></button>' +
         '</div>';
 
         this._colorBars();
@@ -248,6 +257,7 @@ class LocalNotesEditor {
             insertSpecialChar: function() { this._modalSpecialChars(); },
             findReplace:       function() { this._modalFindReplace(); },
             wordCount:         function() { this._modalWordCount(); },
+            tplCustomManage:   function() { this._modalCustomTemplates(); },
             foreColor:         function() {
                 if (this._selectionInChecklist()) return;
                 this._expandWordIfCollapsed();
@@ -1417,6 +1427,149 @@ class LocalNotesEditor {
         var html = templates[type];
         if (html) this._insertHTML(html);
         this._initContextToolbars && this._initContextToolbars();
+    }
+
+    // ── Custom (user-created) templates ─────────────────────────────────
+    // Stored in localStorage as a flat list shared across all notes/editor
+    // instances: [{ id, name, html, createdAt }]
+
+    _escHtml(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+            return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+        });
+    }
+
+    _ctplLoad() {
+        try {
+            var raw = localStorage.getItem(LNE_CUSTOM_TPL_KEY);
+            var list = raw ? JSON.parse(raw) : [];
+            return Array.isArray(list) ? list : [];
+        } catch (e) { return []; }
+    }
+
+    _ctplSave(list) {
+        try { localStorage.setItem(LNE_CUSTOM_TPL_KEY, JSON.stringify(list)); }
+        catch (e) { /* storage full / unavailable — silently ignore */ }
+    }
+
+    _ctplUpdateBadge() {
+        if (!this.toolbar) return;
+        var badge = this.toolbar.querySelector('.lne-tpl-count');
+        if (!badge) return;
+        var count = this._ctplLoad().length;
+        if (count > 0) { badge.textContent = count > 99 ? '99+' : String(count); badge.style.display = ''; }
+        else { badge.style.display = 'none'; }
+    }
+
+    _modalCustomTemplates() {
+        var self = this;
+        var _ = this._.bind(this);
+
+        var renderBody = function() {
+            var list = self._ctplLoad();
+            var listHtml = list.length
+                ? '<div class="lne-ctpl-list">' + list.map(function(tpl) {
+                    return '<div class="lne-ctpl-item" data-id="' + self._escHtml(tpl.id) + '">' +
+                        '<button type="button" class="lne-ctpl-insert" title="' + _('tplCustomInsert','Insert') + '">' +
+                            '<i class="bi bi-file-earmark-richtext"></i>' +
+                            '<span class="lne-ctpl-name">' + self._escHtml(tpl.name) + '</span>' +
+                        '</button>' +
+                        '<button type="button" class="lne-ctpl-del" title="' + _('tplCustomDelete','Delete') + '"><i class="bi bi-trash3"></i></button>' +
+                    '</div>';
+                }).join('') + '</div>'
+                : '<p class="lne-hint lne-ctpl-empty">' + _('tplCustomEmpty', "You don't have any templates yet. Fill the editor and save it above.") + '</p>';
+
+            return '<div class="lne-fg">' +
+                    '<label>' + _('tplCustomName','Template name') + '</label>' +
+                    '<input type="text" class="lne-inp lne-ctpl-name-inp" maxlength="60" placeholder="' + _('tplCustomNamePh','e.g. Weekly standup') + '">' +
+                '</div>' +
+                '<button type="button" class="lne-mbtn lne-mbtn-pri lne-ctpl-save"><i class="bi bi-floppy"></i> ' + _('tplCustomSaveCurrent','Save current note as template') + '</button>' +
+                '<p class="lne-hint lne-ctpl-warn" style="display:none"></p>' +
+                '<div class="lne-ctpl-divider"></div>' +
+                listHtml;
+        };
+
+        var r = this._modal(_('tplCustomTitle','My Templates'), 'bi bi-bookmark-star', renderBody(), function() {}, true);
+        r.ov.classList.add('lne-ctpl-modal');
+        var okBtn = r.ov.querySelector('.lne-mok');
+        if (okBtn) okBtn.style.display = 'none';
+
+        var wire = function() {
+            var nameInp = r.ov.querySelector('.lne-ctpl-name-inp');
+            var warn = r.ov.querySelector('.lne-ctpl-warn');
+            var showWarn = function(msg) { if (warn) { warn.textContent = msg; warn.style.display = 'block'; } };
+            var hideWarn = function() { if (warn) warn.style.display = 'none'; };
+
+            var saveBtn = r.ov.querySelector('.lne-ctpl-save');
+            if (saveBtn) saveBtn.addEventListener('click', function() {
+                hideWarn();
+                var name = (nameInp.value || '').trim();
+                if (!name) { showWarn(_('tplCustomNameRequired','Enter a template name')); nameInp.focus(); return; }
+                var html = self.ed.innerHTML;
+                var plain = self.ed.innerText.trim();
+                if (!plain && !/<img|<table|<iframe/i.test(html)) {
+                    showWarn(_('tplCustomEmptyContent','Editor is empty — write something before saving as a template'));
+                    return;
+                }
+                var list = self._ctplLoad();
+                list.unshift({
+                    id: 'ct' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+                    name: name,
+                    html: html,
+                    createdAt: Date.now()
+                });
+                self._ctplSave(list);
+                self._ctplUpdateBadge();
+                refresh();
+            });
+
+            r.ov.querySelectorAll('.lne-ctpl-insert').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var item = btn.closest('.lne-ctpl-item');
+                    var id = item && item.dataset.id;
+                    var tpl = self._ctplLoad().find(function(t) { return t.id === id; });
+                    if (!tpl) return;
+                    self._insertHTML(tpl.html);
+                    self._initContextToolbars && self._initContextToolbars();
+                    r.close();
+                });
+            });
+
+            r.ov.querySelectorAll('.lne-ctpl-del').forEach(function(btn) {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    if (!btn.classList.contains('lne-ctpl-del-confirm')) {
+                        btn.classList.add('lne-ctpl-del-confirm');
+                        btn.innerHTML = '<i class="bi bi-check-lg"></i>';
+                        btn.title = _('tplCustomConfirmDelete','Delete?');
+                        setTimeout(function() {
+                            if (!btn.isConnected) return;
+                            btn.classList.remove('lne-ctpl-del-confirm');
+                            btn.innerHTML = '<i class="bi bi-trash3"></i>';
+                            btn.title = _('tplCustomDelete','Delete');
+                        }, 2500);
+                        return;
+                    }
+                    var item = btn.closest('.lne-ctpl-item');
+                    var id = item && item.dataset.id;
+                    var list = self._ctplLoad().filter(function(t) { return t.id !== id; });
+                    self._ctplSave(list);
+                    self._ctplUpdateBadge();
+                    refresh();
+                });
+            });
+        };
+
+        var refresh = function() {
+            var body = r.ov.querySelector('.lne-mbody');
+            if (body) body.innerHTML = renderBody();
+            wire();
+            var inp = r.ov.querySelector('.lne-ctpl-name-inp');
+            var isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+            if (inp && !isTouchDevice) inp.focus();
+        };
+
+        wire();
     }
 
     // ── Fullscreen ───────────────────────────────────────────────────────
