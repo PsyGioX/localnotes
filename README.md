@@ -2,7 +2,7 @@
 
 ![Local Notes Screenshot](https://github.com/PsyGioX/localnotes/blob/main/sccc.png?raw=true)
 
-[![Version](https://img.shields.io/badge/Version-1.9.6-brightgreen.svg)](https://github.com/PsyGioX/localnotes/releases)
+[![Version](https://img.shields.io/badge/Version-1.9.7-brightgreen.svg)](https://github.com/PsyGioX/localnotes/releases)
 [![Security](https://img.shields.io/badge/Security-AES--256--GCM%20%2B%20HMAC--SHA--512-blue.svg)](https://github.com/PsyGioX/localnotes)
 [![DOMPurify](https://img.shields.io/badge/XSS-DOMPurify-red.svg)](https://github.com/cure53/DOMPurify)
 [![PWA](https://img.shields.io/badge/PWA-Enabled-purple.svg)](https://github.com/PsyGioX/localnotes)
