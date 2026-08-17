@@ -1,5 +1,5 @@
 // Service Worker для Local Notes
-const CACHE_VERSION = 'v1.9.6';
+const CACHE_VERSION = 'v1.9.7';
 const STATIC_CACHE  = `static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `dynamic-${CACHE_VERSION}`;
 const CACHE_LIMIT   = 60;
@@ -68,6 +68,7 @@ const STATIC_FILES = [
     '/js/date-utils.js',
     '/js/editor-integration.js',
     '/js/markdown.js',
+    '/js/command-palette.js',
 
     // Данные
     '/json/lang.json',

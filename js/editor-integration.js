@@ -19,10 +19,46 @@ function initializeLocalNotesEditor() {
             height: isTablet ? 'calc(var(--vh, 1vh) * 100 - 200px)' : '500px',
             placeholder,
             toolbar: true,
-            statusbar: true
+            statusbar: true,
+            onWikiLinkSearch: searchNotesForWikiLink,
+            onWikiLinkOpen: openNoteFromWikiLink
         });
         return true;
     } catch (e) { console.error('Error initializing LocalNotesEditor:', e); return false; }
+}
+
+// Wiki-link autocomplete — search notesDB for the editor's [[ popup.
+// Called on every keystroke inside "[[...", so it must stay fast and never throw.
+async function searchNotesForWikiLink(query) {
+    if (!window.notesDB || typeof window.notesDB.getAllNotes !== 'function') return [];
+    try {
+        const all = await window.notesDB.getAllNotes();
+        const q = (query || '').trim().toLowerCase();
+        const excludeId = (typeof window.getCurrentNoteId === 'function') ? window.getCurrentNoteId() : null;
+        let matches = all.filter(n => n.id !== excludeId && (!q || (n.title || '').toLowerCase().includes(q)));
+        matches.sort((a, b) => (b.lastModified || 0) - (a.lastModified || 0));
+        const untitled = (typeof t === 'function' ? t('cpUntitled') : null) || 'Untitled note';
+        return matches.slice(0, 8).map(n => ({ id: n.id, title: n.title || untitled }));
+    } catch (e) { return []; }
+}
+
+// Wiki-link click — resolve the id to a note and open it in the edit modal.
+// Explicitly closes the currently-open note first (rather than swapping
+// content into the already-open modal in place) so switching notes via a
+// wiki-link is a clean, visible "close this note → open that note" action —
+// same modal element, but a real open/close cycle rather than a silent
+// content swap underneath the user.
+function openNoteFromWikiLink(noteId) {
+    if (!window.notesDB || typeof window.notesDB.getNote !== 'function' || !noteId) return;
+    window.notesDB.getNote(noteId).then(note => {
+        if (!note) return;
+        if (typeof window.closeModal === 'function') window.closeModal();
+        // One frame so the modal actually registers as closed before we
+        // reopen it — avoids any state left over from the note we just left.
+        requestAnimationFrame(() => {
+            if (typeof window.openModal === 'function') window.openModal(note.id, note.content, note.creationTime);
+        });
+    }).catch(() => {});
 }
 
 function getEditorContent()  { return localNotesEditorInstance ? localNotesEditorInstance.getContent() : ''; }

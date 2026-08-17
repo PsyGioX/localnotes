@@ -361,6 +361,16 @@ ENCRYPT PIPELINE:
 - Text color & highlight with live caret color sync
 - Fullscreen mode, Undo/Redo (Ctrl+Z / Ctrl+Y)
 - Quick Edit mode directly in the notes list
+- **Custom templates** — save any note as a reusable template with icon/category, `{{date}}`/`{{time}}`/`{{weekday}}` variables, JSON export/import
+
+### ⌨️ Command Palette
+- `Ctrl+K` / `⌘K` — new note, calendar, task board, view toggle, theme, lock now
+- Instant search across note titles and content
+- Respects App Lock — disabled while the app is locked
+
+### 🔗 Wiki-links & Backlinks
+- Type `[[` in the editor to link to another note, autocomplete included
+- Backlinks panel in Note Settings — see what links to the note you're editing
 
 ### 🏷️ Tags & Organization
 - Color tags — create, edit, delete with color picker
@@ -506,7 +516,20 @@ Click the install icon in Chrome/Edge address bar and confirm.
 
 ## 🆕 Changelog
 
-### v1.9.6 (current)
+### v1.9.7 (current)
+- **🐛 Fixed calendar month/weekday names** — translation lookup for array values (`months`, `weekdaysShort`, `weekdays`) was returning the translation *key* instead of the array itself, corrupting calendar labels; core `t()` bug, fixed at the source
+- **🐛 Fixed note duplication on reload** — `loadNotes()` could run concurrently from multiple init paths (main app + `workspaces-integration.js` patch), racing on the same DOM clear/append cycle; now serialized through a promise queue
+- **🐛 Fixed checklists not rendering after template insert** — `_insertHTML()` only re-initialized checklist/code-block/context-toolbar behaviour on the iframe/video insertion path; plain `execCommand` inserts (e.g. any checklist template) stayed inert until the note was reopened. Now always re-initialized after insert
+- **✨ Custom templates** — save any note as a reusable template via the editor's modal system; insert with one click, delete with confirm-to-undo safety
+  - **Template variables** — `{{date}}`, `{{time}}`, `{{weekday}}`, `{{datetime}}` auto-expand at insertion time via `Intl`, respecting the app's current language
+  - **Categories & icons** — Business / Study / Planning / Personal / Other, with a whitelisted icon picker (10 Bootstrap Icons)
+  - **Export/Import as JSON** — back up or share a template set; imports are sanitized through the app's standard DOMPurify profile, size-capped (2 MB file / 300 templates / 300k chars per template), and never trust incoming `id`s
+- **✨ Command Palette (Ctrl+K / ⌘K)** — quick actions (new note, calendar, task board, view toggle, theme, lock now) plus instant note search by title/content, all client-side, no new dependencies
+- **✨ Wiki-links between notes** — type `[[` in the editor for an autocomplete popup over existing notes; selecting inserts an atomic link chip that jumps straight to that note on click
+  - **Backlinks panel** — Note Settings now shows which other notes link to the one you're editing, computed on demand (no separate index/migration)
+  - Ctrl+K conflict avoided — the palette yields to the editor's existing "Insert link" shortcut while focus is inside the editor
+
+### v1.9.6
 - **🔐 App Lock** — PIN and/or access file, idle lock (10 min), lock screen with mobile-friendly layout
 - **🔌 API documentation** — full `window.*` API reference in README (notesDB, encryption, AppLock, TagsCalendar, SW messages)
 - **🔔 PWA update flow fixed** — no infinite “Update available” toast; `SKIP_WAITING` before reload

@@ -864,6 +864,55 @@ textarea.lne-inp { resize: vertical; }
     display: flex; flex-direction: column; gap: 6px;
     max-height: 280px; overflow-y: auto; padding-right: 2px;
 }
+.lne-ctpl-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.lne-ctpl-group:last-child { margin-bottom: 0; }
+.lne-ctpl-group-hd {
+    font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--text-secondary,#999);
+    padding: 2px 2px 0;
+}
+.lne-ctpl-metarow { gap: 10px; }
+.lne-ctpl-vars-hint {
+    margin: -2px 0 0; padding: 6px 10px;
+    font-size: 11.5px; font-family: 'JetBrains Mono', monospace, var(--font-family, inherit);
+    background: rgba(174,252,110,.06);
+    border: 1px dashed rgba(174,252,110,.25);
+    border-radius: 6px;
+    color: var(--text-secondary,#999);
+}
+.lne-ctpl-icogrid { display: flex; flex-wrap: wrap; gap: 5px; }
+.lne-ctpl-ico {
+    width: 34px; height: 34px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--border-color,#272727);
+    background: var(--bg-secondary,#111);
+    color: var(--text-secondary,#999);
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 15px;
+    transition: all .12s;
+}
+.lne-ctpl-ico:hover { border-color: rgba(174,252,110,.4); color: #aefc6e; }
+.lne-ctpl-ico-sel {
+    background: rgba(174,252,110,.14);
+    border-color: rgba(174,252,110,.6);
+    color: #aefc6e;
+    box-shadow: 0 0 0 1px rgba(174,252,110,.3) inset;
+}
+.lne-ctpl-toolbar { display: flex; gap: 8px; margin: -2px 0 2px; }
+.lne-ctpl-tbtn {
+    flex: 1;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 8px 10px;
+    border: 1px solid var(--border-color,#272727);
+    background: var(--bg-secondary,#111);
+    color: var(--text-color,#e0e0e0);
+    border-radius: 7px;
+    font-size: 12.5px; font-weight: 600;
+    cursor: pointer;
+    transition: all .12s;
+}
+.lne-ctpl-tbtn:hover { border-color: rgba(174,252,110,.4); color: #aefc6e; background: rgba(174,252,110,.06); }
 .lne-ctpl-item {
     display: flex; align-items: stretch; gap: 6px;
 }
@@ -1047,6 +1096,13 @@ textarea.lne-inp { resize: vertical; }
 [data-theme="light"] .lne-ctpl-del { background: #f8f9fa; color: #6c757d; border-color: #dee2e6; }
 [data-theme="light"] .lne-ctpl-del:hover { background: rgba(220,53,69,.1); border-color: rgba(220,53,69,.4); color: #dc3545; }
 [data-theme="light"] .lne-ctpl-empty { border-color: #dee2e6; color: #6c757d; }
+[data-theme="light"] .lne-ctpl-group-hd { color: #6c757d; }
+[data-theme="light"] .lne-ctpl-vars-hint { background: rgba(40,167,69,.05); border-color: rgba(40,167,69,.25); color: #6c757d; }
+[data-theme="light"] .lne-ctpl-ico { background: #f8f9fa; border-color: #dee2e6; color: #6c757d; }
+[data-theme="light"] .lne-ctpl-ico:hover { border-color: rgba(40,167,69,.4); color: #28a745; }
+[data-theme="light"] .lne-ctpl-ico-sel { background: rgba(40,167,69,.12); border-color: rgba(40,167,69,.5); color: #218838; }
+[data-theme="light"] .lne-ctpl-tbtn { background: #f8f9fa; border-color: #dee2e6; color: #212529; }
+[data-theme="light"] .lne-ctpl-tbtn:hover { border-color: rgba(40,167,69,.4); color: #28a745; background: rgba(40,167,69,.06); }
 
 /* ═══════════════════════════ CODE BLOCK COPY BTN ═══════════════════ */
 .lne-code-wrapper {
@@ -1186,6 +1242,67 @@ textarea.lne-inp { resize: vertical; }
     z-index: 99999;
 }
 .lne-ctx-btn:hover::after { opacity: 1; }
+
+/* ═══════════════════════════ WIKI-LINKS ═══════════════════════════════ */
+
+/* Inline atomic chip inserted when a [[note]] link is chosen */
+.lne-wikilink {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 1px 8px 1px 6px;
+    border-radius: 5px;
+    background: rgba(174,252,110,.14);
+    border: 1px solid rgba(174,252,110,.35);
+    color: #aefc6e;
+    font-size: .92em; font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    vertical-align: baseline;
+    transition: background .12s, border-color .12s;
+}
+.lne-wikilink i { font-size: .85em; }
+.lne-wikilink:hover { background: rgba(174,252,110,.24); border-color: rgba(174,252,110,.55); }
+[data-theme="light"] .lne-wikilink {
+    background: rgba(40,167,69,.1);
+    border-color: rgba(40,167,69,.3);
+    color: #218838;
+}
+[data-theme="light"] .lne-wikilink:hover { background: rgba(40,167,69,.18); border-color: rgba(40,167,69,.5); }
+
+/* Floating [[ autocomplete popup — appended to <body>, positioned via JS */
+.lne-wikipop {
+    position: fixed;
+    z-index: 100000;
+    width: 260px;
+    max-height: 220px;
+    overflow-y: auto;
+    background: var(--modal-bg, #1a1a1a);
+    border: 1px solid var(--border-color, #272727);
+    border-radius: 9px;
+    box-shadow: 0 10px 36px rgba(0,0,0,.5);
+    padding: 5px;
+    animation: lneIn .12s ease;
+}
+.lne-wikipop-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 9px;
+    border-radius: 6px;
+    color: var(--text-color, #e0e0e0);
+    font-size: 13px;
+    cursor: pointer;
+    overflow: hidden;
+}
+.lne-wikipop-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lne-wikipop-item i { color: var(--text-secondary, #999); font-size: 13px; flex-shrink: 0; }
+.lne-wikipop-item.lne-wikipop-active, .lne-wikipop-item:hover {
+    background: rgba(174,252,110,.14);
+    color: #aefc6e;
+}
+.lne-wikipop-item.lne-wikipop-active i, .lne-wikipop-item:hover i { color: #aefc6e; }
+[data-theme="light"] .lne-wikipop { background: #fff; border-color: #dee2e6; }
+[data-theme="light"] .lne-wikipop-item.lne-wikipop-active,
+[data-theme="light"] .lne-wikipop-item:hover { background: rgba(40,167,69,.1); color: #218838; }
+[data-theme="light"] .lne-wikipop-item.lne-wikipop-active i,
+[data-theme="light"] .lne-wikipop-item:hover i { color: #218838; }
 
 /* Hover indicators on editor elements */
 .lne-editor img:hover {
@@ -1344,6 +1461,11 @@ textarea.lne-inp { resize: vertical; }
     .lne-ctpl-insert { padding: 11px 12px; }
     .lne-ctpl-del { width: 44px; }
     .lne-ctpl-list { max-height: 45dvh; }
+    .lne-ctpl-metarow { flex-direction: column; }
+    .lne-ctpl-ico { width: 40px; height: 40px; }
+    .lne-ctpl-tbtn { padding: 10px; }
+    .lne-wikipop { width: min(300px, calc(100vw - 16px)); max-height: 45dvh; }
+    .lne-wikipop-item { padding: 10px 9px; }
     /* Editor modal drag handle */
     .lne-modal::before {
         content: '';

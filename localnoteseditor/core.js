@@ -7,6 +7,10 @@
 
 /** Storage key for user-created (custom) templates — shared across all editor instances */
 var LNE_CUSTOM_TPL_KEY = 'lne_custom_templates_v1';
+/** Whitelisted icon choices for custom templates (never trust arbitrary icon strings from import/localStorage) */
+var LNE_CTPL_ICONS = ['bi-file-earmark-richtext','bi-journal-check','bi-calendar-event','bi-lightbulb','bi-briefcase','bi-mortarboard','bi-house-door','bi-star','bi-flag','bi-clipboard-check'];
+/** Fixed category set for custom templates */
+var LNE_CTPL_CATEGORIES = ['business','study','planning','personal','other'];
 
 /** Clipboard fallback for browsers without navigator.clipboard */
 function _fallbackCopy(text) {
@@ -160,6 +164,7 @@ class LocalNotesEditor {
         GE + SEP +
         GS +
         B('insertLink','bi bi-link-45deg',_('insertLink','Insert link')+'  Ctrl+K') +
+        (this.options.onWikiLinkSearch ? B('insertWikiLink','bi bi-journal-richtext',_('insertWikiLink','Link to another note')+'  [[') : '') +
         B('insertImage','bi bi-image',_('insertImage','Insert image')) +
         B('insertVideo','bi bi-play-circle',_('insertVideo','Insert video')) +
         B('insertTable','bi bi-table',_('createTable','Insert table')) +
@@ -275,6 +280,7 @@ class LocalNotesEditor {
             undo:             function() { this.undo(); },
             redo:             function() { this.redo(); },
             insertChecklist:  function() { this._insertChecklist(); },
+            insertWikiLink:   function() { this._triggerWikiLinkPopup(); },
             insertCode:       function() { this._insertCodeBlock(); },
             insertBlockquote: function() { this._insertBlockquote(); },
             fullscreen:       function() { this._toggleFullscreen(); },
@@ -518,10 +524,17 @@ class LocalNotesEditor {
             } else {
                 this.ed.insertAdjacentHTML('beforeend', html);
             }
-            this._initAll();
         } else {
             document.execCommand('insertHTML', false, html);
         }
+        // Any inserted HTML may contain checklists, code blocks, tables or
+        // media that need their interactive behaviour (and visual state —
+        // checked boxes, opts button, etc.) wired up immediately. Without
+        // this, e.g. a checklist pasted from a template renders "dead"
+        // until the note is reopened/edited and setContent() runs _initAll()
+        // on its own. _initChecklists/_initCodeBlocks are idempotent
+        // (guarded by dataset flags), so calling this on every insert is safe.
+        this._initAll();
         this._syncState();
     }
 
@@ -657,7 +670,7 @@ class LocalNotesEditor {
         this.ed.addEventListener('mouseup',   function() { self._saveRange(); self._syncState(); });
         this.ed.addEventListener('keyup',     function() { self._saveRange(); self._syncState(); });
         this.ed.addEventListener('click',     function() { self._saveRange(); self._syncState(); });
-        this.ed.addEventListener('input',     function() { self._saveSnap(); self._updateStatusbar(); });
+        this.ed.addEventListener('input',     function() { self._saveSnap(); self._updateStatusbar(); self._onWikiLinkTyping(); });
         this.ed.addEventListener('focus',     function() { if (!self.ed.innerHTML) self.ed.innerHTML = '<p><br></p>'; });
     }
 
@@ -700,6 +713,13 @@ class LocalNotesEditor {
     }
 
     _onKey(e) {
+        // Wiki-link autocomplete popup owns arrow/enter/escape while open
+        if (this._wikiPopup) {
+            if (e.key === 'ArrowDown') { e.preventDefault(); this._wikiPopupMove(1); return; }
+            if (e.key === 'ArrowUp')   { e.preventDefault(); this._wikiPopupMove(-1); return; }
+            if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); this._wikiPopupSelect(); return; }
+            if (e.key === 'Escape') { e.preventDefault(); this._closeWikiPopup(); return; }
+        }
         var c = e.key.toLowerCase();
         // Hide context toolbar on any keypress
         if (this._removeCtx) this._removeCtx();
@@ -1431,7 +1451,7 @@ class LocalNotesEditor {
 
     // ── Custom (user-created) templates ─────────────────────────────────
     // Stored in localStorage as a flat list shared across all notes/editor
-    // instances: [{ id, name, html, createdAt }]
+    // instances: [{ id, name, html, icon, category, createdAt }]
 
     _escHtml(s) {
         return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
@@ -1448,8 +1468,8 @@ class LocalNotesEditor {
     }
 
     _ctplSave(list) {
-        try { localStorage.setItem(LNE_CUSTOM_TPL_KEY, JSON.stringify(list)); }
-        catch (e) { /* storage full / unavailable — silently ignore */ }
+        try { localStorage.setItem(LNE_CUSTOM_TPL_KEY, JSON.stringify(list)); return true; }
+        catch (e) { return false; /* quota exceeded / storage unavailable */ }
     }
 
     _ctplUpdateBadge() {
@@ -1461,31 +1481,198 @@ class LocalNotesEditor {
         else { badge.style.display = 'none'; }
     }
 
+    _ctplCatLabel(cat) {
+        var _ = this._.bind(this);
+        var map = {
+            business: _('tplCatBusiness','Business'),
+            study: _('tplCatStudy','Study'),
+            planning: _('tplCatPlanning','Planning'),
+            personal: _('tplCatPersonal','Personal'),
+            other: _('tplCatOther','Other')
+        };
+        return map[cat] || map.other;
+    }
+
+    // Locale tag for Intl formatting — app's internal language codes mostly
+    // match BCP-47, except Ukrainian ('ua' → 'uk')
+    _ctplLocaleTag() {
+        var map = { ua:'uk', en:'en', ru:'ru', pl:'pl', cs:'cs', sk:'sk', bg:'bg', hr:'hr', sr:'sr', bs:'bs', mk:'mk', sl:'sl' };
+        var lang = window.currentLang || 'en';
+        return map[lang] || lang;
+    }
+
+    _ctplCap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+
+    // Expands {{date}}, {{time}}, {{weekday}}, {{datetime}} at insertion time
+    // (not at save time), formatted for the app's current language.
+    _ctplExpandVars(html) {
+        if (!html || html.indexOf('{{') === -1) return html;
+        var self = this;
+        var now = new Date();
+        var locale = this._ctplLocaleTag();
+        var vars;
+        try {
+            vars = {
+                date:     self._ctplCap(new Intl.DateTimeFormat(locale, { day:'numeric', month:'long', year:'numeric' }).format(now)),
+                time:     new Intl.DateTimeFormat(locale, { hour:'2-digit', minute:'2-digit' }).format(now),
+                weekday:  self._ctplCap(new Intl.DateTimeFormat(locale, { weekday:'long' }).format(now)),
+                datetime: self._ctplCap(new Intl.DateTimeFormat(locale, { dateStyle:'long', timeStyle:'short' }).format(now))
+            };
+        } catch (e) {
+            vars = { date: now.toLocaleDateString(), time: now.toLocaleTimeString(), weekday: '', datetime: now.toLocaleString() };
+        }
+        return html.replace(/\{\{\s*(date|time|weekday|datetime)\s*\}\}/gi, function(m, key) {
+            var v = vars[key.toLowerCase()];
+            return (v != null && v !== '') ? v : m;
+        });
+    }
+
+    // Sanitizes template HTML through the same DOMPurify profile the rest of
+    // the app uses for untrusted content (imports, note previews) — allows
+    // the editor's own media/checklist/table markup but strips scripts,
+    // event handlers and anything else that isn't on the allow-list.
+    _ctplSanitizeHtml(html) {
+        if (typeof html !== 'string') return '';
+        if (html.length > 300000) html = html.slice(0, 300000); // hard cap per template
+        if (window.DOMPurify) {
+            return window.DOMPurify.sanitize(html, {
+                ADD_TAGS: ['iframe', 'video', 'source'],
+                ADD_ATTR: ['allowfullscreen', 'frameborder', 'scrolling', 'allow', 'src', 'width', 'height', 'controls', 'autoplay', 'muted', 'loop']
+            });
+        }
+        // DOMPurify is a hard dependency of the app itself (index.js aborts
+        // without it) — this branch should be unreachable. If it's ever hit,
+        // fail safe: escape to plain text instead of inserting raw markup.
+        var d = document.createElement('div'); d.textContent = html; return d.innerHTML;
+    }
+
+    _ctplExportAll() {
+        var list = this._ctplLoad();
+        var payload = { app: 'local-notes', type: 'custom-templates', version: 1, exportedAt: Date.now(), templates: list };
+        var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        var d = new Date();
+        var pad = function(n) { return String(n).padStart(2, '0'); };
+        a.href = url;
+        a.download = 'local-notes-templates-' + d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + '.json';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(function() { URL.revokeObjectURL(url); }, 2000);
+    }
+
+    // Imports templates from a user-picked JSON file. Every field is
+    // validated and untrusted HTML is run through _ctplSanitizeHtml before
+    // it ever touches localStorage or the DOM — imported files are treated
+    // exactly like any other untrusted input (e.g. a shared .note file).
+    _ctplImportFromFile(file, cb) {
+        var self = this;
+        if (!file) { cb(false, 'badFormat'); return; }
+        if (file.size > 2 * 1024 * 1024) { cb(false, 'tooLarge'); return; } // 2MB cap
+        var reader = new FileReader();
+        reader.onload = function() {
+            try {
+                var data = JSON.parse(String(reader.result || ''));
+                var incoming = Array.isArray(data) ? data : (data && Array.isArray(data.templates) ? data.templates : null);
+                if (!incoming) { cb(false, 'badFormat'); return; }
+
+                var MAX_TOTAL = 300;
+                var existing = self._ctplLoad();
+                var added = 0;
+
+                incoming.slice(0, MAX_TOTAL).forEach(function(raw, i) {
+                    if (!raw || typeof raw !== 'object') return;
+                    var name = String(raw.name == null ? '' : raw.name).trim().slice(0, 60);
+                    var html = self._ctplSanitizeHtml(raw.html);
+                    var plainCheck = html.replace(/<[^>]*>/g, '').trim();
+                    if (!name || (!plainCheck && !/<img|<table|<iframe/i.test(html))) return;
+                    var icon = LNE_CTPL_ICONS.indexOf(raw.icon) !== -1 ? raw.icon : LNE_CTPL_ICONS[0];
+                    var category = LNE_CTPL_CATEGORIES.indexOf(raw.category) !== -1 ? raw.category : 'other';
+                    existing.unshift({
+                        id: 'ct' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7) + i,
+                        name: name, html: html, icon: icon, category: category, createdAt: Date.now()
+                    });
+                    added++;
+                });
+
+                if (added === 0) { cb(false, 'badFormat'); return; }
+                if (existing.length > MAX_TOTAL) existing = existing.slice(0, MAX_TOTAL);
+                var ok = self._ctplSave(existing);
+                cb(ok, ok ? 'ok' : 'quota', added);
+            } catch (e) { cb(false, 'badFormat'); }
+        };
+        reader.onerror = function() { cb(false, 'badFormat'); };
+        reader.readAsText(file);
+    }
+
     _modalCustomTemplates() {
         var self = this;
         var _ = this._.bind(this);
 
         var renderBody = function() {
             var list = self._ctplLoad();
-            var listHtml = list.length
-                ? '<div class="lne-ctpl-list">' + list.map(function(tpl) {
-                    return '<div class="lne-ctpl-item" data-id="' + self._escHtml(tpl.id) + '">' +
-                        '<button type="button" class="lne-ctpl-insert" title="' + _('tplCustomInsert','Insert') + '">' +
-                            '<i class="bi bi-file-earmark-richtext"></i>' +
-                            '<span class="lne-ctpl-name">' + self._escHtml(tpl.name) + '</span>' +
-                        '</button>' +
-                        '<button type="button" class="lne-ctpl-del" title="' + _('tplCustomDelete','Delete') + '"><i class="bi bi-trash3"></i></button>' +
+            var grouped = {};
+            LNE_CTPL_CATEGORIES.forEach(function(c) { grouped[c] = []; });
+            list.forEach(function(tpl) {
+                var cat = LNE_CTPL_CATEGORIES.indexOf(tpl.category) !== -1 ? tpl.category : 'other';
+                grouped[cat].push(tpl);
+            });
+
+            var listHtml;
+            if (!list.length) {
+                listHtml = '<p class="lne-hint lne-ctpl-empty">' + _('tplCustomEmpty', "You don't have any templates yet. Fill the editor and save it above.") + '</p>';
+            } else {
+                listHtml = LNE_CTPL_CATEGORIES.map(function(cat) {
+                    var items = grouped[cat];
+                    if (!items.length) return '';
+                    return '<div class="lne-ctpl-group">' +
+                        '<div class="lne-ctpl-group-hd">' + self._ctplCatLabel(cat) + '</div>' +
+                        items.map(function(tpl) {
+                            var icon = LNE_CTPL_ICONS.indexOf(tpl.icon) !== -1 ? tpl.icon : LNE_CTPL_ICONS[0];
+                            return '<div class="lne-ctpl-item" data-id="' + self._escHtml(tpl.id) + '">' +
+                                '<button type="button" class="lne-ctpl-insert" title="' + _('tplCustomInsert','Insert') + '">' +
+                                    '<i class="bi ' + icon + '"></i>' +
+                                    '<span class="lne-ctpl-name">' + self._escHtml(tpl.name) + '</span>' +
+                                '</button>' +
+                                '<button type="button" class="lne-ctpl-del" title="' + _('tplCustomDelete','Delete') + '"><i class="bi bi-trash3"></i></button>' +
+                            '</div>';
+                        }).join('') +
                     '</div>';
-                }).join('') + '</div>'
-                : '<p class="lne-hint lne-ctpl-empty">' + _('tplCustomEmpty', "You don't have any templates yet. Fill the editor and save it above.") + '</p>';
+                }).join('');
+            }
+
+            var iconOptions = LNE_CTPL_ICONS.map(function(ic, i) {
+                return '<button type="button" class="lne-ctpl-ico' + (i === 0 ? ' lne-ctpl-ico-sel' : '') + '" data-icon="' + ic + '" title="' + ic + '"><i class="bi ' + ic + '"></i></button>';
+            }).join('');
+
+            var catOptions = LNE_CTPL_CATEGORIES.map(function(cat) {
+                return '<option value="' + cat + '">' + self._ctplCatLabel(cat) + '</option>';
+            }).join('');
 
             return '<div class="lne-fg">' +
                     '<label>' + _('tplCustomName','Template name') + '</label>' +
                     '<input type="text" class="lne-inp lne-ctpl-name-inp" maxlength="60" placeholder="' + _('tplCustomNamePh','e.g. Weekly standup') + '">' +
                 '</div>' +
+                '<div class="lne-row lne-ctpl-metarow">' +
+                    '<div class="lne-fg">' +
+                        '<label>' + _('tplCustomCategory','Category') + '</label>' +
+                        '<select class="lne-inp lne-ctpl-cat-inp">' + catOptions + '</select>' +
+                    '</div>' +
+                    '<div class="lne-fg">' +
+                        '<label>' + _('tplCustomIcon','Icon') + '</label>' +
+                        '<div class="lne-ctpl-icogrid">' + iconOptions + '</div>' +
+                    '</div>' +
+                '</div>' +
+                '<p class="lne-hint lne-ctpl-vars-hint">' + _('tplCustomVarsHint','Supported variables: {{date}}, {{time}}, {{weekday}}') + '</p>' +
                 '<button type="button" class="lne-mbtn lne-mbtn-pri lne-ctpl-save"><i class="bi bi-floppy"></i> ' + _('tplCustomSaveCurrent','Save current note as template') + '</button>' +
                 '<p class="lne-hint lne-ctpl-warn" style="display:none"></p>' +
                 '<div class="lne-ctpl-divider"></div>' +
+                '<div class="lne-ctpl-toolbar">' +
+                    '<button type="button" class="lne-ctpl-tbtn lne-ctpl-export"><i class="bi bi-download"></i> ' + _('tplCustomExport','Export') + '</button>' +
+                    '<button type="button" class="lne-ctpl-tbtn lne-ctpl-import"><i class="bi bi-upload"></i> ' + _('tplCustomImport','Import') + '</button>' +
+                    '<input type="file" class="lne-ctpl-import-inp" accept="application/json,.json" style="display:none">' +
+                '</div>' +
                 listHtml;
         };
 
@@ -1499,6 +1686,15 @@ class LocalNotesEditor {
             var warn = r.ov.querySelector('.lne-ctpl-warn');
             var showWarn = function(msg) { if (warn) { warn.textContent = msg; warn.style.display = 'block'; } };
             var hideWarn = function() { if (warn) warn.style.display = 'none'; };
+            var selectedIcon = LNE_CTPL_ICONS[0];
+
+            r.ov.querySelectorAll('.lne-ctpl-ico').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    r.ov.querySelectorAll('.lne-ctpl-ico').forEach(function(b) { b.classList.remove('lne-ctpl-ico-sel'); });
+                    btn.classList.add('lne-ctpl-ico-sel');
+                    selectedIcon = btn.dataset.icon;
+                });
+            });
 
             var saveBtn = r.ov.querySelector('.lne-ctpl-save');
             if (saveBtn) saveBtn.addEventListener('click', function() {
@@ -1511,14 +1707,19 @@ class LocalNotesEditor {
                     showWarn(_('tplCustomEmptyContent','Editor is empty — write something before saving as a template'));
                     return;
                 }
+                var catSel = r.ov.querySelector('.lne-ctpl-cat-inp');
+                var category = (catSel && LNE_CTPL_CATEGORIES.indexOf(catSel.value) !== -1) ? catSel.value : 'other';
                 var list = self._ctplLoad();
                 list.unshift({
                     id: 'ct' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
                     name: name,
                     html: html,
+                    icon: selectedIcon,
+                    category: category,
                     createdAt: Date.now()
                 });
-                self._ctplSave(list);
+                var ok = self._ctplSave(list);
+                if (!ok) { showWarn(_('tplCustomStorageFull','Not enough storage to save more templates')); return; }
                 self._ctplUpdateBadge();
                 refresh();
             });
@@ -1529,8 +1730,7 @@ class LocalNotesEditor {
                     var id = item && item.dataset.id;
                     var tpl = self._ctplLoad().find(function(t) { return t.id === id; });
                     if (!tpl) return;
-                    self._insertHTML(tpl.html);
-                    self._initContextToolbars && self._initContextToolbars();
+                    self._insertHTML(self._ctplExpandVars(tpl.html));
                     r.close();
                 });
             });
@@ -1558,6 +1758,38 @@ class LocalNotesEditor {
                     refresh();
                 });
             });
+
+            var exportBtn = r.ov.querySelector('.lne-ctpl-export');
+            if (exportBtn) exportBtn.addEventListener('click', function() {
+                if (!self._ctplLoad().length) { showWarn(_('tplCustomExportEmpty','Nothing to export yet')); return; }
+                hideWarn();
+                self._ctplExportAll();
+            });
+
+            var importBtn = r.ov.querySelector('.lne-ctpl-import');
+            var importInp = r.ov.querySelector('.lne-ctpl-import-inp');
+            if (importBtn && importInp) {
+                importBtn.addEventListener('click', function() { importInp.click(); });
+                importInp.addEventListener('change', function() {
+                    var file = importInp.files && importInp.files[0];
+                    importInp.value = '';
+                    if (!file) return;
+                    hideWarn();
+                    self._ctplImportFromFile(file, function(ok, reason) {
+                        if (ok) {
+                            self._ctplUpdateBadge();
+                            refresh();
+                        } else {
+                            var msgs = {
+                                tooLarge: _('tplImportTooLarge','File is too large (max 2 MB)'),
+                                badFormat: _('tplImportBadFormat','Invalid or empty templates file'),
+                                quota: _('tplCustomStorageFull','Not enough storage to save more templates')
+                            };
+                            showWarn(msgs[reason] || msgs.badFormat);
+                        }
+                    });
+                });
+            }
         };
 
         var refresh = function() {
@@ -1570,6 +1802,171 @@ class LocalNotesEditor {
         };
 
         wire();
+    }
+
+    // ── Wiki-links (note-to-note links) ─────────────────────────────────
+    // Typing "[[query" opens an autocomplete popup (fed by options.onWikiLinkSearch,
+    // wired by the app to search notesDB) and inserts an atomic
+    // <span class="lne-wikilink" data-note-id="..."> chip on selection.
+    // Clicking a chip calls options.onWikiLinkOpen(id). Fully inert (never
+    // triggers) if the host page doesn't pass those two callbacks.
+
+    _escWikiAttr(s) { return this._escHtml(s).replace(/`/g, '&#96;'); }
+
+    _onWikiLinkTyping() {
+        if (!this.options.onWikiLinkSearch) return;
+        var sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0 || !sel.isCollapsed) { this._closeWikiPopup(); return; }
+        var node = sel.anchorNode;
+        if (!node || node.nodeType !== 3 || !this.ed.contains(node)) { this._closeWikiPopup(); return; }
+        var textBefore = node.textContent.slice(0, sel.anchorOffset);
+        var m = textBefore.match(/\[\[([^\[\]]{0,80})$/);
+        if (!m) { this._closeWikiPopup(); return; }
+
+        var self = this;
+        var query = m[1];
+        this._wikiQueryNode = node;
+        this._wikiQueryLen = m[0].length; // "[[" + query, chars to remove on selection
+        this._wikiQueryToken = (this._wikiQueryToken || 0) + 1;
+        var token = this._wikiQueryToken;
+
+        Promise.resolve(this.options.onWikiLinkSearch(query)).then(function (results) {
+            if (token !== self._wikiQueryToken) return; // stale — a newer keystroke superseded this lookup
+            self._renderWikiPopup(Array.isArray(results) ? results : []);
+        }).catch(function () { self._closeWikiPopup(); });
+    }
+
+    _renderWikiPopup(results) {
+        var self = this;
+        if (!results.length) { this._closeWikiPopup(); return; }
+        if (!this._wikiPopup) {
+            this._wikiPopup = document.createElement('div');
+            this._wikiPopup.className = 'lne-wikipop';
+            document.body.appendChild(this._wikiPopup);
+            if (!this._wikiOutsideHandler) {
+                this._wikiOutsideHandler = function (e) {
+                    if (self._wikiPopup && !self._wikiPopup.contains(e.target)) self._closeWikiPopup();
+                };
+                document.addEventListener('mousedown', this._wikiOutsideHandler);
+            }
+        }
+        this._wikiItems = results.slice(0, 8);
+        this._wikiActive = 0;
+        this._wikiPopup.innerHTML = this._wikiItems.map(function (r, i) {
+            return '<div class="lne-wikipop-item' + (i === 0 ? ' lne-wikipop-active' : '') + '" data-idx="' + i + '">' +
+                '<i class="bi bi-file-earmark-text"></i><span>' + self._escHtml(r.title) + '</span>' +
+            '</div>';
+        }).join('');
+        this._wikiPopup.querySelectorAll('.lne-wikipop-item').forEach(function (el) {
+            el.addEventListener('mousedown', function (e) {
+                e.preventDefault(); // keep editor selection/focus intact
+                self._wikiActive = parseInt(el.dataset.idx, 10);
+                self._wikiPopupSelect();
+            });
+        });
+        this._positionWikiPopup();
+    }
+
+    _positionWikiPopup() {
+        if (!this._wikiPopup) return;
+        var sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0) return;
+        var rect = sel.getRangeAt(0).getClientRects()[0] || sel.getRangeAt(0).getBoundingClientRect();
+        if (!rect) return;
+        var top = rect.bottom + 4;
+        var left = rect.left;
+        var popW = 260;
+        if (left + popW > window.innerWidth - 8) left = Math.max(8, window.innerWidth - popW - 8);
+        // Flip above the caret if there isn't room below
+        if (top + 220 > window.innerHeight) top = Math.max(8, rect.top - 4 - 220);
+        this._wikiPopup.style.top = top + 'px';
+        this._wikiPopup.style.left = left + 'px';
+    }
+
+    _wikiPopupMove(dir) {
+        if (!this._wikiItems || !this._wikiItems.length) return;
+        this._wikiActive = (this._wikiActive + dir + this._wikiItems.length) % this._wikiItems.length;
+        var self = this;
+        this._wikiPopup.querySelectorAll('.lne-wikipop-item').forEach(function (el, i) {
+            el.classList.toggle('lne-wikipop-active', i === self._wikiActive);
+        });
+        var activeEl = this._wikiPopup.querySelector('.lne-wikipop-active');
+        if (activeEl) activeEl.scrollIntoView({ block: 'nearest' });
+    }
+
+    _wikiPopupSelect() {
+        if (!this._wikiItems || !this._wikiItems.length || !this._wikiQueryNode) { this._closeWikiPopup(); return; }
+        var item = this._wikiItems[this._wikiActive] || this._wikiItems[0];
+        var node = this._wikiQueryNode;
+        var sel = window.getSelection();
+        if (!sel || !node.isConnected) { this._closeWikiPopup(); return; }
+
+        this._saveSnap();
+        // Remove the typed "[[query" text, then insert the link chip in its place
+        var range = document.createRange();
+        var endOffset = sel.rangeCount ? sel.getRangeAt(0).endOffset : node.textContent.length;
+        var startOffset = Math.max(0, endOffset - this._wikiQueryLen);
+        range.setStart(node, startOffset);
+        range.setEnd(node, endOffset);
+        range.deleteContents();
+
+        var chip = document.createElement('span');
+        chip.className = 'lne-wikilink';
+        chip.setAttribute('contenteditable', 'false');
+        chip.setAttribute('data-note-id', String(item.id));
+        chip.innerHTML = '<i class="bi bi-file-earmark-text"></i>' + this._escHtml(item.title);
+        range.insertNode(chip);
+
+        var space = document.createTextNode('\u00A0');
+        chip.parentNode.insertBefore(space, chip.nextSibling);
+        var after = document.createRange();
+        after.setStartAfter(space);
+        after.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(after);
+
+        this._closeWikiPopup();
+        this._initWikiLinks();
+        this._syncState();
+        this.ed.focus();
+    }
+
+    _closeWikiPopup() {
+        if (this._wikiPopup && this._wikiPopup.parentNode) this._wikiPopup.parentNode.removeChild(this._wikiPopup);
+        this._wikiPopup = null;
+        this._wikiItems = null;
+        this._wikiQueryNode = null;
+        this._wikiQueryToken = (this._wikiQueryToken || 0) + 1; // invalidate any in-flight search
+    }
+
+    // Toolbar entry point — types "[[" at the caret to kick off the same
+    // autocomplete flow as manual typing (no separate modal needed)
+    _triggerWikiLinkPopup() {
+        if (!this.options.onWikiLinkSearch) return;
+        this._saveSnap();
+        this._restoreRange();
+        document.execCommand('insertText', false, '[[');
+        this._onWikiLinkTyping();
+    }
+
+    _initWikiLinks() {
+        var self = this;
+        this.ed.querySelectorAll('.lne-wikilink').forEach(function (chip) {
+            if (chip._lneWikiBound) return;
+            chip._lneWikiBound = true;
+            chip.setAttribute('contenteditable', 'false');
+            // mousedown (not click) — same reliable pattern used for the
+            // popup items: fires before the browser's native "place caret
+            // next to atomic contenteditable=false node" handling can
+            // interfere, and preventDefault keeps editor focus/selection
+            // from jumping around before we navigate away.
+            chip.addEventListener('mousedown', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var id = chip.getAttribute('data-note-id');
+                if (id && self.options.onWikiLinkOpen) self.options.onWikiLinkOpen(id);
+            });
+        });
     }
 
     // ── Fullscreen ───────────────────────────────────────────────────────
@@ -3153,6 +3550,7 @@ class LocalNotesEditor {
                 self._saveSnap();
             });
         });
+        this._initWikiLinks();
         this._initChecklists();
         this._initCodeBlocks();
         this._initContextToolbars();

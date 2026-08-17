@@ -1269,6 +1269,18 @@ async function clearAllNotes() {
 // In-memory settings while editing — persisted only on Save
 window._noteMeta = { tags: [], dueDate: null, color: '', pinned: false, taskStatus: 'todo', taskPriority: '' };
 
+// Finds notes whose content contains a wiki-link (data-note-id="...") pointing
+// at the given note id. Simple substring scan over already-loaded/decrypted
+// note content — no separate index to maintain or migrate.
+async function findBacklinks(noteId) {
+    if (!noteId || !window.notesDB || typeof window.notesDB.getAllNotes !== 'function') return [];
+    try {
+        const all = await window.notesDB.getAllNotes();
+        const marker = 'data-note-id="' + noteId + '"';
+        return all.filter(n => n.id !== noteId && typeof n.content === 'string' && n.content.indexOf(marker) !== -1);
+    } catch (e) { return []; }
+}
+
 function openNoteSettings(noteId) {
     // Snapshot original state so cancel can restore it
     const _orig = window._noteMeta;
@@ -1381,6 +1393,13 @@ function openNoteSettings(noteId) {
                             <button type="button" class="nsm-pri-btn${meta.taskPriority === 'high' ? ' active' : ''}" data-pri="high">${window.t ? window.t('taskPriorityHigh') : 'High'}</button>
                         </div>
                     </section>
+                    ${noteId ? `
+                    <section class="nsm-section">
+                        <div class="nsm-section-title"><i class="bi bi-link-45deg"></i> ${window.t ? window.t('backlinks') : 'Backlinks'}</div>
+                        <div class="nsm-backlinks-list" id="nsm-backlinks-list">
+                            <div class="nsm-backlinks-loading">${window.t ? window.t('backlinksLoading') : 'Searching…'}</div>
+                        </div>
+                    </section>` : ''}
                 </div>
                 <div class="nsm-footer">
                     <button class="nsm-btn nsm-btn-sec" id="nsm-cancel"><i class="bi bi-x-lg"></i> ${window.t ? window.t('cancel') : 'Cancel'}</button>
@@ -1601,6 +1620,36 @@ function openNoteSettings(noteId) {
             meta.dueDate = dueVal ? new Date(dueVal).getTime() : null;
             closeOv();
         });
+
+        // Backlinks — which other notes reference this one via a wiki-link
+        if (noteId) {
+            const blContainer = ov.querySelector('#nsm-backlinks-list');
+            if (blContainer) {
+                findBacklinks(noteId).then(notes => {
+                    if (!blContainer.isConnected) return; // modal closed/re-rendered before this resolved
+                    if (!notes.length) {
+                        blContainer.innerHTML = `<div class="nsm-backlinks-empty">${window.t ? window.t('backlinksEmpty') : 'No notes link here yet'}</div>`;
+                        return;
+                    }
+                    blContainer.innerHTML = notes.map(n => `
+                        <button type="button" class="nsm-backlink-item" data-id="${escapeHtml(n.id)}">
+                            <i class="bi ${n.pinned ? 'bi-pin-angle-fill' : 'bi-file-earmark-text'}"></i>
+                            <span>${escapeHtml(n.title || (window.t ? window.t('cpUntitled') : 'Untitled note'))}</span>
+                        </button>
+                    `).join('');
+                    blContainer.querySelectorAll('.nsm-backlink-item').forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            const target = notes.find(n => n.id === btn.dataset.id);
+                            if (!target) return;
+                            cancelOv();
+                            if (typeof window.openModal === 'function') window.openModal(target.id, target.content, target.creationTime);
+                        });
+                    });
+                }).catch(() => {
+                    if (blContainer.isConnected) blContainer.innerHTML = `<div class="nsm-backlinks-empty">${window.t ? window.t('backlinksEmpty') : 'No notes link here yet'}</div>`;
+                });
+            }
+        }
     };
 
     document.body.appendChild(ov);
@@ -1953,6 +2002,22 @@ async function _loadNotesImpl() {
             // Remove contenteditable from all elements in note cards (not in editor)
             notePreview.querySelectorAll('[contenteditable]').forEach(el => {
                 el.removeAttribute('contenteditable');
+            });
+
+            // Wiki-links (data-note-id chips) — clicking one in a note card
+            // preview opens that note, same as clicking one inside the editor.
+            // stopPropagation keeps this from also triggering quick-edit's
+            // own click handling on the surrounding card in quick-edit mode.
+            notePreview.querySelectorAll('.lne-wikilink').forEach(chip => {
+                chip.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const targetId = chip.getAttribute('data-note-id');
+                    if (!targetId) return;
+                    notesDB.getNote(targetId).then(target => {
+                        if (target && typeof window.openModal === 'function') window.openModal(target.id, target.content, target.creationTime);
+                    }).catch(() => {});
+                });
             });
 
             // Mark note card if it contains video/iframe — used for CSS height override
@@ -3375,3 +3440,4 @@ window.notesDB = notesDB;
 window.encryption = encryption;
 window.exportNote = exportNote;
 window.importNotesWithFormat = importNotesWithFormat;
+window.getCurrentNoteId = () => currentNoteId;
