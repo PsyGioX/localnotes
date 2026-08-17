@@ -1248,6 +1248,8 @@ textarea.lne-inp { resize: vertical; }
 /* Inline atomic chip inserted when a [[note]] link is chosen */
 .lne-wikilink {
     display: inline-flex; align-items: center; gap: 4px;
+    max-width: 100%;
+    box-sizing: border-box;
     padding: 1px 8px 1px 6px;
     border-radius: 5px;
     background: rgba(174,252,110,.14);
@@ -1259,7 +1261,13 @@ textarea.lne-inp { resize: vertical; }
     vertical-align: baseline;
     transition: background .12s, border-color .12s;
 }
-.lne-wikilink i { font-size: .85em; }
+.lne-wikilink i { font-size: .85em; flex-shrink: 0; }
+.lne-wikilink-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 .lne-wikilink:hover { background: rgba(174,252,110,.24); border-color: rgba(174,252,110,.55); }
 [data-theme="light"] .lne-wikilink {
     background: rgba(40,167,69,.1);

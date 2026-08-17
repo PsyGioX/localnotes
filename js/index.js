@@ -2009,6 +2009,18 @@ async function _loadNotesImpl() {
             // stopPropagation keeps this from also triggering quick-edit's
             // own click handling on the surrounding card in quick-edit mode.
             notePreview.querySelectorAll('.lne-wikilink').forEach(chip => {
+                // Migrate legacy chips (plain text node, no wrapping label)
+                // saved before the ellipsis-truncation markup existed — long
+                // titles would otherwise overflow the card uncontained.
+                if (!chip.querySelector('.lne-wikilink-label')) {
+                    const icon = chip.querySelector('i');
+                    const label = document.createElement('span');
+                    label.className = 'lne-wikilink-label';
+                    const toMove = [];
+                    chip.childNodes.forEach(n => { if (n !== icon) toMove.push(n); });
+                    toMove.forEach(n => label.appendChild(n));
+                    chip.appendChild(label);
+                }
                 chip.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();

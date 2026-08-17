@@ -1914,7 +1914,7 @@ class LocalNotesEditor {
         chip.className = 'lne-wikilink';
         chip.setAttribute('contenteditable', 'false');
         chip.setAttribute('data-note-id', String(item.id));
-        chip.innerHTML = '<i class="bi bi-file-earmark-text"></i>' + this._escHtml(item.title);
+        chip.innerHTML = '<i class="bi bi-file-earmark-text"></i><span class="lne-wikilink-label">' + this._escHtml(item.title) + '</span>';
         range.insertNode(chip);
 
         var space = document.createTextNode('\u00A0');
@@ -1952,6 +1952,18 @@ class LocalNotesEditor {
     _initWikiLinks() {
         var self = this;
         this.ed.querySelectorAll('.lne-wikilink').forEach(function (chip) {
+            // Migrate legacy chips (plain text node, no wrapping label) so
+            // the ellipsis-truncation CSS on .lne-wikilink-label applies to
+            // links that were saved before that markup existed.
+            if (!chip.querySelector('.lne-wikilink-label')) {
+                var icon = chip.querySelector('i');
+                var label = document.createElement('span');
+                label.className = 'lne-wikilink-label';
+                var toMove = [];
+                chip.childNodes.forEach(function (n) { if (n !== icon) toMove.push(n); });
+                toMove.forEach(function (n) { label.appendChild(n); });
+                chip.appendChild(label);
+            }
             if (chip._lneWikiBound) return;
             chip._lneWikiBound = true;
             chip.setAttribute('contenteditable', 'false');
