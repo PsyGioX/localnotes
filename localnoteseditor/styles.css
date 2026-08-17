@@ -1269,6 +1269,13 @@ textarea.lne-inp { resize: vertical; }
     white-space: nowrap;
 }
 .lne-wikilink:hover { background: rgba(174,252,110,.24); border-color: rgba(174,252,110,.55); }
+
+/* Loading state while the target note is being fetched (and decrypted, on
+   encrypted vaults) — spins the existing icon rather than swapping it out,
+   dims the chip, and blocks re-entrant clicks while the fetch is in flight. */
+.lne-wikilink-loading { opacity: .6; cursor: progress; pointer-events: none; }
+.lne-wikilink-loading i { animation: lneWikiSpin .7s linear infinite; }
+@keyframes lneWikiSpin { to { transform: rotate(360deg); } }
 [data-theme="light"] .lne-wikilink {
     background: rgba(40,167,69,.1);
     border-color: rgba(40,167,69,.3);

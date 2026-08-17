@@ -48,15 +48,20 @@ async function searchNotesForWikiLink(query) {
 // wiki-link is a clean, visible "close this note → open that note" action —
 // same modal element, but a real open/close cycle rather than a silent
 // content swap underneath the user.
+// Returns a Promise so the editor can show a loading state on the chip
+// while notesDB.getNote() (and, on encrypted vaults, decryption) runs.
 function openNoteFromWikiLink(noteId) {
-    if (!window.notesDB || typeof window.notesDB.getNote !== 'function' || !noteId) return;
-    window.notesDB.getNote(noteId).then(note => {
+    if (!window.notesDB || typeof window.notesDB.getNote !== 'function' || !noteId) return Promise.resolve();
+    return window.notesDB.getNote(noteId).then(note => {
         if (!note) return;
         if (typeof window.closeModal === 'function') window.closeModal();
         // One frame so the modal actually registers as closed before we
         // reopen it — avoids any state left over from the note we just left.
-        requestAnimationFrame(() => {
-            if (typeof window.openModal === 'function') window.openModal(note.id, note.content, note.creationTime);
+        return new Promise(resolve => {
+            requestAnimationFrame(() => {
+                if (typeof window.openModal === 'function') window.openModal(note.id, note.content, note.creationTime);
+                resolve();
+            });
         });
     }).catch(() => {});
 }

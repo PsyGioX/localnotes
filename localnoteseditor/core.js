@@ -1975,8 +1975,13 @@ class LocalNotesEditor {
             chip.addEventListener('mousedown', function (e) {
                 e.preventDefault();
                 e.stopPropagation();
+                if (chip.classList.contains('lne-wikilink-loading')) return; // already opening — ignore repeat clicks
                 var id = chip.getAttribute('data-note-id');
-                if (id && self.options.onWikiLinkOpen) self.options.onWikiLinkOpen(id);
+                if (!id || !self.options.onWikiLinkOpen) return;
+                chip.classList.add('lne-wikilink-loading');
+                Promise.resolve(self.options.onWikiLinkOpen(id)).catch(function () {}).finally(function () {
+                    if (chip.isConnected) chip.classList.remove('lne-wikilink-loading');
+                });
             });
         });
     }

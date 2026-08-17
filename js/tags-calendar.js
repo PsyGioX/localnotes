@@ -928,6 +928,7 @@ function openCalendarNotePreview(note, calModal) {
             confirmOverlay.remove();
             try {
                 await notesDB.deleteNote(note.id);
+                if (typeof notesDB.deleteVersionsForNote === 'function') await notesDB.deleteVersionsForNote(note.id);
                 close();
                 await loadNotes();
                 const calModalEl = document.getElementById('calendarModal');

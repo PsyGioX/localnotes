@@ -663,7 +663,8 @@ body {
     scroll-snap-align: start;
 }
 .btn_view_div #toggleTaskBoardButton,
-.btn_view_div #appLockBtn {
+.btn_view_div #appLockBtn,
+.btn_view_div #notifSettingsBtn {
     flex: 0 0 auto;
     scroll-snap-align: end;
     transform: none;
@@ -674,6 +675,7 @@ body {
     letter-spacing: 0.5px;
     text-transform: uppercase;
     border-radius: 16px;
+    background: linear-gradient(135deg, var(--button-bg) 0%, rgba(174, 252, 110, 0.05) 100%);
 }
 #toggleViewButton::before {
     content: '';

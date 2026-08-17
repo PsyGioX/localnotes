@@ -2,7 +2,7 @@
 
 ![Local Notes Screenshot](https://github.com/PsyGioX/localnotes/blob/main/sccc.png?raw=true)
 
-[![Version](https://img.shields.io/badge/Version-1.9.7-brightgreen.svg)](https://github.com/PsyGioX/localnotes/releases)
+[![Version](https://img.shields.io/badge/Version-1.9.8-brightgreen.svg)](https://github.com/PsyGioX/localnotes/releases)
 [![Security](https://img.shields.io/badge/Security-AES--256--GCM%20%2B%20HMAC--SHA--512-blue.svg)](https://github.com/PsyGioX/localnotes)
 [![DOMPurify](https://img.shields.io/badge/XSS-DOMPurify-red.svg)](https://github.com/cure53/DOMPurify)
 [![PWA](https://img.shields.io/badge/PWA-Enabled-purple.svg)](https://github.com/PsyGioX/localnotes)
@@ -516,7 +516,13 @@ Click the install icon in Chrome/Edge address bar and confirm.
 
 ## 🆕 Changelog
 
-### v1.9.7 (current)
+### v1.9.8 (current)
+- **✨ Advanced search operators** — `is:pinned|overdue|today|soon`, `has:image|video|table|checklist|link`, `before:YYYY-MM-DD`, `after:YYYY-MM-DD`, combinable with `#tag` and free text
+- **✨ Version history** — every save of an existing note snapshots its previous content (only when it actually changed); browse, restore, or delete past versions from Note Settings — last 20 kept per note
+- **✨ Reminders** — opt-in Notification API reminders for due/overdue notes. Honest scope note: this is a fully local, serverless app, so reminders only fire while the app is open (on load, on tab focus, every 15 min) — not background push when the app is fully closed
+- **✨ Web Share Target wired up** — manifest already declared `share_target` and shortcut actions, but nothing read them; sharing text/links to Local Notes from other apps (or using the Home Screen shortcuts) now actually opens a pre-filled new note / focuses search / opens import, instead of silently doing nothing
+
+### v1.9.7
 - **🐛 Fixed calendar month/weekday names** — translation lookup for array values (`months`, `weekdaysShort`, `weekdays`) was returning the translation *key* instead of the array itself, corrupting calendar labels; core `t()` bug, fixed at the source
 - **🐛 Fixed note duplication on reload** — `loadNotes()` could run concurrently from multiple init paths (main app + `workspaces-integration.js` patch), racing on the same DOM clear/append cycle; now serialized through a promise queue
 - **🐛 Fixed checklists not rendering after template insert** — `_insertHTML()` only re-initialized checklist/code-block/context-toolbar behaviour on the iframe/video insertion path; plain `execCommand` inserts (e.g. any checklist template) stayed inert until the note was reopened. Now always re-initialized after insert
@@ -529,13 +535,13 @@ Click the install icon in Chrome/Edge address bar and confirm.
   - **Backlinks panel** — Note Settings now shows which other notes link to the one you're editing, computed on demand (no separate index/migration)
   - Ctrl+K conflict avoided — the palette yields to the editor's existing "Insert link" shortcut while focus is inside the editor
 
-### v1.9.6
+### v1.9.8
 - **🔐 App Lock** — PIN and/or access file, idle lock (10 min), lock screen with mobile-friendly layout
 - **🔌 API documentation** — full `window.*` API reference in README (notesDB, encryption, AppLock, TagsCalendar, SW messages)
 - **🔔 PWA update flow fixed** — no infinite “Update available” toast; `SKIP_WAITING` before reload
 - **🎨 Lock screen UI** — green top accent clipped to panel border-radius; removed redundant “App locked” toast
 
-### v1.9.6
+### v1.9.8
 - **🛡️ CSP hardened** — `unsafe-inline` removed from `script-src`; all inline scripts extracted to external files (`ga-init.js`, `script-loader.js`, `lang-redirect.js`, `page-init.js`)
 - **🔒 DOMPurify hard-fail** — `index.js` throws on startup if DOMPurify is missing; all unsafe fallbacks removed
 - **✅ Checklist redesigned** — flat `checkbox + input` layout, no wrapper blocks; customization panel per item: color (7 swatches), priority (low/mid/high), text label; Enter/Backspace keyboard navigation

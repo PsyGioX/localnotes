@@ -126,7 +126,7 @@ let currentLang = getCurrentLang();
 // NOTES DATABASE (from backup)
 // ============================================================================
 class NotesDatabase {
-    constructor() { this.dbName = 'LocalNotesDB'; this.dbVersion = 1; this.db = null; }
+    constructor() { this.dbName = 'LocalNotesDB'; this.dbVersion = 2; this.db = null; }
     async init() {
         return new Promise((resolve, reject) => {
             const req = indexedDB.open(this.dbName, this.dbVersion);
@@ -141,6 +141,11 @@ class NotesDatabase {
                     s.createIndex('title', 'title', { unique: false });
                 }
                 if (!db.objectStoreNames.contains('settings')) db.createObjectStore('settings', { keyPath: 'key' });
+                if (!db.objectStoreNames.contains('noteVersions')) {
+                    const v = db.createObjectStore('noteVersions', { keyPath: 'id', autoIncrement: true });
+                    v.createIndex('noteId', 'noteId', { unique: false });
+                    v.createIndex('savedAt', 'savedAt', { unique: false });
+                }
             };
         });
     }
@@ -179,6 +184,48 @@ class NotesDatabase {
             req.onsuccess = () => resolve(req.result);
             req.onerror = () => reject(req.error);
         });
+    }
+    // ── Version history ──────────────────────────────────────────────────
+    // Snapshots are taken of the PREVIOUS content right before an existing
+    // note is overwritten (see saveNoteButton handler), so they represent
+    // real past states a user can restore, not the current one.
+    async saveVersion(noteId, content, savedAt) {
+        if (!this.db) await this.init();
+        return new Promise((resolve, reject) => {
+            const tx = this.db.transaction(['noteVersions'], 'readwrite');
+            const req = tx.objectStore('noteVersions').add({ noteId, content, savedAt });
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+        });
+    }
+    async getVersions(noteId) {
+        if (!this.db) await this.init();
+        return new Promise((resolve, reject) => {
+            const tx = this.db.transaction(['noteVersions'], 'readonly');
+            const req = tx.objectStore('noteVersions').index('noteId').getAll(noteId);
+            req.onsuccess = () => resolve((req.result || []).sort((a, b) => b.savedAt - a.savedAt));
+            req.onerror = () => reject(req.error);
+        });
+    }
+    async deleteVersion(versionId) {
+        if (!this.db) await this.init();
+        return new Promise((resolve, reject) => {
+            const tx = this.db.transaction(['noteVersions'], 'readwrite');
+            const req = tx.objectStore('noteVersions').delete(versionId);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+        });
+    }
+    async deleteVersionsForNote(noteId) {
+        if (!this.db) await this.init();
+        const versions = await this.getVersions(noteId);
+        for (const v of versions) { await this.deleteVersion(v.id); }
+    }
+    // Keeps only the most recent `keep` versions for a note (oldest pruned first)
+    async pruneVersions(noteId, keep) {
+        const versions = await this.getVersions(noteId); // sorted newest→oldest
+        const excess = versions.slice(keep);
+        for (const v of excess) { await this.deleteVersion(v.id); }
     }
     async saveSetting(key, value) {
         if (!this.db) await this.init();
@@ -1254,7 +1301,7 @@ function showClearAllConfirmationModal() {
 async function clearAllNotes() {
     try {
         const notes = await notesDB.getAllNotes();
-        for (const n of notes) await notesDB.deleteNote(n.id);
+        for (const n of notes) { await notesDB.deleteNote(n.id); await notesDB.deleteVersionsForNote(n.id); }
         await loadNotes();
         showCustomAlert(typeof t === 'function' ? t('success') : 'Success', typeof t === 'function' ? t('allNotesDeleted') : 'All notes deleted!', 'success');
     } catch (e) {
@@ -1397,6 +1444,12 @@ function openNoteSettings(noteId) {
                     <section class="nsm-section">
                         <div class="nsm-section-title"><i class="bi bi-link-45deg"></i> ${window.t ? window.t('backlinks') : 'Backlinks'}</div>
                         <div class="nsm-backlinks-list" id="nsm-backlinks-list">
+                            <div class="nsm-backlinks-loading">${window.t ? window.t('backlinksLoading') : 'Searching…'}</div>
+                        </div>
+                    </section>
+                    <section class="nsm-section">
+                        <div class="nsm-section-title"><i class="bi bi-clock-history"></i> ${window.t ? window.t('versionHistory') : 'Version History'}</div>
+                        <div class="nsm-versions-list" id="nsm-versions-list">
                             <div class="nsm-backlinks-loading">${window.t ? window.t('backlinksLoading') : 'Searching…'}</div>
                         </div>
                     </section>` : ''}
@@ -1650,6 +1703,65 @@ function openNoteSettings(noteId) {
                 });
             }
         }
+
+        // Version history — automatic snapshots taken on save when content changed
+        if (noteId) {
+            const vhContainer = ov.querySelector('#nsm-versions-list');
+            if (vhContainer) {
+                notesDB.getVersions(noteId).then(versions => {
+                    if (!vhContainer.isConnected) return;
+                    if (!versions.length) {
+                        vhContainer.innerHTML = `<div class="nsm-backlinks-empty">${window.t ? window.t('versionHistoryEmpty') : 'No earlier versions yet — future saved changes will appear here'}</div>`;
+                        return;
+                    }
+                    const actualLang = typeof getCurrentLanguage === 'function' ? getCurrentLanguage() : currentLang;
+                    vhContainer.innerHTML = versions.map(v => {
+                        const when = typeof formatDate === 'function' ? formatDate(v.savedAt, 'medium', actualLang) : new Date(v.savedAt).toLocaleString();
+                        const snippetSrc = String(v.content || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+                        const snippet = snippetSrc.length > 60 ? snippetSrc.slice(0, 60) + '…' : snippetSrc;
+                        return `
+                            <div class="nsm-version-item" data-vid="${v.id}">
+                                <button type="button" class="nsm-version-restore">
+                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                    <span class="nsm-version-meta"><strong>${escapeHtml(when)}</strong><em>${escapeHtml(snippet)}</em></span>
+                                </button>
+                                <button type="button" class="nsm-version-del" title="${window.t ? window.t('tplCustomDelete') : 'Delete'}"><i class="bi bi-trash3"></i></button>
+                            </div>`;
+                    }).join('');
+                    vhContainer.querySelectorAll('.nsm-version-restore').forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            const vid = parseInt(btn.closest('.nsm-version-item').dataset.vid, 10);
+                            const version = versions.find(v => v.id === vid);
+                            if (!version) return;
+                            if (typeof localNotesEditorInstance !== 'undefined' && localNotesEditorInstance) {
+                                localNotesEditorInstance.setContent(version.content);
+                            }
+                            cancelOv();
+                        });
+                    });
+                    vhContainer.querySelectorAll('.nsm-version-del').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            if (!btn.classList.contains('nsm-version-del-confirm')) {
+                                btn.classList.add('nsm-version-del-confirm');
+                                btn.innerHTML = '<i class="bi bi-check-lg"></i>';
+                                setTimeout(() => {
+                                    if (btn.isConnected) { btn.classList.remove('nsm-version-del-confirm'); btn.innerHTML = '<i class="bi bi-trash3"></i>'; }
+                                }, 2500);
+                                return;
+                            }
+                            const vid = parseInt(btn.closest('.nsm-version-item').dataset.vid, 10);
+                            notesDB.deleteVersion(vid).then(() => {
+                                const item = btn.closest('.nsm-version-item');
+                                if (item) item.remove();
+                            }).catch(() => {});
+                        });
+                    });
+                }).catch(() => {
+                    if (vhContainer.isConnected) vhContainer.innerHTML = `<div class="nsm-backlinks-empty">${window.t ? window.t('versionHistoryEmpty') : 'No earlier versions yet — future saved changes will appear here'}</div>`;
+                });
+            }
+        }
     };
 
     document.body.appendChild(ov);
@@ -1757,6 +1869,20 @@ function openModal(noteId, noteContent, noteCreationTime) {
             const timestamp = Date.now();
             const noteId2 = currentNoteId || secureNoteId();
             const meta = window._noteMeta || {};
+
+            // Snapshot the note's PREVIOUS content as a version before overwriting
+            // it, so history represents real past states. Only for existing notes,
+            // and only if the content actually changed (skip no-op saves).
+            if (currentNoteId) {
+                try {
+                    const prev = await notesDB.getNote(currentNoteId);
+                    if (prev && prev.content && prev.content !== processedContent) {
+                        await notesDB.saveVersion(currentNoteId, prev.content, prev.lastModified || timestamp);
+                        await notesDB.pruneVersions(currentNoteId, 20); // keep last 20 snapshots per note
+                    }
+                } catch (e) { console.error('Version snapshot error:', e); /* never block saving over a history hiccup */ }
+            }
+
             const note = {
                 id: noteId2,
                 content: processedContent,
@@ -2024,11 +2150,15 @@ async function _loadNotesImpl() {
                 chip.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
+                    if (chip.classList.contains('lne-wikilink-loading')) return; // already opening
                     const targetId = chip.getAttribute('data-note-id');
                     if (!targetId) return;
+                    chip.classList.add('lne-wikilink-loading');
                     notesDB.getNote(targetId).then(target => {
                         if (target && typeof window.openModal === 'function') window.openModal(target.id, target.content, target.creationTime);
-                    }).catch(() => {});
+                    }).catch(() => {}).finally(() => {
+                        if (chip.isConnected) chip.classList.remove('lne-wikilink-loading');
+                    });
                 });
             });
 
@@ -2187,11 +2317,15 @@ async function _loadNotesImpl() {
             const delBtn = document.createElement('button'); delBtn.classList.add('deleteBtn');
             delBtn.innerHTML = typeof t === 'function' ? t('delete') : 'Delete';
             delBtn.onclick = () => {
-                noteEl.classList.add('removing');
-                setTimeout(async () => {
-                    try { await notesDB.deleteNote(note.id); await loadNotes(); }
-                    catch (e) { showCustomAlert(typeof t === 'function' ? t('error') : 'Error', typeof t === 'function' ? t('errorDeletingNote') : 'Error deleting!', 'error'); }
-                }, 500);
+                const msg = typeof t === 'function' ? t('confirmDeleteOneNote') : 'Delete this note? This cannot be undone.';
+                const doDelete = () => {
+                    noteEl.classList.add('removing');
+                    setTimeout(async () => {
+                        try { await notesDB.deleteNote(note.id); await notesDB.deleteVersionsForNote(note.id); await loadNotes(); }
+                        catch (e) { showCustomAlert(typeof t === 'function' ? t('error') : 'Error', typeof t === 'function' ? t('errorDeletingNote') : 'Error deleting!', 'error'); }
+                    }, 500);
+                };
+                showConfirmModal(msg, doDelete);
             };
             const expBtn = document.createElement('button'); expBtn.classList.add('exportBtn');
             expBtn.innerHTML = typeof t === 'function' ? t('export') : 'Export';
@@ -2355,19 +2489,64 @@ function transliterateAdvanced(text) {
     return text.toLowerCase().split('').map(c => map[c] !== undefined ? map[c] : c).join('');
 }
 
-// Parse search query: extract #tag parts and text parts
+// Parse search query: extract #tag parts, is:/has:/before:/after: operators, and free text.
+// Supported operators (case-insensitive):
+//   #tag                       — note has this tag
+//   is:pinned|overdue|today|soon
+//   has:image|video|table|checklist|link
+//   before:YYYY-MM-DD | after:YYYY-MM-DD  — filters by note creation date
+// Anything else is treated as free text (same matching as before).
 function parseSearchQuery(raw) {
     const tagMatches = [];
+    const isFilters = [];
+    const hasFilters = [];
+    let beforeDate = null, afterDate = null;
     const textParts = [];
     const tokens = raw.trim().split(/\s+/);
     for (const tok of tokens) {
+        const lower = tok.toLowerCase();
         if (tok.startsWith('#') && tok.length > 1) {
             tagMatches.push(tok.slice(1).toLowerCase());
+        } else if (lower.startsWith('is:') && lower.length > 3) {
+            isFilters.push(lower.slice(3));
+        } else if (lower.startsWith('has:') && lower.length > 4) {
+            hasFilters.push(lower.slice(4));
+        } else if (lower.startsWith('before:') && lower.length > 7) {
+            const d = new Date(lower.slice(7));
+            if (!isNaN(d.getTime())) beforeDate = d;
+            else textParts.push(tok.toLowerCase());
+        } else if (lower.startsWith('after:') && lower.length > 6) {
+            const d = new Date(lower.slice(6));
+            if (!isNaN(d.getTime())) afterDate = d;
+            else textParts.push(tok.toLowerCase());
         } else if (tok.length > 0) {
             textParts.push(tok.toLowerCase());
         }
     }
-    return { tagMatches, textQuery: textParts.join(' '), textWords: textParts };
+    return { tagMatches, isFilters, hasFilters, beforeDate, afterDate, textQuery: textParts.join(' '), textWords: textParts };
+}
+
+// Does this note element satisfy an is:xxx status filter?
+function noteMatchesIsFilter(noteEl, filter) {
+    switch (filter) {
+        case 'pinned':   return noteEl.classList.contains('pinned');
+        case 'overdue':  return noteEl.classList.contains('note-overdue');
+        case 'today':    return noteEl.classList.contains('note-due-today');
+        case 'soon':     return noteEl.classList.contains('note-due-soon');
+        default:         return true; // unknown operator — don't filter anything out
+    }
+}
+
+// Does this note's content contain the given has:xxx content type?
+function noteMatchesHasFilter(content, filter) {
+    switch (filter) {
+        case 'image':     return !!content.querySelector('img');
+        case 'video':      return !!content.querySelector('video, iframe, .lne-video-wrapper');
+        case 'table':      return !!content.querySelector('table');
+        case 'checklist':  return !!content.querySelector('.checklist-item, input[type="checkbox"]');
+        case 'link':       return !!content.querySelector('a[href], .lne-wikilink');
+        default:           return true; // unknown operator — don't filter anything out
+    }
 }
 
 // Get tag names for a note element (from data-tag-names attribute set during render)
@@ -2416,7 +2595,7 @@ function filterNotes() {
         return;
     }
 
-    const { tagMatches, textQuery, textWords } = parseSearchQuery(raw);
+    const { tagMatches, isFilters, hasFilters, beforeDate, afterDate, textQuery, textWords } = parseSearchQuery(raw);
 
     document.querySelectorAll('.note').forEach(note => {
         const content = note.querySelector('.noteContent');
@@ -2432,6 +2611,25 @@ function filterNotes() {
                 noteTags.some(noteTag => noteTag === searchTag || noteTag.startsWith(searchTag))
             );
             if (!allTagsMatch) { note.classList.add('hidden'); return; }
+        }
+
+        // is:xxx status filters (pinned / overdue / today / soon) — all must match
+        if (isFilters.length > 0 && !isFilters.every(f => noteMatchesIsFilter(note, f))) {
+            note.classList.add('hidden'); return;
+        }
+
+        // has:xxx content-type filters (image / video / table / checklist / link) — all must match
+        if (hasFilters.length > 0 && !hasFilters.every(f => noteMatchesHasFilter(content, f))) {
+            note.classList.add('hidden'); return;
+        }
+
+        // before:/after: creation date range
+        if (beforeDate || afterDate) {
+            const created = parseInt(note.dataset.noteCreationTime, 10);
+            if (!isNaN(created)) {
+                if (beforeDate && created >= beforeDate.getTime()) { note.classList.add('hidden'); return; }
+                if (afterDate && created <= afterDate.getTime()) { note.classList.add('hidden'); return; }
+            }
         }
 
         // Text filter
@@ -3355,6 +3553,29 @@ function initializeEventListeners() {
         window._updateLockBtn = updateLockBtn;
     }
 
+    // Reminders (notifications) settings button
+    const notifBtn = document.getElementById('notifSettingsBtn');
+    if (notifBtn) {
+        const updateNotifBtn = () => {
+            const on = window.LNNotifications && window.LNNotifications.isEnabled();
+            notifBtn.classList.toggle('ln-notif-active', !!on);
+            notifBtn.innerHTML = on
+                ? `<i class="bi bi-bell-fill"></i> ${(typeof t === 'function' ? t('notifBtn') : null) || 'Reminders'}`
+                : `<i class="bi bi-bell"></i> ${(typeof t === 'function' ? t('notifBtn') : null) || 'Reminders'}`;
+        };
+        updateNotifBtn();
+        notifBtn.addEventListener('click', () => {
+            if (!window.LNNotifications) return;
+            window.LNNotifications.openSettings();
+            const poll = setInterval(() => {
+                if (!document.getElementById('ln-notif-settings-modal')) {
+                    updateNotifBtn();
+                    clearInterval(poll);
+                }
+            }, 300);
+        });
+    }
+
     // Calendar button
     const calBtn = document.getElementById('calendarBtn');
     if (calBtn) calBtn.addEventListener('click', () => {
@@ -3439,6 +3660,7 @@ window.loadNotes = loadNotes;
 window.openModal = openModal;
 window.closeModal = closeModal;
 window.showCustomAlert = showCustomAlert;
+window.showConfirmModal = showConfirmModal;
 window.showCustomPrompt = showCustomPrompt;
 window.showExportOptions = showExportOptions;
 window.showWordCount = showWordCount;
