@@ -542,7 +542,7 @@ Click the install icon in Chrome/Edge address bar and confirm.
 - **🐛 Fixed missing/inconsistent delete confirmation** — the main notes list deleted a note immediately with no confirmation at all; the task board fell back to the browser's unstyled native `confirm()` because `showConfirmModal` was never exported to `window`. Both now use the same styled confirmation modal as the rest of the app
 - **➖ Reminders removed** — the Notification-API due-date reminders shipped earlier in this cycle were removed after reconsideration; the app doesn't have a server, so they could only ever be foreground-only reminders (checked while the tab was open), and that scope didn't earn its complexity. May return in a different shape later
 
-### v1.9.8
+### v1.9.7
 - **🐛 Fixed calendar month/weekday names** — translation lookup for array values (`months`, `weekdaysShort`, `weekdays`) was returning the translation *key* instead of the array itself, corrupting calendar labels; core `t()` bug, fixed at the source
 - **🐛 Fixed note duplication on reload** — `loadNotes()` could run concurrently from multiple init paths (main app + `workspaces-integration.js` patch), racing on the same DOM clear/append cycle; now serialized through a promise queue
 - **🐛 Fixed checklists not rendering after template insert** — `_insertHTML()` only re-initialized checklist/code-block/context-toolbar behaviour on the iframe/video insertion path; plain `execCommand` inserts (e.g. any checklist template) stayed inert until the note was reopened. Now always re-initialized after insert
@@ -555,13 +555,13 @@ Click the install icon in Chrome/Edge address bar and confirm.
   - **Backlinks panel** — Note Settings now shows which other notes link to the one you're editing, computed on demand (no separate index/migration)
   - Ctrl+K conflict avoided — the palette yields to the editor's existing "Insert link" shortcut while focus is inside the editor
 
-### v1.9.8
+### v1.9.6
 - **🔐 App Lock** — PIN and/or access file, idle lock (10 min), lock screen with mobile-friendly layout
 - **🔌 API documentation** — full `window.*` API reference in README (notesDB, encryption, AppLock, TagsCalendar, SW messages)
 - **🔔 PWA update flow fixed** — no infinite “Update available” toast; `SKIP_WAITING` before reload
 - **🎨 Lock screen UI** — green top accent clipped to panel border-radius; removed redundant “App locked” toast
 
-### v1.9.8
+### v1.9.4
 - **🛡️ CSP hardened** — `unsafe-inline` removed from `script-src`; all inline scripts extracted to external files (`ga-init.js`, `script-loader.js`, `lang-redirect.js`, `page-init.js`)
 - **🔒 DOMPurify hard-fail** — `index.js` throws on startup if DOMPurify is missing; all unsafe fallbacks removed
 - **✅ Checklist redesigned** — flat `checkbox + input` layout, no wrapper blocks; customization panel per item: color (7 swatches), priority (low/mid/high), text label; Enter/Backspace keyboard navigation
