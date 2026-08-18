@@ -31,7 +31,12 @@ if (!isRootPage) {
         var userLang = getUserLanguage();
         if (userLang !== 'en' && languageMap[userLang]) {
             localStorage.setItem('preferredLanguage', userLang);
-            window.location.replace(languageMap[userLang]);
+            // Preserve query string + hash across the redirect — otherwise
+            // incoming Web Share Target data (?title=&text=&url=) or a
+            // shared-note link (#shared=...) gets silently dropped here,
+            // before js/share-target.js on the localized page ever sees it.
+            var target = languageMap[userLang] + window.location.search + window.location.hash;
+            window.location.replace(target);
         } else {
             // English or unknown — stay on root, clear any stale redirect pref
             localStorage.removeItem('preferredLanguage');
