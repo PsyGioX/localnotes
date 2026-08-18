@@ -69,7 +69,6 @@ const STATIC_FILES = [
     '/js/editor-integration.js',
     '/js/markdown.js',
     '/js/command-palette.js',
-    '/js/notifications.js',
     '/js/share-target.js',
 
     // Данные

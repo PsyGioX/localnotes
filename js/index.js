@@ -2331,6 +2331,18 @@ async function _loadNotesImpl() {
             expBtn.innerHTML = typeof t === 'function' ? t('export') : 'Export';
             expBtn.onclick = () => showExportOptions(note.content);
 
+            // Share button — hands the note's title + plain text off to the OS
+            // share sheet (navigator.share), the same mechanism this app now
+            // also receives shares through (Web Share Target). There's no
+            // hosted URL to share since Local Notes is fully local/encrypted —
+            // this shares the note's content as text, not a link to a server.
+            const shareBtn = document.createElement('button'); shareBtn.classList.add('shareBtn');
+            const shareLabel = (typeof t === 'function' ? t('shareNote') : null) || 'Share';
+            shareBtn.title = shareLabel;
+            shareBtn.innerHTML = '<i class="bi bi-share"></i>';
+            shareBtn.setAttribute('aria-label', shareLabel);
+            shareBtn.onclick = () => shareNoteContent(note);
+
             // Screenshot button
             const ssBtn = document.createElement('button'); ssBtn.classList.add('screenshotBtn');
             const ssLabel = (typeof t === 'function' ? t('screenshotBtn') : null) || 'Screenshot';
@@ -2344,7 +2356,7 @@ async function _loadNotesImpl() {
                 }
             };
 
-            btnRow.appendChild(editBtn); btnRow.appendChild(delBtn); btnRow.appendChild(expBtn); btnRow.appendChild(ssBtn);
+            btnRow.appendChild(editBtn); btnRow.appendChild(delBtn); btnRow.appendChild(expBtn); btnRow.appendChild(ssBtn); btnRow.appendChild(shareBtn);
             btns.appendChild(btnRow);
             noteEl.appendChild(btns);
 
@@ -3156,6 +3168,122 @@ function exportNoteWithFormat(noteContent, format = 'html') {
     }
 }
 
+// Hands a note's title + plain-text content to the OS share sheet via the
+// Web Share API. Falls back to copying the text to the clipboard on
+// browsers/platforms without navigator.share (most desktop browsers).
+//
+// The link itself: Local Notes has no server, so "a link that opens the
+// editor with this note's content" can only work by encoding the note
+// directly INTO the url — specifically into the fragment (`#...`), which
+// browsers never send to a server, keeping this as local/private as
+// everything else in the app. The receiving end lives in js/share-target.js.
+const LN_APP_SHARE_URL = 'https://localnotes-three.vercel.app/';
+const LN_SHARE_LINK_MAX_LEN = 6000; // practical cap so the link still works when pasted into chat apps
+
+function lnBase64UrlEncode(bytes) {
+    let binary = '';
+    bytes.forEach(b => { binary += String.fromCharCode(b); });
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+// Encodes { title, content } into a compact URL-safe payload. Uses gzip via
+// CompressionStream where available (most current browsers) to keep links
+// short; falls back to plain base64 (larger, but works everywhere) since
+// CompressionStream isn't in older Safari/Firefox.
+async function encodeNoteForShareLink(note) {
+    const payload = JSON.stringify({ t: note.title || '', c: note.content || '' });
+    const bytes = new TextEncoder().encode(payload);
+    if (typeof CompressionStream === 'function') {
+        try {
+            const cs = new CompressionStream('gzip');
+            const writer = cs.writable.getWriter();
+            writer.write(bytes);
+            writer.close();
+            const compressed = new Uint8Array(await new Response(cs.readable).arrayBuffer());
+            return 'z' + lnBase64UrlEncode(compressed);
+        } catch (e) { /* fall through to uncompressed */ }
+    }
+    return 'r' + lnBase64UrlEncode(bytes);
+}
+
+async function buildShareableNoteLink(note) {
+    const encoded = await encodeNoteForShareLink(note);
+    const url = LN_APP_SHARE_URL + '#shared=' + encoded;
+    return { url, tooLarge: url.length > LN_SHARE_LINK_MAX_LEN };
+}
+
+async function shareNoteContent(note) {
+    const title = note.title || (typeof t === 'function' ? t('cpUntitled') : 'Untitled note');
+    const introText = (typeof t === 'function' ? t('shareNoteIntro') : null) || 'Check out my note';
+
+    let link;
+    try {
+        link = await buildShareableNoteLink(note);
+    } catch (e) {
+        showCustomAlert(
+            typeof t === 'function' ? t('error') : 'Error',
+            (typeof t === 'function' ? t('shareCopyFailed') : null) || 'Could not share or copy this note.',
+            'error'
+        );
+        return;
+    }
+
+    if (link.tooLarge) {
+        showCustomAlert(
+            typeof t === 'function' ? t('shareNote') : 'Share',
+            (typeof t === 'function' ? t('shareLinkTooLarge') : null) || 'This note is too big to share as a link — try Export instead.',
+            'warning'
+        );
+        return;
+    }
+
+    const shareData = { title, text: introText, url: link.url };
+
+    if (navigator.share) {
+        try {
+            if (navigator.canShare && !navigator.canShare(shareData)) throw new Error('canShare rejected this data');
+            await navigator.share(shareData);
+        } catch (e) {
+            if (e && e.name === 'AbortError') return; // user cancelled the share sheet — not an error
+            await copyShareTextToClipboard(title, introText, link.url);
+        }
+        return;
+    }
+    await copyShareTextToClipboard(title, introText, link.url);
+}
+
+async function copyShareTextToClipboard(title, text, url) {
+    const parts = [title];
+    if (text) parts.push(text);
+    if (url) parts.push(url);
+    const combined = parts.join('\n\n');
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(combined);
+        } else {
+            const ta = document.createElement('textarea');
+            ta.value = combined;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            ta.remove();
+        }
+        showCustomAlert(
+            (typeof t === 'function' ? t('shareNote') : null) || 'Share',
+            (typeof t === 'function' ? t('shareCopiedToClipboard') : null) || 'Sharing is not available here — note copied to the clipboard instead.',
+            'success'
+        );
+    } catch (e) {
+        showCustomAlert(
+            typeof t === 'function' ? t('error') : 'Error',
+            (typeof t === 'function' ? t('shareCopyFailed') : null) || 'Could not share or copy this note.',
+            'error'
+        );
+    }
+}
+
 function showExportOptions(noteContent) {
     const modal = document.createElement('div');
     modal.className = 'export-modal';
@@ -3551,29 +3679,6 @@ function initializeEventListeners() {
         });
 
         window._updateLockBtn = updateLockBtn;
-    }
-
-    // Reminders (notifications) settings button
-    const notifBtn = document.getElementById('notifSettingsBtn');
-    if (notifBtn) {
-        const updateNotifBtn = () => {
-            const on = window.LNNotifications && window.LNNotifications.isEnabled();
-            notifBtn.classList.toggle('ln-notif-active', !!on);
-            notifBtn.innerHTML = on
-                ? `<i class="bi bi-bell-fill"></i> ${(typeof t === 'function' ? t('notifBtn') : null) || 'Reminders'}`
-                : `<i class="bi bi-bell"></i> ${(typeof t === 'function' ? t('notifBtn') : null) || 'Reminders'}`;
-        };
-        updateNotifBtn();
-        notifBtn.addEventListener('click', () => {
-            if (!window.LNNotifications) return;
-            window.LNNotifications.openSettings();
-            const poll = setInterval(() => {
-                if (!document.getElementById('ln-notif-settings-modal')) {
-                    updateNotifBtn();
-                    clearInterval(poll);
-                }
-            }, 300);
-        });
     }
 
     // Calendar button

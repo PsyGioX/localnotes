@@ -663,8 +663,7 @@ body {
     scroll-snap-align: start;
 }
 .btn_view_div #toggleTaskBoardButton,
-.btn_view_div #appLockBtn,
-.btn_view_div #notifSettingsBtn {
+.btn_view_div #appLockBtn {
     flex: 0 0 auto;
     scroll-snap-align: end;
     transform: none;

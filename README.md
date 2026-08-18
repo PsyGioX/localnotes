@@ -213,6 +213,14 @@ await takeNoteScreenshot(noteObject);  // renders note card → PNG preview moda
 
 Requires a note object with `content`, `title`, etc. (same shape as IndexedDB record).
 
+### Sharing (`window.shareNoteContent`, Web Share Target)
+
+```javascript
+await shareNoteContent(noteObject);  // navigator.share() with clipboard fallback
+```
+
+Two-way: the note-card Share button sends a note's title + text out via the OS share sheet (`navigator.share`, falls back to clipboard copy where unsupported); `manifest.json`'s `share_target` + `js/share-target.js` receive shares (or shortcut actions) coming in from other apps and pre-fill a new note.
+
 ### Security (`window.SecurityManager`)
 
 ```javascript
@@ -386,8 +394,18 @@ ENCRYPT PIPELINE:
 
 ### 🔍 Search
 - Instant search through note content
+- Advanced operators: `#tag`, `is:pinned|overdue|today|soon`, `has:image|video|table|checklist|link`, `before:`/`after:YYYY-MM-DD` — combinable in one query
 - Transliteration support (Cyrillic ↔ Latin)
 - Grid and list view modes
+
+### 📜 Version History
+- Every save of an existing note snapshots its previous content (only when it actually changed)
+- Browse, restore, or delete past versions from Note Settings — last 20 kept per note
+
+### 📤 Sharing
+- Share button on each note card — `navigator.share()` to the OS share sheet, clipboard-copy fallback
+- Web Share Target — share text/links into Local Notes from other apps, pre-fills a new note
+- Home Screen shortcuts (`New Note` / `Search` / `Import`) are wired up too
 
 ### 💾 Export & Import
 - Encrypted `.note` files (AES-256-GCM v4 pipeline)
@@ -519,10 +537,12 @@ Click the install icon in Chrome/Edge address bar and confirm.
 ### v1.9.8 (current)
 - **✨ Advanced search operators** — `is:pinned|overdue|today|soon`, `has:image|video|table|checklist|link`, `before:YYYY-MM-DD`, `after:YYYY-MM-DD`, combinable with `#tag` and free text
 - **✨ Version history** — every save of an existing note snapshots its previous content (only when it actually changed); browse, restore, or delete past versions from Note Settings — last 20 kept per note
-- **✨ Reminders** — opt-in Notification API reminders for due/overdue notes. Honest scope note: this is a fully local, serverless app, so reminders only fire while the app is open (on load, on tab focus, every 15 min) — not background push when the app is fully closed
 - **✨ Web Share Target wired up** — manifest already declared `share_target` and shortcut actions, but nothing read them; sharing text/links to Local Notes from other apps (or using the Home Screen shortcuts) now actually opens a pre-filled new note / focuses search / opens import, instead of silently doing nothing
+- **✨ Share button** — the note-card toolbar (Edit/Delete/Export/Screenshot) now has a Share button too, using `navigator.share()` to hand the note's title + text off to the OS share sheet, with a clipboard-copy fallback where the Web Share API isn't available. The natural counterpart to Share Target above — the app can now send as well as receive
+- **🐛 Fixed missing/inconsistent delete confirmation** — the main notes list deleted a note immediately with no confirmation at all; the task board fell back to the browser's unstyled native `confirm()` because `showConfirmModal` was never exported to `window`. Both now use the same styled confirmation modal as the rest of the app
+- **➖ Reminders removed** — the Notification-API due-date reminders shipped earlier in this cycle were removed after reconsideration; the app doesn't have a server, so they could only ever be foreground-only reminders (checked while the tab was open), and that scope didn't earn its complexity. May return in a different shape later
 
-### v1.9.7
+### v1.9.8
 - **🐛 Fixed calendar month/weekday names** — translation lookup for array values (`months`, `weekdaysShort`, `weekdays`) was returning the translation *key* instead of the array itself, corrupting calendar labels; core `t()` bug, fixed at the source
 - **🐛 Fixed note duplication on reload** — `loadNotes()` could run concurrently from multiple init paths (main app + `workspaces-integration.js` patch), racing on the same DOM clear/append cycle; now serialized through a promise queue
 - **🐛 Fixed checklists not rendering after template insert** — `_insertHTML()` only re-initialized checklist/code-block/context-toolbar behaviour on the iframe/video insertion path; plain `execCommand` inserts (e.g. any checklist template) stayed inert until the note was reopened. Now always re-initialized after insert

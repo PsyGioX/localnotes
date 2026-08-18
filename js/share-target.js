@@ -16,6 +16,44 @@
         return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     }
 
+    function t(key, fallback) {
+        if (typeof window.t === 'function') {
+            const v = window.t(key);
+            if (v && v !== key) return v;
+        }
+        return fallback;
+    }
+
+    function lnBase64UrlDecode(str) {
+        str = str.replace(/-/g, '+').replace(/_/g, '/');
+        while (str.length % 4) str += '=';
+        const binary = atob(str);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        return bytes;
+    }
+
+    // Reverses js/index.js's encodeNoteForShareLink(): 'z' prefix = gzip
+    // compressed (needs DecompressionStream), 'r' prefix = raw base64.
+    async function decodeNoteFromShareLink(encoded) {
+        const marker = encoded.charAt(0);
+        const bytes = lnBase64UrlDecode(encoded.slice(1));
+        let jsonBytes = bytes;
+        if (marker === 'z') {
+            if (typeof DecompressionStream !== 'function') {
+                throw new Error('This browser cannot decompress this link');
+            }
+            const ds = new DecompressionStream('gzip');
+            const writer = ds.writable.getWriter();
+            writer.write(bytes);
+            writer.close();
+            jsonBytes = new Uint8Array(await new Response(ds.readable).arrayBuffer());
+        }
+        const json = new TextDecoder().decode(jsonBytes);
+        const data = JSON.parse(json);
+        return { title: data.t || '', content: data.c || '' };
+    }
+
     // Poll for the editor instance rather than assume timing — same
     // defensive pattern already used elsewhere in this app (e.g.
     // workspaces-integration.js) since editor init is itself async.
@@ -60,7 +98,54 @@
         } catch (e) { /* not fatal — worst case the params linger in the address bar */ }
     }
 
+    function cleanHash() {
+        try {
+            const url = new URL(window.location.href);
+            url.hash = '';
+            window.history.replaceState({}, document.title, url.pathname + url.search);
+        } catch (e) { /* not fatal */ }
+    }
+
+    // Opens a note someone shared as a #shared=... link. This is content
+    // encoded straight into the URL (see js/index.js buildShareableNoteLink) —
+    // never auto-saved into notesDB on open, so it can't silently overwrite
+    // or clutter the recipient's own notes; they review it and hit Save
+    // themselves, same as any freshly-typed note.
+    async function openSharedNoteLink(encoded) {
+        cleanHash(); // do this first so a reload never re-triggers the same open
+        let note;
+        try {
+            note = await decodeNoteFromShareLink(encoded);
+        } catch (e) {
+            if (typeof window.showCustomAlert === 'function') {
+                window.showCustomAlert(
+                    t('error', 'Error'),
+                    t('sharedNoteLinkBroken', 'This share link looks broken or incomplete.'),
+                    'error'
+                );
+            }
+            return;
+        }
+        if (typeof window.openModal !== 'function') return;
+        window.openModal();
+        const ed = await waitForEditorReady(4000);
+        if (ed) ed.setContent(note.content);
+        if (typeof window.showCustomAlert === 'function') {
+            window.showCustomAlert(
+                t('sharedNoteOpenedTitle', 'Shared note'),
+                t('sharedNoteOpenedBody', 'Someone shared this note with you. Save it if you want to keep it.'),
+                'info'
+            );
+        }
+    }
+
     function run() {
+        const hash = window.location.hash;
+        if (hash && hash.indexOf('#shared=') === 0) {
+            openSharedNoteLink(hash.slice('#shared='.length));
+            return;
+        }
+
         const params = new URLSearchParams(window.location.search);
         const action = params.get('action');
         const sharedTitle = params.get('title');

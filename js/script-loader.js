@@ -29,7 +29,6 @@ var scripts = [
     '/js/task-board.js?v=1.9.8',
     '/js/index.js?v=1.9.8',
     '/js/command-palette.js?v=1.9.8',
-    '/js/notifications.js?v=1.9.8',
     '/js/share-target.js?v=1.9.8'
 ];
 
