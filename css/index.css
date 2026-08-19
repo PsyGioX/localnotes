@@ -557,6 +557,7 @@ body {
 }
 .editBtn, .deleteBtn, .exportBtn {
     flex: 1;
+    padding: 11px;
     height: 36px;
     border: 1px solid var(--border-color);
     background: var(--button-bg);
