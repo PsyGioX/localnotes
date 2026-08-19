@@ -534,7 +534,17 @@ Click the install icon in Chrome/Edge address bar and confirm.
 
 ## 🆕 Changelog
 
-### v1.9.8 (current)
+### v1.9.9 (current)
+- **✨ Network mode expanded** — new **Auto** option alongside the existing Online/Offline toggle, following real connectivity (`navigator.onLine` + online/offline events) and switching the service worker to cache-only the instant the device actually loses connection, no manual flipping needed
+- **🎨 Toggle redesigned** — 3-way segmented control with a sliding highlight, plus a live connectivity status dot independent of the selected mode (so "Online" mode with no actual signal is visibly distinguishable from "Online" mode that's actually connected)
+- **✨ Import from Notion, Evernote, Google Keep** — new source options in the import dialog:
+  - **Notion** — Markdown/HTML export `.zip` (or loose `.md`/`.html` files), strips Notion's page-id suffixes from titles
+  - **Evernote** — `.enex` files, parses every note in the export with original created/modified timestamps preserved
+  - **Google Keep** — Google Takeout `.zip` (or loose `Keep/*.json`), checklists convert to the app's native checklist format, pinned notes stay pinned
+  - No external ZIP library added — a minimal ZIP reader (End of Central Directory + Central Directory + Local File Headers) built on the native `DecompressionStream('deflate-raw')` API keeps this in line with the app's zero-dependency approach
+  
+
+### v1.9.8
 - **✨ Advanced search operators** — `is:pinned|overdue|today|soon`, `has:image|video|table|checklist|link`, `before:YYYY-MM-DD`, `after:YYYY-MM-DD`, combinable with `#tag` and free text
 - **✨ Version history** — every save of an existing note snapshots its previous content (only when it actually changed); browse, restore, or delete past versions from Note Settings — last 20 kept per note
 - **✨ Web Share Target wired up** — manifest already declared `share_target` and shortcut actions, but nothing read them; sharing text/links to Local Notes from other apps (or using the Home Screen shortcuts) now actually opens a pre-filled new note / focuses search / opens import, instead of silently doing nothing
