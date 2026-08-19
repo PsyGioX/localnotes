@@ -1469,7 +1469,7 @@ footer a:hover { color: var(--primary-color); }
         height: 28px !important;
         font-size: 11px !important;
         border-radius: 6px !important;
-        padding: 0 8px !important;
+        padding: 0 14px !important;
         white-space: nowrap !important;
     }
     .btn_view_div {
