@@ -3329,6 +3329,12 @@ function importNotesWithFormat(event) {
             <button class="export-option" data-format="html"><span class="export-icon">🌐</span><span class="export-text">HTML</span><span class="export-desc">HTML files</span></button>
             <button class="export-option" data-format="markdown"><span class="export-icon">📝</span><span class="export-text">Markdown</span><span class="export-desc">.md files</span></button>
         </div>
+        <div class="export-options-divider"><span>${typeof t === 'function' ? t('importFromOtherApps') || 'From other apps' : 'From other apps'}</span></div>
+        <div class="export-options">
+            <button class="export-option" data-format="notion"><span class="export-icon">🗂️</span><span class="export-text">Notion</span><span class="export-desc">.zip / .md / .html</span></button>
+            <button class="export-option" data-format="evernote"><span class="export-icon">🐘</span><span class="export-text">Evernote</span><span class="export-desc">.enex</span></button>
+            <button class="export-option" data-format="keep"><span class="export-icon">📌</span><span class="export-text">Google Keep</span><span class="export-desc">Takeout .zip / .json</span></button>
+        </div>
         <button class="export-close">${typeof t === 'function' ? t('cancel') : 'Cancel'}</button></div>`;
 
     // Remove loading overlay, show format modal
@@ -3340,7 +3346,12 @@ function importNotesWithFormat(event) {
             const fmt = opt.dataset.format; close();
             if (fmt === 'encrypted') importNotesFiles(filesArray);
             else if (fmt === 'html') importNotesHTML(filesArray);
-            else importNotesMarkdown(filesArray);
+            else if (fmt === 'markdown') importNotesMarkdown(filesArray);
+            else if (window.LNImportFormats) {
+                if (fmt === 'notion') window.LNImportFormats.importNotionSource(filesArray);
+                else if (fmt === 'evernote') window.LNImportFormats.importEvernoteEnex(filesArray);
+                else if (fmt === 'keep') window.LNImportFormats.importGoogleKeepSource(filesArray);
+            }
         });
     });
     modal.querySelector('.export-close').addEventListener('click', () => { close(); });

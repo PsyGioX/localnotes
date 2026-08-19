@@ -1,5 +1,5 @@
 // Service Worker для Local Notes
-const CACHE_VERSION = 'v1.9.8';
+const CACHE_VERSION = 'v1.9.9';
 const STATIC_CACHE  = `static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `dynamic-${CACHE_VERSION}`;
 const CACHE_LIMIT   = 60;
@@ -68,6 +68,7 @@ const STATIC_FILES = [
     '/js/date-utils.js',
     '/js/editor-integration.js',
     '/js/markdown.js',
+    '/js/import-formats.js',
     '/js/command-palette.js',
     '/js/share-target.js',
 
@@ -102,7 +103,7 @@ const CACHE_FIRST_EXTS = ['.woff', '.woff2', '.ttf', '.otf', '.png', '.jpg',
                            '.jpeg', '.gif', '.svg', '.ico', '.webp', '.avif'];
 
 // ─── Текущий режим сети (персистируется через IndexedDB / fallback переменная) ─
-let networkMode = 'online'; // 'online' | 'offline'
+let networkMode = 'online'; // 'online' | 'offline' | 'auto'
 
 // Читаем сохранённый режим из IndexedDB при старте SW
 async function loadNetworkMode() {
@@ -110,7 +111,7 @@ async function loadNetworkMode() {
         const db = await openModeDB();
         const tx = db.transaction('settings', 'readonly');
         const val = await idbGet(tx, 'networkMode');
-        if (val === 'offline' || val === 'online') networkMode = val;
+        if (val === 'offline' || val === 'online' || val === 'auto') networkMode = val;
     } catch (_) { /* ignore */ }
 }
 
@@ -206,7 +207,11 @@ self.addEventListener('fetch', event => {
     const ext = url.pathname.substring(url.pathname.lastIndexOf('.'));
 
     // ── Принудительный офлайн-режим: только кэш ──────────────────────────────
-    if (networkMode === 'offline') {
+    // 'offline' — всегда; 'auto' — только когда реально нет соединения
+    // (navigator.onLine доступен и внутри service worker'а)
+    const forcedOffline = networkMode === 'offline' ||
+        (networkMode === 'auto' && typeof navigator !== 'undefined' && navigator.onLine === false);
+    if (forcedOffline) {
         event.respondWith(cacheOnly(cleanRequest, request));
         return;
     }
@@ -338,8 +343,10 @@ self.addEventListener('message', event => {
     }
 
     if (data.type === 'SET_NETWORK_MODE') {
-        networkMode = data.mode;
-        saveNetworkMode(data.mode);
+        if (data.mode === 'offline' || data.mode === 'online' || data.mode === 'auto') {
+            networkMode = data.mode;
+            saveNetworkMode(data.mode);
+        }
     }
 
     // Принудительно перекэшировать все статические файлы
