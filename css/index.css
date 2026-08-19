@@ -572,7 +572,7 @@ body {
 #notesContainer.full-width-view .deleteBtn,
 #notesContainer.full-width-view .exportBtn {
     height: 32px;
-    font-size: 13px;
+    font-size: 10px;
     border-radius: 6px;
 }
 .editBtn:hover, .deleteBtn:hover, .exportBtn:hover { 
