@@ -1467,7 +1467,7 @@ footer a:hover { color: var(--primary-color); }
     #notesContainer .deleteBtn,
     #notesContainer .exportBtn {
         height: 28px !important;
-        font-size: 11px !important;
+        font-size: 8px !important;
         border-radius: 6px !important;
         padding: 0 8px !important;
         white-space: nowrap !important;
