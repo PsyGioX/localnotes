@@ -1,0 +1,739 @@
+/* ══════════════════════════════════════════════════════════════════
+   АДАПТАЦИЯ ДЛЯ КВАДРАТНЫХ МОНИТОРОВ
+   Соотношения сторон: 4:3, 1:1, 5:4
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── 4:3 Мониторы (1280×960, 1024×768, 800×600) ─────────────────── */
+@media (min-aspect-ratio: 4/3) and (max-aspect-ratio: 4/3) {
+    
+    /* Навигация и контейнеры */
+    .info-app {
+        height: 80px;
+        gap: 24px;
+    }
+    
+    .sticky {
+        padding: 10px 16px;
+    }
+    
+    #searchInput {
+        flex: 0.18;
+        height: 44px;
+        font-size: 14px;
+    }
+    
+    .block_btn {
+        gap: 8px;
+    }
+    
+    #addNoteButton, #importButton, #clearAllButton, #calendarBtn, #quickEditToggle {
+        height: 44px;
+        font-size: 13px;
+        padding: 0 10px;
+    }
+    
+    /* Сетка заметок */
+    #notesContainer.default-view {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 15px;
+    }
+    
+    #notesContainer.default-view .note {
+        height: 380px;
+    }
+    
+    #notesContainer.default-view .note.has-video {
+        height: 380px;
+    }
+    
+    .noteContent {
+        font-size: 14px;
+        padding: 10px 12px;
+    }
+    
+    /* Премьеры / приветствие */
+    .welcome-content {
+        padding: 30px 25px;
+    }
+    
+    .welcome-title {
+        font-size: 2rem;
+    }
+    
+    .welcome-section {
+        padding: 18px 20px;
+        margin-bottom: 20px;
+    }
+    
+    .welcome-features,
+    .welcome-goals {
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 6px;
+    }
+    
+    /* Модальные окна */
+    .modal-content {
+        margin: 3vh auto;
+        height: 90vh;
+        height: 90dvh;
+        max-width: 1100px;
+    }
+    
+    /* Кнопки */
+    .editBtn, .deleteBtn, .exportBtn {
+        height: 32px;
+        font-size: 12px;
+    }
+    
+    /* Футер */
+    .info-about-project {
+        padding: 24px 32px 18px;
+    }
+    
+    .info-about-project p {
+        font-size: 13px;
+        max-width: 650px;
+    }
+    
+    .footer-content {
+        padding: 18px 32px 24px;
+        gap: 4px 16px;
+    }
+    
+    
+    /* Кнопка просмотра */
+    #toggleViewButton {
+        min-width: min(220px, 45vw);
+        height: 46px;
+        font-size: 15px;
+    }
+    
+    .btn_view_div {
+        padding: 8px 14px 16px 14px;
+        min-height: 70px;
+    }
+    
+    /* Прогресс и чеклисты */
+    .checklist-item-wrapper {
+        padding: 8px 10px;
+        gap: 10px;
+    }
+    
+    .ln-check-box {
+        width: 20px !important;
+        height: 20px !important;
+        min-width: 20px !important;
+        min-height: 20px !important;
+    }
+    
+    /* PWA модальное окно */
+    .pwa-modal {
+        max-width: 380px;
+    }
+    
+    /* Поисковые подсказки */
+    .search-hint-dropdown {
+        max-height: 300px;
+    }
+}
+
+/* ── 1:1 Квадратные мониторы (1024×1024, 800×800) ───────────────── */
+@media (min-aspect-ratio: 1/1) and (max-aspect-ratio: 1/1) {
+    
+    /* Навигация */
+    .info-app {
+        height: 70px;
+        gap: 16px;
+        padding: 0 12px;
+    }
+    
+    .info-app .logo {
+        width: 36px;
+        height: 36px;
+    }
+    
+    .info-app .name-app {
+        font-size: 1.6em;
+    }
+    
+    .sticky {
+        flex-direction: column;
+        padding: 8px 12px;
+        gap: 8px;
+    }
+    
+    #searchInput {
+        width: 100%;
+        flex: none;
+        height: 42px;
+        font-size: 14px;
+    }
+    
+    .block_btn {
+        width: 100%;
+        overflow-x: auto;
+        gap: 6px;
+        padding-bottom: 4px;
+    }
+    
+    #addNoteButton, #importButton, #clearAllButton, #calendarBtn, #quickEditToggle {
+        flex: 0 0 auto;
+        min-width: 100px;
+        height: 40px;
+        font-size: 12px;
+        padding: 0 10px;
+        white-space: nowrap;
+    }
+    
+    /* Сетка заметок */
+    #notesContainer.default-view {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 10px;
+        padding: 0 4px;
+    }
+    
+    #notesContainer.default-view .note {
+        height: 320px;
+    }
+    
+    #notesContainer.default-view .note.has-video {
+        height: 320px;
+    }
+    
+    .noteContent {
+        font-size: 13px;
+        padding: 8px 10px;
+        line-height: 1.5;
+    }
+    
+    .note-footer {
+        padding: 4px 8px;
+        font-size: 0.65rem;
+    }
+    
+    /* Кнопки заметок */
+    .editBtn, .deleteBtn, .exportBtn {
+        height: 28px;
+        font-size: 11px;
+        padding: 0 8px;
+        border-radius: 4px;
+    }
+    
+    .note-buttons .note-tags {
+        padding: 4px 8px 3px;
+        gap: 3px;
+    }
+    
+    .note-btn-row {
+        padding: 4px 8px;
+        gap: 4px;
+    }
+    
+    /* Приветствие */
+    .welcome-content {
+        padding: 20px 16px;
+    }
+    
+    .welcome-title {
+        font-size: 1.8rem;
+    }
+    
+    .welcome-subtitle {
+        font-size: 1rem;
+    }
+    
+    .welcome-section {
+        padding: 14px 16px;
+        margin-bottom: 14px;
+    }
+    
+    .welcome-section-title {
+        font-size: 1.2rem;
+    }
+    
+    .welcome-features,
+    .welcome-goals {
+        grid-template-columns: 1fr;
+        gap: 4px;
+    }
+    
+    .welcome-features li,
+    .welcome-goals li {
+        font-size: 0.85rem;
+        padding: 5px 0 5px 24px;
+    }
+    
+    /* Модальные окна */
+    .modal-content {
+        margin: 2vh auto;
+        height: 94vh;
+        height: 94dvh;
+        max-width: 900px;
+        border-radius: 14px;
+    }
+    
+    .modal-content-error,
+    .modal-content-warning {
+        max-width: 420px;
+        padding: 16px;
+    }
+    
+    .modal-content-inner {
+        padding: 18px 20px;
+    }
+    
+    /* Футер */
+    .info-about-project {
+        padding: 16px 20px 12px;
+    }
+    
+    .info-about-project p {
+        font-size: 12px;
+        max-width: 500px;
+    }
+    
+    .footer-content {
+        padding: 14px 20px 20px;
+        gap: 3px 12px;
+    }
+    
+    .footer-content a {
+        font-size: 12px;
+    }
+    
+    .footer-content .footerCopyRight,
+    .footer-content p:last-of-type {
+        font-size: 11px;
+        margin-top: 8px;
+    }
+    
+    /* Кнопки */
+    .theme-toggle {
+        width: 40px;
+        height: 40px;
+        bottom: 14px;
+        right: 14px;
+        font-size: 1rem;
+    }
+    
+    #toggleViewButton {
+        min-width: min(160px, 42vw);
+        height: 40px;
+        font-size: 13px;
+        border-radius: 12px;
+    }
+    
+    .btn_view_div {
+        padding: 6px 10px 12px 10px;
+        min-height: 60px;
+    }
+    
+    .btn_view_div #appLockBtn {
+        min-width: 160px;
+        height: 38px;
+        font-size: 13px;
+    }
+    
+    /* Чеклисты */
+    .checklist-item-wrapper {
+        padding: 6px 8px;
+        gap: 8px;
+        margin: 5px 0;
+    }
+    
+    .ln-check-box {
+        width: 18px !important;
+        height: 18px !important;
+        min-width: 18px !important;
+        min-height: 18px !important;
+    }
+    
+    .checklist-text {
+        font-size: 13px;
+    }
+    
+    /* Прогресс */
+    .checklist-progress {
+        padding: 4px 8px 6px;
+    }
+    
+    /* PWA */
+    .pwa-modal {
+        max-width: 360px;
+        border-radius: 20px;
+    }
+    
+    .pwa-modal-header {
+        padding: 18px 18px 12px;
+    }
+    
+    .pwa-feature-item {
+        padding: 8px 10px;
+    }
+    
+    /* Поисковые подсказки */
+    .search-hint-dropdown {
+        max-height: 250px;
+    }
+    
+    .search-hint-tag-pill {
+        font-size: 11px;
+        padding: 2px 6px;
+    }
+    
+    /* Сетевой переключатель */
+    .ln-net-seg {
+        padding: 4px 10px;
+        font-size: 0.7rem;
+    }
+    
+    /* Экспорт/импорт */
+    .export-modal-content,
+    .import-modal-content {
+        padding: 20px;
+        max-width: 400px;
+    }
+    
+    .export-option,
+    .import-option {
+        padding: 12px 14px;
+    }
+    
+    .export-icon,
+    .import-icon {
+        font-size: 20px;
+        width: 32px;
+    }
+    
+    .export-text,
+    .import-text {
+        font-size: 14px;
+    }
+}
+
+/* ── 5:4 Мониторы (1280×1024, 1024×819) ─────────────────────────── */
+@media (min-aspect-ratio: 5/4) and (max-aspect-ratio: 5/4) {
+    
+    /* Навигация */
+    .info-app {
+        height: 75px;
+        gap: 20px;
+    }
+    
+    .sticky {
+        padding: 10px 18px;
+    }
+    
+    #searchInput {
+        flex: 0.19;
+        height: 44px;
+        font-size: 14px;
+    }
+    
+    .block_btn {
+        gap: 7px;
+    }
+    
+    #addNoteButton, #importButton, #clearAllButton, #calendarBtn, #quickEditToggle {
+        height: 44px;
+        font-size: 13px;
+        padding: 0 10px;
+    }
+    
+    /* Сетка заметок */
+    #notesContainer.default-view {
+        grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+        gap: 12px;
+    }
+    
+    #notesContainer.default-view .note {
+        height: 350px;
+    }
+    
+    #notesContainer.default-view .note.has-video {
+        height: 350px;
+    }
+    
+    .noteContent {
+        font-size: 14px;
+        padding: 10px 12px;
+    }
+    
+    /* Приветствие */
+    .welcome-content {
+        padding: 25px 22px;
+    }
+    
+    .welcome-title {
+        font-size: 2.2rem;
+    }
+    
+    .welcome-section {
+        padding: 16px 18px;
+        margin-bottom: 16px;
+    }
+    
+    .welcome-features,
+    .welcome-goals {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 5px;
+    }
+    
+    /* Модальные окна */
+    .modal-content {
+        margin: 3vh auto;
+        height: 90vh;
+        height: 90dvh;
+        max-width: 1000px;
+    }
+    
+    /* Футер */
+    .info-about-project {
+        padding: 20px 28px 16px;
+    }
+    
+    .footer-content {
+        padding: 16px 28px 24px;
+        gap: 4px 14px;
+    }
+    
+    /* Кнопки */
+    .theme-toggle {
+        width: 42px;
+        height: 42px;
+        bottom: 16px;
+        right: 16px;
+    }
+    
+    #toggleViewButton {
+        min-width: min(200px, 44vw);
+        height: 44px;
+        font-size: 14px;
+    }
+    
+    .btn_view_div {
+        padding: 8px 12px 14px 12px;
+        min-height: 65px;
+    }
+}
+
+/* ── Низкое разрешение квадратных мониторов ─────────────────────── */
+@media (max-width: 1024px) and (min-aspect-ratio: 4/3) and (max-aspect-ratio: 5/4) {
+    
+    .info-app {
+        height: 65px;
+        gap: 14px;
+    }
+    
+    .info-app .logo {
+        width: 34px;
+        height: 34px;
+    }
+    
+    .info-app .name-app {
+        font-size: 1.5em;
+    }
+    
+    .sticky {
+        padding: 8px 12px;
+        gap: 6px;
+    }
+    
+    #searchInput {
+        height: 40px;
+        font-size: 13px;
+    }
+    
+    .block_btn button {
+        height: 38px;
+        font-size: 12px;
+        padding: 0 8px;
+    }
+    
+    #notesContainer.default-view {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 8px;
+    }
+    
+    #notesContainer.default-view .note {
+        height: 280px;
+    }
+    
+    .noteContent {
+        font-size: 12px;
+        padding: 8px 10px;
+    }
+    
+    .note-footer {
+        padding: 4px 8px;
+        font-size: 0.6rem;
+    }
+    
+    .editBtn, .deleteBtn, .exportBtn {
+        height: 26px;
+        font-size: 10px;
+    }
+    
+    .welcome-title {
+        font-size: 1.6rem;
+    }
+    
+    .welcome-section {
+        padding: 12px 14px;
+        margin-bottom: 12px;
+    }
+    
+    .modal-content {
+        margin: 1vh auto;
+        height: 96vh;
+        height: 96dvh;
+    }
+    
+    .btn_view_div {
+        min-height: 55px;
+        padding: 5px 8px 10px 8px;
+    }
+    
+    #toggleViewButton {
+        min-width: 140px;
+        height: 36px;
+        font-size: 12px;
+    }
+}
+
+/* ── Высокое разрешение квадратных мониторов ────────────────────── */
+@media (min-width: 1600px) and (min-aspect-ratio: 4/3) and (max-aspect-ratio: 5/4) {
+    
+    #notesContainer.default-view {
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 22px;
+    }
+    
+    #notesContainer.default-view .note {
+        height: 450px;
+    }
+    
+    .noteContent {
+        font-size: 16px;
+        padding: 14px 16px;
+    }
+    
+    .welcome-content {
+        padding: 40px 35px;
+    }
+    
+    .welcome-title {
+        font-size: 2.5rem;
+    }
+    
+    .modal-content {
+        max-width: 1200px;
+    }
+    
+    .info-app {
+        height: 90px;
+    }
+    
+    .info-app .name-app {
+        font-size: 2.2em;
+    }
+}
+
+/* ── Портретная ориентация квадратных мониторов ─────────────────── */
+@media (orientation: portrait) and (min-aspect-ratio: 4/3) and (max-aspect-ratio: 5/4) {
+    
+    .sticky {
+        flex-direction: column;
+    }
+    
+    #searchInput {
+        width: 100%;
+        flex: none;
+    }
+    
+    .block_btn {
+        width: 100%;
+        overflow-x: auto;
+    }
+    
+    #notesContainer.default-view {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    #notesContainer.default-view .note {
+        height: auto;
+        min-height: 250px;
+    }
+    
+    .noteContent {
+        max-height: none;
+        overflow-y: visible;
+    }
+    
+    .btn_view_div {
+        flex-wrap: wrap;
+    }
+}
+
+/* ── Ландшафтная ориентация квадратных мониторов ────────────────── */
+@media (orientation: landscape) and (min-aspect-ratio: 4/3) and (max-aspect-ratio: 5/4) {
+    
+    #notesContainer.default-view {
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    }
+    
+    .btn_view_div {
+        flex-wrap: nowrap;
+    }
+}
+
+/* ── Дополнительные оптимизации для квадратных экранов ──────────── */
+@media (min-aspect-ratio: 4/3) and (max-aspect-ratio: 5/4) {
+    
+    /* Уменьшаем отступы для экономии места */
+    .app-notes-center {
+        padding: 12px;
+        gap: 10px;
+    }
+    
+    .app-notes {
+        width: 97%;
+    }
+    
+    /* Оптимизация для сенсорных квадратных экранов */
+    @media (hover: none) and (pointer: coarse) {
+        .note {
+            min-height: 200px;
+        }
+        
+        .editBtn, .deleteBtn, .exportBtn {
+            height: 36px;
+            min-height: 36px;
+        }
+        
+        .ln-check-box {
+            width: 22px !important;
+            height: 22px !important;
+            min-width: 22px !important;
+            min-height: 22px !important;
+        }
+    }
+    
+    /* Уменьшение размеров скроллбаров */
+    ::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+    }
+    
+    /* Оптимизация для предпочтения уменьшенного движения */
+    @media (prefers-reduced-motion: reduce) {
+        .note,
+        .welcome-message,
+        .modal-content,
+        #toggleViewButton {
+            transition: none !important;
+            animation: none !important;
+        }
+    }
+}
