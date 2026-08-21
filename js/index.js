@@ -2974,12 +2974,12 @@ function enableQuickEditOnNote(noteEl) {
                               // blur-triggered autosave from racing each
                               // other into two concurrent saves
 
-    const persist = async () => {
+    const persist = async (opts = {}) => {
         if (savePending) return;
         savePending = true;
         clearTimeout(blurTimer);
         try {
-            await saveQuickEdit(noteEl, content, noteId, noteCreationTime);
+            await saveQuickEdit(noteEl, content, noteId, noteCreationTime, opts);
             noteEl.classList.remove('quick-edit-dirty');
         } finally {
             savePending = false;
@@ -2988,7 +2988,7 @@ function enableQuickEditOnNote(noteEl) {
 
     bar.querySelector('.quick-edit-save').addEventListener('click', async e => {
         e.stopPropagation();
-        await persist();
+        await persist(); // explicit action — the "Note saved!" toast belongs here
         trueOriginalContent = content.innerHTML; // explicit save = new baseline
     });
     bar.querySelector('.quick-edit-cancel').addEventListener('click', async e => {
@@ -3002,11 +3002,15 @@ function enableQuickEditOnNote(noteEl) {
         noteEl.classList.remove('quick-edit-dirty');
         disableQuickEditOnNote(noteEl);
         if (!document.querySelector('#notesContainer .note.quick-edit-note')) { quickEditActive = false; localStorage.setItem('quickEditMode','0'); applyQuickEditMode(); }
-        showQuickEditNotification(typeof t === 'function' ? t('quickEditCancelled') || 'Changes cancelled' : 'Changes cancelled', 'info');
+        showQuickEditNotification(typeof t === 'function' ? t('quickEditCancelled') || 'Quick edit turned off' : 'Quick edit turned off', 'info');
     });
     content.addEventListener('input', () => noteEl.classList.add('quick-edit-dirty'));
     content.addEventListener('blur', () => {
-        blurTimer = setTimeout(() => { if (noteEl.classList.contains('quick-edit-dirty')) persist(); }, 400);
+        // Silent — this fires every time focus moves to a DIFFERENT note
+        // while several are open in quick edit at once, so a full toast per
+        // note would stack into a wall of "Note saved!" popups for what's
+        // really just routine navigation, not a deliberate save action.
+        blurTimer = setTimeout(() => { if (noteEl.classList.contains('quick-edit-dirty')) persist({ silent: true }); }, 400);
     });
     content.addEventListener('focus', () => clearTimeout(blurTimer));
 
