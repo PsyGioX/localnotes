@@ -2958,19 +2958,28 @@ function enableQuickEditOnNote(noteEl) {
         </div>`;
     noteEl.appendChild(bar);
     const noteId = noteEl.dataset.noteId, noteCreationTime = parseInt(noteEl.dataset.noteCreationTime, 10);
-    let originalContent = content.innerHTML;
-    let blurTimer = null;
-    let savePending = false; // guards against the manual Save button and the
-                              // blur-triggered autosave racing each other and
-                              // firing two concurrent saves for the same note
 
-    const doSave = async () => {
+    // Two separate checkpoints, on purpose:
+    //  - trueOriginalContent: the state when quick-edit was opened. Only
+    //    moves forward when the user explicitly clicks Save — that's the
+    //    only action that should redefine "what Cancel reverts to".
+    //  - blur-autosave (below) persists to the DB as a safety net so work
+    //    isn't lost if the user navigates away without clicking Save, but it
+    //    deliberately does NOT move trueOriginalContent forward. Otherwise
+    //    Cancel stops being able to undo anything the moment you tab out
+    //    once, which is exactly what made both buttons feel pointless.
+    let trueOriginalContent = content.innerHTML;
+    let blurTimer = null;
+    let savePending = false; // guards the manual Save button and the
+                              // blur-triggered autosave from racing each
+                              // other into two concurrent saves
+
+    const persist = async () => {
         if (savePending) return;
         savePending = true;
         clearTimeout(blurTimer);
         try {
             await saveQuickEdit(noteEl, content, noteId, noteCreationTime);
-            originalContent = content.innerHTML;
             noteEl.classList.remove('quick-edit-dirty');
         } finally {
             savePending = false;
@@ -2979,19 +2988,25 @@ function enableQuickEditOnNote(noteEl) {
 
     bar.querySelector('.quick-edit-save').addEventListener('click', async e => {
         e.stopPropagation();
-        await doSave();
+        await persist();
+        trueOriginalContent = content.innerHTML; // explicit save = new baseline
     });
-    bar.querySelector('.quick-edit-cancel').addEventListener('click', e => {
+    bar.querySelector('.quick-edit-cancel').addEventListener('click', async e => {
         e.stopPropagation();
         clearTimeout(blurTimer);
-        content.innerHTML = originalContent; noteEl.classList.remove('quick-edit-dirty');
+        content.innerHTML = trueOriginalContent;
+        // A blur-autosave may already have written the in-between (unwanted)
+        // state to the DB — re-save the true original so storage matches
+        // what's back on screen, not just the visible DOM.
+        await saveQuickEdit(noteEl, content, noteId, noteCreationTime, { silent: true });
+        noteEl.classList.remove('quick-edit-dirty');
         disableQuickEditOnNote(noteEl);
         if (!document.querySelector('#notesContainer .note.quick-edit-note')) { quickEditActive = false; localStorage.setItem('quickEditMode','0'); applyQuickEditMode(); }
         showQuickEditNotification(typeof t === 'function' ? t('quickEditCancelled') || 'Changes cancelled' : 'Changes cancelled', 'info');
     });
     content.addEventListener('input', () => noteEl.classList.add('quick-edit-dirty'));
     content.addEventListener('blur', () => {
-        blurTimer = setTimeout(() => { if (noteEl.classList.contains('quick-edit-dirty')) doSave(); }, 400);
+        blurTimer = setTimeout(() => { if (noteEl.classList.contains('quick-edit-dirty')) persist(); }, 400);
     });
     content.addEventListener('focus', () => clearTimeout(blurTimer));
 
@@ -3031,17 +3046,6 @@ function enableQuickEditOnNote(noteEl) {
         if (textInput) textInput.classList.toggle('cl-done', cb.checked);
         noteEl.classList.add('quick-edit-dirty');
     });
-
-    // Periodic autosave while dirty — a competing action elsewhere in the
-    // app (deleting another note, editing a tag, etc.) triggers a full
-    // loadNotes() re-render that wipes any in-progress unsaved edit. Saving
-    // every few seconds shrinks that window instead of relying solely on
-    // blur, which only fires once the user leaves the field.
-    const autosaveInterval = setInterval(() => {
-        if (!document.body.contains(noteEl)) { clearInterval(autosaveInterval); return; }
-        if (noteEl.classList.contains('quick-edit-dirty') && document.activeElement === content) doSave();
-    }, 4000);
-    noteEl._qeAutosaveInterval = autosaveInterval;
 }
 
 // Sync cl-text input values to HTML attributes before reading innerHTML
@@ -3056,7 +3060,7 @@ function syncClInputs(container) {
     });
 }
 
-async function saveQuickEdit(noteEl, content, noteId, noteCreationTime) {
+async function saveQuickEdit(noteEl, content, noteId, noteCreationTime, options = {}) {
     syncClInputs(content);
     const updatedContent = content.innerHTML;
     const timestamp = Date.now();
@@ -3073,7 +3077,12 @@ async function saveQuickEdit(noteEl, content, noteId, noteCreationTime) {
             const createdText = window.langData?.[actLng]?.created || (typeof t === 'function' ? t('created') : 'Created');
             footer.textContent = `${createdText}: ${new Date(noteCreationTime).toLocaleString(locale, opts)} | ${modifiedText}: ${new Date(timestamp).toLocaleString(locale, opts)}`;
         }
-        showQuickEditNotification(typeof t === 'function' ? t('noteSaved') || 'Note saved!' : 'Note saved!', 'success');
+        // Cancel re-saves the pre-edit content to undo an earlier blur-autosave,
+        // then shows its own "Changes cancelled" toast — showing "Note saved!"
+        // right before that would be confusing, so it's suppressed here.
+        if (!options.silent) {
+            showQuickEditNotification(typeof t === 'function' ? t('noteSaved') || 'Note saved!' : 'Note saved!', 'success');
+        }
     } catch (e) {
         console.error('Quick edit save error:', e);
         showQuickEditNotification(typeof t === 'function' ? t('errorSavingNote') || 'Error saving!' : 'Error saving!', 'error');
@@ -3085,7 +3094,6 @@ function disableQuickEditOnNote(noteEl) {
     if (content) { content.removeAttribute('contenteditable'); content.removeAttribute('spellcheck'); }
     noteEl.classList.remove('quick-edit-note', 'quick-edit-dirty');
     const bar = noteEl.querySelector('.quick-edit-bar'); if (bar) noteEl.removeChild(bar);
-    if (noteEl._qeAutosaveInterval) { clearInterval(noteEl._qeAutosaveInterval); noteEl._qeAutosaveInterval = null; }
 }
 
 // Stacks vertically via a CSS custom property instead of one-at-a-time
