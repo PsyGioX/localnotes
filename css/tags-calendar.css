@@ -794,6 +794,7 @@
         border-radius: 16px 16px 0 0;
         max-width: 100%;
         width: 100%;
+        max-height: 95vh;
         max-height: 95dvh;
         animation: slideUp .25s ease;
     }
@@ -827,15 +828,15 @@
     .nsm-panel {
         border-radius: 16px 16px 0 0;
         max-width: 100%;
-        max-height: 92dvh;
         max-height: 92vh;
+        max-height: 92dvh;
         animation: slideUp .28s cubic-bezier(0.32, 0.72, 0, 1);
         overflow: visible;
     }
     .nsm-drag-handle { display: block; }
     .nsm-body {
-        max-height: 62dvh;
         max-height: 62vh;
+        max-height: 62dvh;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
         overscroll-behavior-y: contain;
@@ -858,6 +859,7 @@
         bottom: 0 !important; top: auto !important;
         width: 100% !important;
         border-radius: 16px 16px 0 0;
+        max-height: 70vh;
         max-height: 70dvh;
         overflow-y: auto;
         animation: slideUp .22s ease;

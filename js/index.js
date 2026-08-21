@@ -2959,21 +2959,89 @@ function enableQuickEditOnNote(noteEl) {
     noteEl.appendChild(bar);
     const noteId = noteEl.dataset.noteId, noteCreationTime = parseInt(noteEl.dataset.noteCreationTime, 10);
     let originalContent = content.innerHTML;
+    let blurTimer = null;
+    let savePending = false; // guards against the manual Save button and the
+                              // blur-triggered autosave racing each other and
+                              // firing two concurrent saves for the same note
+
+    const doSave = async () => {
+        if (savePending) return;
+        savePending = true;
+        clearTimeout(blurTimer);
+        try {
+            await saveQuickEdit(noteEl, content, noteId, noteCreationTime);
+            originalContent = content.innerHTML;
+            noteEl.classList.remove('quick-edit-dirty');
+        } finally {
+            savePending = false;
+        }
+    };
+
     bar.querySelector('.quick-edit-save').addEventListener('click', async e => {
         e.stopPropagation();
-        await saveQuickEdit(noteEl, content, noteId, noteCreationTime);
-        originalContent = content.innerHTML; noteEl.classList.remove('quick-edit-dirty');
+        await doSave();
     });
     bar.querySelector('.quick-edit-cancel').addEventListener('click', e => {
-        e.stopPropagation(); content.innerHTML = originalContent; noteEl.classList.remove('quick-edit-dirty');
+        e.stopPropagation();
+        clearTimeout(blurTimer);
+        content.innerHTML = originalContent; noteEl.classList.remove('quick-edit-dirty');
         disableQuickEditOnNote(noteEl);
         if (!document.querySelector('#notesContainer .note.quick-edit-note')) { quickEditActive = false; localStorage.setItem('quickEditMode','0'); applyQuickEditMode(); }
         showQuickEditNotification(typeof t === 'function' ? t('quickEditCancelled') || 'Changes cancelled' : 'Changes cancelled', 'info');
     });
     content.addEventListener('input', () => noteEl.classList.add('quick-edit-dirty'));
-    let blurTimer;
-    content.addEventListener('blur', () => { blurTimer = setTimeout(async () => { if (noteEl.classList.contains('quick-edit-dirty')) { await saveQuickEdit(noteEl, content, noteId, noteCreationTime); originalContent = content.innerHTML; noteEl.classList.remove('quick-edit-dirty'); } }, 400); });
+    content.addEventListener('blur', () => {
+        blurTimer = setTimeout(() => { if (noteEl.classList.contains('quick-edit-dirty')) doSave(); }, 400);
+    });
     content.addEventListener('focus', () => clearTimeout(blurTimer));
+
+    // Quick Edit is a bare contenteditable region with none of the full
+    // editor's paste handling (localnoteseditor/core.js _onPaste) — without
+    // this, pasted HTML goes straight into the live DOM unsanitized, and an
+    // <img onerror=...>-style payload can fire the moment it's pasted, before
+    // anything is even saved. Sanitize on the way in, same as everywhere else.
+    content.addEventListener('paste', e => {
+        e.preventDefault();
+        const html = e.clipboardData.getData('text/html');
+        const text = e.clipboardData.getData('text/plain');
+        let clean = null;
+        if (html) {
+            clean = DOMPurify.sanitize(html, {
+                ADD_TAGS: ['iframe', 'video', 'source'],
+                ADD_ATTR: ['allowfullscreen', 'frameborder', 'scrolling', 'allow', 'src', 'width', 'height', 'controls', 'autoplay', 'muted', 'loop']
+            });
+        } else if (text) {
+            clean = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+        }
+        if (clean) document.execCommand('insertHTML', false, clean);
+        noteEl.classList.add('quick-edit-dirty');
+    });
+
+    // Checklist checkboxes toggled during quick edit didn't get the same
+    // live strikethrough/done styling the full editor applies immediately —
+    // state was only ever synced to storage on save, so the card looked
+    // stale until the note was reopened. Match the full editor's behaviour.
+    content.addEventListener('change', e => {
+        const cb = e.target;
+        if (!cb.matches('.cl-cb')) return;
+        const item = cb.closest('.cl-item');
+        const textInput = item && item.querySelector('.cl-text');
+        cb.setAttribute('data-checked', cb.checked ? 'true' : 'false');
+        if (item) item.classList.toggle('cl-item-done', cb.checked);
+        if (textInput) textInput.classList.toggle('cl-done', cb.checked);
+        noteEl.classList.add('quick-edit-dirty');
+    });
+
+    // Periodic autosave while dirty — a competing action elsewhere in the
+    // app (deleting another note, editing a tag, etc.) triggers a full
+    // loadNotes() re-render that wipes any in-progress unsaved edit. Saving
+    // every few seconds shrinks that window instead of relying solely on
+    // blur, which only fires once the user leaves the field.
+    const autosaveInterval = setInterval(() => {
+        if (!document.body.contains(noteEl)) { clearInterval(autosaveInterval); return; }
+        if (noteEl.classList.contains('quick-edit-dirty') && document.activeElement === content) doSave();
+    }, 4000);
+    noteEl._qeAutosaveInterval = autosaveInterval;
 }
 
 // Sync cl-text input values to HTML attributes before reading innerHTML
@@ -3017,15 +3085,45 @@ function disableQuickEditOnNote(noteEl) {
     if (content) { content.removeAttribute('contenteditable'); content.removeAttribute('spellcheck'); }
     noteEl.classList.remove('quick-edit-note', 'quick-edit-dirty');
     const bar = noteEl.querySelector('.quick-edit-bar'); if (bar) noteEl.removeChild(bar);
+    if (noteEl._qeAutosaveInterval) { clearInterval(noteEl._qeAutosaveInterval); noteEl._qeAutosaveInterval = null; }
+}
+
+// Stacks vertically via a CSS custom property instead of one-at-a-time
+// position:fixed, so two notes saved close together (e.g. blur-autosave on
+// one note landing right after a manual Save on another) don't overlap.
+let _qeActiveNotifications = [];
+function _positionQuickEditNotifications() {
+    let offset = 0;
+    _qeActiveNotifications.forEach(el => {
+        el.style.setProperty('--qe-stack-offset', offset + 'px');
+        offset += el.offsetHeight + 10;
+    });
 }
 
 function showQuickEditNotification(message, type = 'success') {
+    const iconMap = { success: 'bi-check-lg', error: 'bi-x-lg', info: 'bi-info-circle-fill' };
     const n = document.createElement('div');
-    const colors = { success: '#28a745', error: '#dc3545', info: '#007bff' };
-    n.style.cssText = `position:fixed;bottom:20px;right:20px;background:${colors[type]||colors.info};color:white;padding:12px 20px;border-radius:8px;z-index:99999;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,0.3);transition:opacity 0.3s;`;
-    n.textContent = message;
+    n.className = `quick-edit-notification quick-edit-notification-${type}`;
+    n.innerHTML = `
+        <div class="quick-edit-notification-content">
+            <div class="quick-edit-notification-icon"><i class="bi ${iconMap[type] || iconMap.info}"></i></div>
+            <div class="quick-edit-notification-text"></div>
+        </div>`;
+    n.querySelector('.quick-edit-notification-text').textContent = message; // textContent, never innerHTML — message may echo user input (e.g. error text)
     document.body.appendChild(n);
-    setTimeout(() => { n.style.opacity = '0'; setTimeout(() => { if (n.parentNode) document.body.removeChild(n); }, 300); }, 2000);
+    _qeActiveNotifications.push(n);
+    _positionQuickEditNotifications();
+    requestAnimationFrame(() => n.classList.add('show'));
+
+    const remove = () => {
+        n.classList.remove('show');
+        setTimeout(() => {
+            if (n.parentNode) document.body.removeChild(n);
+            _qeActiveNotifications = _qeActiveNotifications.filter(el => el !== n);
+            _positionQuickEditNotifications();
+        }, 300);
+    };
+    setTimeout(remove, 2400);
 }
 
 function restoreQuickEditMode() {

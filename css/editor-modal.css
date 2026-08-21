@@ -51,7 +51,18 @@
     grid-template-areas: "editor" "actions";
     box-sizing: border-box !important;
     overflow: hidden;
+    /* Fallback stack: if a browser/engine rejects `dvh` inside min()/calc()
+       (the entire declaration is invalid per spec, not just that unit — so
+       without a plain-vh value declared FIRST, the modal ends up with no
+       height constraint at all, grows to fit its content, and pushes
+       .modal-buttons-container off the bottom of the viewport with only the
+       backdrop scrollable to reach it). Plain vh first, dvh-refined second —
+       browsers that don't understand the second line simply keep the first. */
+    max-height: calc(100vh - 24px);
+    max-height: min(88vh, calc(100vh - 24px));
     max-height: min(88dvh, calc(100vh - 24px));
+    height: calc(100vh - 24px);
+    height: min(88vh, calc(100vh - 24px));
     height: min(88dvh, calc(100vh - 24px));
     padding: 0 !important;
     gap: 0;
@@ -239,7 +250,11 @@
     #editModal .modal-content {
         width: 98% !important;
         margin: 2vh auto !important;
+        height: calc(100vh - 20px);
+        height: min(94vh, calc(100vh - 20px));
         height: min(94dvh, calc(100vh - 20px));
+        max-height: calc(100vh - 20px);
+        max-height: min(94vh, calc(100vh - 20px));
         max-height: min(94dvh, calc(100vh - 20px));
     }
 }
@@ -253,7 +268,11 @@
     #editModal .modal-content {
         width: 96% !important;
         margin: 2vh auto !important;
+        height: calc(100vh - 24px);
+        height: min(92vh, calc(100vh - 24px));
         height: min(92dvh, calc(100vh - 24px));
+        max-height: calc(100vh - 24px);
+        max-height: min(92vh, calc(100vh - 24px));
         max-height: min(92dvh, calc(100vh - 24px));
     }
 }
@@ -345,7 +364,9 @@
 @media (max-width: 768px) {
     @supports (-moz-appearance: none) {
         #editModal .modal-content {
+            height: 100vh;
             height: 100dvh;
+            max-height: 100vh;
             max-height: 100dvh;
         }
     }

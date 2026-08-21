@@ -1411,9 +1411,9 @@ textarea.lne-inp { resize: vertical; }
     .lne-editor { padding: 12px 14px; }
     /* Modal bottom-sheet full height */
     .lne-modal-ov { padding: 0; align-items: flex-end; }
-    .lne-modal { border-radius: 16px 16px 0 0; max-width: 100%; max-height: 95dvh; animation: slideUp .28s cubic-bezier(0.32, 0.72, 0, 1); will-change: transform; }
+    .lne-modal { border-radius: 16px 16px 0 0; max-width: 100%; max-height: 95vh; max-height: 95dvh; animation: slideUp .28s cubic-bezier(0.32, 0.72, 0, 1); will-change: transform; }
     .lne-modal-wide .lne-modal { width: 100%; }
-    .lne-mbody { max-height: 55dvh; }
+    .lne-mbody { max-height: 55vh; max-height: 55dvh; }
 }
 
 /* ─────────────── MODAL MOBILE (<640px) ─────────────── */
@@ -1425,6 +1425,7 @@ textarea.lne-inp { resize: vertical; }
     .lne-modal {
         border-radius: 16px 16px 0 0;
         max-width: 100%;
+        max-height: 92vh;
         max-height: 92dvh;
         animation: slideUp .28s cubic-bezier(0.32, 0.72, 0, 1);
         will-change: transform;
@@ -1434,6 +1435,7 @@ textarea.lne-inp { resize: vertical; }
     }
     /* Body scrollable */
     .lne-mbody {
+        max-height: 55vh;
         max-height: 55dvh;
     }
     /* Footer sticks to bottom */
@@ -1475,11 +1477,11 @@ textarea.lne-inp { resize: vertical; }
     /* Custom templates — bigger tap targets */
     .lne-ctpl-insert { padding: 11px 12px; }
     .lne-ctpl-del { width: 44px; }
-    .lne-ctpl-list { max-height: 45dvh; }
+    .lne-ctpl-list { max-height: 45vh; max-height: 45dvh; }
     .lne-ctpl-metarow { flex-direction: column; }
     .lne-ctpl-ico { width: 40px; height: 40px; }
     .lne-ctpl-tbtn { padding: 10px; }
-    .lne-wikipop { width: min(300px, calc(100vw - 16px)); max-height: 45dvh; }
+    .lne-wikipop { width: min(300px, calc(100vw - 16px)); max-height: 45vh; max-height: 45dvh; }
     .lne-wikipop-item { padding: 10px 9px; }
     /* Editor modal drag handle */
     .lne-modal::before {
