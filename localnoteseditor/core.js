@@ -721,6 +721,13 @@ class LocalNotesEditor {
             if (e.key === 'Escape') { e.preventDefault(); this._closeWikiPopup(); return; }
         }
         var c = e.key.toLowerCase();
+        // e.key is LAYOUT-DEPENDENT (physically pressing "K" on a Cyrillic
+        // layout produces "л", not "k", so relying on e.key alone silently
+        // breaks every one of these shortcuts on non-Latin layouts). e.code
+        // reflects the physical key position regardless of layout — map the
+        // ones used below and prefer that when present.
+        var codeMap = { KeyZ: 'z', KeyY: 'y', KeyB: 'b', KeyI: 'i', KeyU: 'u', KeyK: 'k', KeyH: 'h' };
+        if (e.code && codeMap[e.code]) c = codeMap[e.code];
         // Hide context toolbar on any keypress
         if (this._removeCtx) this._removeCtx();
         if (e.ctrlKey || e.metaKey) {

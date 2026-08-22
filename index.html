@@ -9,7 +9,7 @@
     <meta http-equiv="Permissions-Policy" content="browsing-topics=(), run-ad-auction=(), camera=(), microphone=(), geolocation=()">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.googletagmanager.com https://www.google-analytics.com; script-src-elem 'self' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com chrome-extension:; connect-src 'self' blob: https://www.google-analytics.com https://analytics.google.com; frame-src 'self' https://www.youtube.com https://youtu.be https://www.youtube-nocookie.com https://rutube.ru https://vk.com https://vkvideo.ru https://vk.ru https://ok.ru https://www.tiktok.com https://player.vimeo.com https://www.dailymotion.com https://player.twitch.tv https://clips.twitch.tv; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self'; upgrade-insecure-requests;">
     <!-- Google Analytics — Consent Mode v2 + loader (no inline scripts) -->
-    <script src="/js/ga-init.js?v=1.9.9"></script>
+    <script src="/js/ga-init.js?v=1.9.10"></script>
 
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <meta http-equiv="X-XSS-Protection" content="1; mode=block">
@@ -221,8 +221,8 @@
         },
         "datePublished": "2024-01-01",
         "dateModified": "2026-08-17",
-        "version": "1.9.9",
-        "softwareVersion": "1.9.9",
+        "version": "1.9.10",
+        "softwareVersion": "1.9.10",
         "browserRequirements": "Requires JavaScript. Requires HTML5.",
         "memoryRequirements": "Minimal",
         "storageRequirements": "Browser Local Storage",
@@ -270,26 +270,26 @@
     </script>
 
     <!-- Language Detection and Redirect -->
-    <script src="/js/lang-redirect.js?v=1.9.9"></script>
+    <script src="/js/lang-redirect.js?v=1.9.10"></script>
 
     <!-- Critical CSS -->
-    <link rel="stylesheet" href="/css/index.css?v=1.9.9">
-    <link rel="stylesheet" href="../css/adaptive.css?v=1.9.9">
+    <link rel="stylesheet" href="/css/index.css?v=1.9.10">
+    <link rel="stylesheet" href="../css/adaptive.css?v=1.9.10">
     <!-- Screenshot & App Lock -->
-    <link rel="stylesheet" href="/css/screenshot.css?v=1.9.9">
-    <link rel="stylesheet" href="/css/app-lock.css?v=1.9.9">
+    <link rel="stylesheet" href="/css/screenshot.css?v=1.9.10">
+    <link rel="stylesheet" href="/css/app-lock.css?v=1.9.10">
 
     <!-- Non-critical CSS — loaded async via page-init.js (no onload= handlers) -->
     <noscript>
-        <link rel="stylesheet" href="/css/img.css?v=1.9.9">
+        <link rel="stylesheet" href="/css/img.css?v=1.9.10">
         <link rel="stylesheet" href="/localnoteseditor/bootstrap-icons/font/bootstrap-icons.min.css">
-        <link rel="stylesheet" href="/css/highlight.css?v=1.9.9">
-        <link rel="stylesheet" href="/localnoteseditor/styles.css?v=1.9.9">
-        <link rel="stylesheet" href="/css/editor-modal.css?v=1.9.9">
-        <link rel="stylesheet" href="/css/apple.css?v=1.9.9">
-        <link rel="stylesheet" href="/css/tags-calendar.css?v=1.9.9">
-        <link rel="stylesheet" href="/css/workspaces.css?v=1.9.9">
-        <link rel="stylesheet" href="/css/task-board.css?v=1.9.9">
+        <link rel="stylesheet" href="/css/highlight.css?v=1.9.10">
+        <link rel="stylesheet" href="/localnoteseditor/styles.css?v=1.9.10">
+        <link rel="stylesheet" href="/css/editor-modal.css?v=1.9.10">
+        <link rel="stylesheet" href="/css/apple.css?v=1.9.10">
+        <link rel="stylesheet" href="/css/tags-calendar.css?v=1.9.10">
+        <link rel="stylesheet" href="/css/workspaces.css?v=1.9.10">
+        <link rel="stylesheet" href="/css/task-board.css?v=1.9.10">
     </noscript>
     
     <!-- Prevent FOUC: hide only main content, NOT the preloader -->
@@ -334,7 +334,7 @@
         body.styles-loading footer { visibility: hidden; }
     </style>
     <!-- Page init: styles-loading class, cache cleanup, async CSS loading -->
-    <script src="/js/page-init.js?v=1.9.9"></script>
+    <script src="/js/page-init.js?v=1.9.10"></script>
     
     <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png">
@@ -382,13 +382,30 @@
         <section class="sticky">
             <div class="block_btn">
                 <button id="addNoteButton"><i class="bi bi-plus-lg"></i> Add a note</button>
-                <button id="importButton"><i class="bi bi-box-arrow-in-down"></i> Import notes</button>
-                <button id="clearAllButton"><i class="bi bi-trash3"></i> Clear all notes</button>
-                <button id="calendarBtn"><i class="bi bi-calendar3"></i> Calendar</button>
-                <button id="quickEditToggle"><i class="bi bi-lightning-charge"></i> Quick Edit</button>
+                <!-- Collapses into a dropdown on narrow screens so Import/Clear
+                     all/Calendar/Quick Edit don't force a horizontal-scroll
+                     strip to discover — on desktop this toggle stays hidden
+                     and .more-actions-menu renders its buttons inline exactly
+                     as before (display:contents), so nothing changes there. -->
+                <button id="moreActionsToggle" class="more-actions-toggle" type="button" aria-haspopup="true" aria-expanded="false" aria-label="More actions">
+                    <i class="bi bi-three-dots"></i>
+                </button>
+                <div class="more-actions-menu" id="moreActionsMenu">
+                    <button id="importButton"><i class="bi bi-box-arrow-in-down"></i> Import notes</button>
+                    <button id="clearAllButton"><i class="bi bi-trash3"></i> Clear all notes</button>
+                    <button id="calendarBtn"><i class="bi bi-calendar3"></i> Calendar</button>
+                    <button id="quickEditToggle"><i class="bi bi-lightning-charge"></i> Quick Edit</button>
+                </div>
                 <input multiple type="file" id="importInput" accept=".note,.html,.htm,.md,.zip,.enex,.json">
             </div>
-            <input type="text" id="searchInput" autocomplete="off" placeholder="Search notes... (#tag)" title="#tag  is:pinned|overdue|today|soon  has:image|video|table|checklist|link  before:YYYY-MM-DD  after:YYYY-MM-DD">
+            <div class="search-wrap">
+                <input type="text" id="searchInput" autocomplete="off" placeholder="Search notes... (#tag)" title="#tag  is:pinned|overdue|today|soon  has:image|video|table|checklist|link  before:YYYY-MM-DD  after:YYYY-MM-DD">
+                <!-- Surfaces the Command Palette shortcut — otherwise it's
+                     entirely undiscoverable unless you already know it exists.
+                     Desktop only (touch devices have no Ctrl/Cmd key), and
+                     doesn't intercept clicks — it's just a label. -->
+                <kbd class="search-shortcut-hint" id="searchShortcutHint" aria-hidden="true">Ctrl+K</kbd>
+            </div>
         </section>
     </div>
 
@@ -408,6 +425,15 @@
             <div class="notes_center">
                 <div id="notesContainer" class="default-view"></div>
             </div>
+
+            <!-- Mobile-only floating action button — "Add note" is the most
+                 frequent action; the header row (top of a tall phone screen)
+                 requires a reach, while a bottom-right FAB is thumb-reachable
+                 single-handed. Fires the same click as #addNoteButton, no new
+                 note-creation logic needed. Hidden on desktop via CSS. -->
+            <button id="mobileAddNoteFab" class="mobile-add-fab" type="button" aria-label="Add a note">
+                <i class="bi bi-plus-lg"></i>
+            </button>
 
             <!-- Modal for editing notes -->
             <div id="editModal" class="modal">
@@ -460,32 +486,32 @@
 
 
     <!-- Critical JavaScript loaded first with cache busting -->
-    <script src="/js/purify.min.js?v=1.9.9"></script>
-    <script src="/js/utils.js?v=1.9.9"></script>
-    <script src="/js/selectors.js?v=1.9.9"></script>
-    <script src="/js/translate.js?v=1.9.9"></script>
-    <script src="/js/themes.js?v=1.9.9"></script>
-    <script src="/js/performance.js?v=1.9.9"></script>
-    <script src="/js/security.js?v=1.9.9"></script>
-    <script src="/js/preloader.js?v=1.9.9"></script>
+    <script src="/js/purify.min.js?v=1.9.10"></script>
+    <script src="/js/utils.js?v=1.9.10"></script>
+    <script src="/js/selectors.js?v=1.9.10"></script>
+    <script src="/js/translate.js?v=1.9.10"></script>
+    <script src="/js/themes.js?v=1.9.10"></script>
+    <script src="/js/performance.js?v=1.9.10"></script>
+    <script src="/js/security.js?v=1.9.10"></script>
+    <script src="/js/preloader.js?v=1.9.10"></script>
     <!-- LocalNotesEditor -->
-    <script src="/localnoteseditor/core.js?v=1.9.9" defer></script>
+    <script src="/localnoteseditor/core.js?v=1.9.10" defer></script>
     
     <!-- Non-critical JavaScript loaded asynchronously -->
-    <script src="/js/script-loader.js?v=1.9.9"></script>
+    <script src="/js/script-loader.js?v=1.9.10"></script>
     
     <!-- Workspaces System -->
-    <script src="/js/workspaces-translations.js?v=1.9.9"></script>
-    <script src="/js/workspaces.js?v=1.9.9"></script>
-    <script src="/js/workspaces-integration.js?v=1.9.9"></script>
+    <script src="/js/workspaces-translations.js?v=1.9.10"></script>
+    <script src="/js/workspaces.js?v=1.9.10"></script>
+    <script src="/js/workspaces-integration.js?v=1.9.10"></script>
     
     <!-- Service Worker + PWA Modal -->
-    <script src="/js/pwa.js?v=1.9.9"></script>
-    <script src="/js/network-mode.js?v=1.9.9"></script>
+    <script src="/js/pwa.js?v=1.9.10"></script>
+    <script src="/js/network-mode.js?v=1.9.10"></script>
 
     <!-- Screenshot & App Lock -->
-    <script src="/js/screenshot.js?v=1.9.9"></script>
-    <script src="/js/app-lock.js?v=1.9.9"></script>
+    <script src="/js/screenshot.js?v=1.9.10"></script>
+    <script src="/js/app-lock.js?v=1.9.10"></script>
 
     <!-- Universal Cookies Banner -->
     <script src="/cookies_banner_universal/cookies-banner.js"></script>

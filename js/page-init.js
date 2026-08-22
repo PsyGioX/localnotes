@@ -23,15 +23,15 @@ document.addEventListener('DOMContentLoaded', function() {
 // Load non-critical CSS asynchronously (replaces onload= event handlers on <link> tags)
 (function() {
     var sheets = [
-        '/css/img.css?v=1.9.9',
+        '/css/img.css?v=1.9.10',
         '/localnoteseditor/bootstrap-icons/font/bootstrap-icons.min.css',
-        '/css/highlight.css?v=1.9.9',
-        '/localnoteseditor/styles.css?v=1.9.9',
-        '/css/editor-modal.css?v=1.9.9',
-        '/css/apple.css?v=1.9.9',
-        '/css/tags-calendar.css?v=1.9.9',
-        '/css/workspaces.css?v=1.9.9',
-        '/css/task-board.css?v=1.9.9'
+        '/css/highlight.css?v=1.9.10',
+        '/localnoteseditor/styles.css?v=1.9.10',
+        '/css/editor-modal.css?v=1.9.10',
+        '/css/apple.css?v=1.9.10',
+        '/css/tags-calendar.css?v=1.9.10',
+        '/css/workspaces.css?v=1.9.10',
+        '/css/task-board.css?v=1.9.10'
     ];
     sheets.forEach(function(href) {
         var link = document.createElement('link');

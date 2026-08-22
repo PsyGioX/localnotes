@@ -3196,6 +3196,10 @@ function updateButtonTexts() {
         ['ok', `<i class="bi bi-check-lg"></i> ${fn('ok') || 'OK'}`],
         ['calendarBtn', `<i class="bi bi-calendar3"></i> ${fn('calendar') || 'Calendar'}`]
     ].forEach(([id, html]) => { const el = document.getElementById(id); if (el) el.innerHTML = html; });
+    const moreToggle = document.getElementById('moreActionsToggle');
+    if (moreToggle) moreToggle.setAttribute('aria-label', fn('moreActions') || 'More actions');
+    const mobileFab = document.getElementById('mobileAddNoteFab');
+    if (mobileFab) mobileFab.setAttribute('aria-label', fn('addNote') || 'Add a note');
     if (window.appUtils) window.appUtils.updateToggleViewButton();
     if (window.taskBoard) window.taskBoard.updateToggleButton();
     // Re-apply quick edit button text after language is ready
@@ -3682,6 +3686,39 @@ function initializeEventListeners() {
 
     const addBtn = document.getElementById('addNoteButton');
     if (addBtn) addBtn.addEventListener(eventType, e => { e.preventDefault(); openModal(); });
+
+    // Mobile floating "Add note" button — same action as the header button
+    const mobileFab = document.getElementById('mobileAddNoteFab');
+    if (mobileFab) mobileFab.addEventListener(eventType, e => { e.preventDefault(); openModal(); });
+
+    // "More actions" dropdown (mobile only — desktop keeps everything inline
+    // via CSS `display:contents`, this toggle is simply hidden there)
+    const moreToggle = document.getElementById('moreActionsToggle');
+    const moreMenu = document.getElementById('moreActionsMenu');
+    if (moreToggle && moreMenu) {
+        const closeMoreMenu = () => {
+            moreMenu.classList.remove('open');
+            moreToggle.setAttribute('aria-expanded', 'false');
+        };
+        moreToggle.addEventListener(eventType, e => {
+            e.preventDefault();
+            e.stopPropagation();
+            const isOpen = moreMenu.classList.toggle('open');
+            moreToggle.setAttribute('aria-expanded', String(isOpen));
+        });
+        // Close when a menu item is actually clicked, so the panel doesn't
+        // linger open over whatever the action just opened (import picker,
+        // calendar, quick-edit toggle, the confirm-delete dialog, etc.)
+        moreMenu.addEventListener('click', () => closeMoreMenu());
+        document.addEventListener(eventType, e => {
+            if (!moreMenu.classList.contains('open')) return;
+            if (moreMenu.contains(e.target) || moreToggle.contains(e.target)) return;
+            closeMoreMenu();
+        });
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && moreMenu.classList.contains('open')) closeMoreMenu();
+        });
+    }
 
     const importBtn = document.getElementById('importButton');
     const importInput = document.getElementById('importInput');

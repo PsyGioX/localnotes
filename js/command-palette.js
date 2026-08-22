@@ -45,8 +45,8 @@
         if (document.getElementById('lnp-style')) return;
         var css =
             '.lnp-ov{position:fixed;inset:0;z-index:9999;display:flex;align-items:flex-start;justify-content:center;' +
-                'padding-top:12vh;background:rgba(0,0,0,.55);backdrop-filter:blur(2px);opacity:0;transition:opacity .12s;}' +
-            '.lnp-ov.lnp-open{opacity:1;}' +
+                'padding-top:12vh;background:rgba(0,0,0,.55);backdrop-filter:blur(2px);opacity:0;pointer-events:none;transition:opacity .12s;}' +
+            '.lnp-ov.lnp-open{opacity:1;pointer-events:auto;}' +
             '.lnp-box{width:min(560px,92vw);max-height:70vh;display:flex;flex-direction:column;' +
                 'background:var(--modal-bg,#1a1a1a);border:1px solid var(--modal-border,#272727);border-radius:14px;' +
                 'box-shadow:0 16px 64px rgba(0,0,0,.45);overflow:hidden;transform:translateY(-8px);transition:transform .12s;}' +
@@ -259,9 +259,36 @@
 
     function toggle() { if (isOpen()) close(); else open(); }
 
+    // Firefox doesn't reliably hand Ctrl+K to page JS at all (reserved for
+    // its own search bar), so showing "Ctrl+K" there would point at a
+    // shortcut that silently does nothing — show the working one instead.
+    (function updateShortcutHint() {
+        var hint = document.getElementById('searchShortcutHint');
+        if (!hint) return;
+        var isFirefox = /firefox/i.test(navigator.userAgent) && !/seamonkey/i.test(navigator.userAgent);
+        var isMac = /mac/i.test(navigator.platform || navigator.userAgent);
+        var mod = isMac ? '⌘' : 'Ctrl';
+        hint.textContent = isFirefox ? mod + '+/' : mod + '+K';
+    })();
+
     document.addEventListener('keydown', function (e) {
         var k = (e.key || '').toLowerCase();
-        if ((e.ctrlKey || e.metaKey) && k === 'k') {
+        // Ctrl+K is what Notion/Slack/Linear use too, and Chrome/Edge let a
+        // page intercept it fine — but Firefox reserves it hard at the
+        // browser-chrome level (focuses its search bar) and won't reliably
+        // hand it to page JS at all, no matter what preventDefault() does.
+        // Ctrl+/ isn't claimed by any mainstream browser, so it's the
+        // reliable fallback — kept as a real second binding, not just a
+        // documented alternative, since Ctrl+K silently not working in some
+        // browsers would otherwise look like the feature is just broken there.
+        //
+        // e.key is LAYOUT-DEPENDENT — physically pressing the "K" key on a
+        // Cyrillic/Hebrew/Arabic/etc. layout produces a different character
+        // (e.g. "л" on Russian ЙЦУКЕН), so e.key alone misses it entirely on
+        // any non-Latin layout. e.code reflects the physical key position
+        // regardless of layout, so check both.
+        var isPaletteKey = e.code === 'KeyK' || e.code === 'Slash' || k === 'k' || k === '/';
+        if ((e.ctrlKey || e.metaKey) && isPaletteKey) {
             // The rich-text editor already binds Ctrl+K to "Insert link" —
             // don't steal the shortcut while the user is typing inside it,
             // or both the link modal and the palette would open at once.

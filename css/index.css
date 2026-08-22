@@ -217,8 +217,15 @@ body {
     align-items: stretch; 
     box-sizing: border-box;
 }
-#searchInput {
+.search-wrap {
+    position: relative;
     flex: 0.20;
+    min-width: 0;
+    display: flex;
+    align-items: stretch;
+}
+#searchInput {
+    width: 100%;
     min-width: 0;
     height: 48px;
     border: 1px solid var(--button-border);
@@ -233,6 +240,31 @@ body {
     transition: background 0.2s ease, border-color 0.2s ease;
 }
 #searchInput:focus { border-color: var(--primary-color); background: var(--button-hover); }
+
+/* Command Palette shortcut hint — desktop with a real keyboard only; a touch
+   device has no Ctrl/Cmd key, so this would just be visual noise there. */
+.search-shortcut-hint {
+    display: none;
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 3px 7px;
+    border-radius: 5px;
+    border: 1px solid var(--border-color);
+    background: var(--modal-bg, var(--button-bg));
+    color: var(--footer-text, var(--input-text));
+    font: 600 11px/1 'JetBrains Mono', monospace, inherit;
+    letter-spacing: .01em;
+    opacity: .55;
+    pointer-events: none;
+    white-space: nowrap;
+}
+#searchInput:focus ~ .search-shortcut-hint { opacity: 0; } /* out of the way once the field itself is in use */
+@media (hover: hover) and (pointer: fine) and (min-width: 769px) {
+    .search-shortcut-hint { display: block; }
+    #searchInput { padding-right: 64px; }
+}
 .search-stats {
     display: none;
     position: absolute;
@@ -611,6 +643,12 @@ body {
     line-height: 1.2;
 }
 #addNoteButton:hover, #importButton:hover, #clearAllButton:hover { background: var(--button-hover); }
+
+/* ── "More actions" — desktop: transparent passthrough, mobile: dropdown ── */
+.more-actions-toggle { display: none; }
+.more-actions-menu { display: contents; } /* desktop: children lay out inline in .block_btn exactly as before */
+
+.mobile-add-fab { display: none; }
 .btn_view_div {
     position: fixed;
     bottom: 0;
@@ -1400,6 +1438,63 @@ footer a:hover { color: var(--primary-color); }
         color: #000 !important;
         border-color: var(--primary-color) !important;
     }
+
+    /* "More actions" dropdown replaces the horizontal-scroll discovery
+       problem: Import/Clear all/Calendar/Quick Edit were only reachable by
+       swiping the button row sideways, easy to never notice. Now only "Add
+       a note" + a "⋮ More" toggle sit in the row; the rest live in a panel
+       that drops down from the toggle. */
+    .more-actions-toggle {
+        display: flex !important;
+        flex: 0 0 auto !important;
+        width: 44px !important;
+        height: 44px !important;
+        padding: 0 !important;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px !important;
+        border: 1px solid var(--button-border) !important;
+        background: var(--button-bg) !important;
+        color: var(--button-text) !important;
+        font-size: 16px;
+        cursor: pointer;
+        scroll-snap-align: start;
+        transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .more-actions-toggle[aria-expanded="true"] {
+        background: rgba(174, 252, 110, 0.14) !important;
+        border-color: var(--primary-color) !important;
+        color: var(--primary-color) !important;
+    }
+    .more-actions-menu {
+        display: flex !important;
+        flex-direction: column;
+        gap: 6px;
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 12px;
+        left: 12px;
+        z-index: 30;
+        padding: 10px;
+        border-radius: 14px;
+        background: var(--modal-bg, var(--header-bg));
+        border: 1px solid var(--border-color);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-6px);
+        transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s;
+    }
+    .more-actions-menu.open {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
+    .more-actions-menu button {
+        width: 100% !important;
+        justify-content: flex-start !important;
+        scroll-snap-align: none !important;
+    }
     #clearAllButton {
         background: rgba(220, 53, 69, 0.1) !important;
         border-color: rgba(220, 53, 69, 0.4) !important;
@@ -1407,6 +1502,41 @@ footer a:hover { color: var(--primary-color); }
     }
     #importInput {
         display: none !important;
+    }
+
+    /* Floating "Add note" button — thumb-reachable at the bottom of the
+       screen instead of requiring a reach to the top header on tall phones. */
+    .mobile-add-fab {
+        display: flex !important;
+        position: fixed;
+        right: 18px;
+        bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        border: none;
+        background: var(--primary-color);
+        color: #000;
+        font-size: 22px;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.05);
+        z-index: 40;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .mobile-add-fab:active {
+        transform: scale(0.92);
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    }
+    /* Get out of the way while quick-editing a note near the bottom of the
+       list, or while the task board's own bottom chrome is in the same area */
+    body.quick-edit-active .mobile-add-fab,
+    body.task-board-active .mobile-add-fab {
+        opacity: 0.55;
+    }
+    .search-wrap {
+        width: 100%;
     }
     #searchInput {
         width: 100% !important;
@@ -1635,9 +1765,11 @@ footer a:hover { color: var(--primary-color); }
         scroll-snap-align: start;
     }
     #searchInput {
-        flex: 0 0 200px;
         height: 44px;
         font-size: 14px;
+    }
+    .search-wrap {
+        flex: 0 0 200px;
     }
 }
 @media (min-width: 1025px) and (max-width: 1366px) {
@@ -1686,6 +1818,8 @@ footer a:hover { color: var(--primary-color); }
     #searchInput {
         height: 44px;
         font-size: 15px;
+    }
+    .search-wrap {
         flex: 0 0 220px;
     }
 }

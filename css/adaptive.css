@@ -17,9 +17,11 @@
     }
     
     #searchInput {
-        flex: 0.18;
         height: 44px;
         font-size: 14px;
+    }
+    .search-wrap {
+        flex: 0.18;
     }
     
     .block_btn {
@@ -163,10 +165,12 @@
     }
     
     #searchInput {
-        width: 100%;
-        flex: none;
         height: 42px;
         font-size: 14px;
+    }
+    .search-wrap {
+        width: 100%;
+        flex: none;
     }
     
     .block_btn {
@@ -425,9 +429,11 @@
     }
     
     #searchInput {
-        flex: 0.19;
         height: 44px;
         font-size: 14px;
+    }
+    .search-wrap {
+        flex: 0.19;
     }
     
     .block_btn {
@@ -646,7 +652,7 @@
         flex-direction: column;
     }
     
-    #searchInput {
+    .search-wrap {
         width: 100%;
         flex: none;
     }
