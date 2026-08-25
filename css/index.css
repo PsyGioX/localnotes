@@ -1964,8 +1964,14 @@ footer a:hover { color: var(--primary-color); }
     animation: modalFadeIn 0.3s ease-out;
 }
 @keyframes modalFadeIn {
-    from { opacity: 0; backdrop-filter: blur(0px); }
-    to { opacity: 1; backdrop-filter: blur(10px); }
+    /* Animating backdrop-filter itself (not just opacity) is a well-known
+       WebKit/mobile-Safari rendering trap: while the compositor is still
+       ramping the blur up, nested contenteditable text painted during that
+       window can fail to show at all until something forces a repaint —
+       which a touch/tap does, exactly matching "text disappears until you
+       tap the editor". Keep backdrop-filter constant, animate opacity only. */
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 .modal-content {
     background: var(--modal-bg);

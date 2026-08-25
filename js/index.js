@@ -20,7 +20,14 @@ class ResponsiveManager {
         this.isLargeTablet = this.currentBreakpoint === 'largeTablet';
         this.isDesktop = this.currentBreakpoint === 'desktop';
         this.isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-        this.isTabletDevice = this.isTablet || this.isLargeTablet;
+        // Width alone isn't enough here: a plain desktop/laptop browser window
+        // (e.g. a 1280x1024 monitor, or any 768-1366px-wide non-maximized
+        // window) falls in the same width band as a real tablet. Without the
+        // touch check, such windows were wrongly flagged as tablets and later
+        // forced into the full-screen mobile modal layout (see
+        // applyFullscreenModal), which fights the desktop/square-monitor CSS
+        // and breaks both centering and the editor's height containment.
+        this.isTabletDevice = (this.isTablet || this.isLargeTablet) && this.isTouch;
         this.init();
     }
     getCurrentBreakpoint() {
@@ -45,7 +52,7 @@ class ResponsiveManager {
             this.currentBreakpoint = nb;
             this.isMobile = nb === 'mobile'; this.isTablet = nb === 'tablet';
             this.isLargeTablet = nb === 'largeTablet'; this.isDesktop = nb === 'desktop';
-            this.isTabletDevice = this.isTablet || this.isLargeTablet;
+            this.isTabletDevice = (this.isTablet || this.isLargeTablet) && this.isTouch;
             document.documentElement.classList.add(`${nb}-device`);
         }
     }
@@ -1842,6 +1849,21 @@ function openModal(noteId, noteContent, noteCreationTime) {
                     currentNoteId = null;
                 }
                 localNotesEditorInstance.focus();
+                // iOS/mobile WebKit occasionally paints newly-set
+                // contenteditable content without actually compositing it to
+                // screen until something forces a repaint — a real touch
+                // does this, but a JS-driven .focus() call alone doesn't
+                // always. Nudge a repaint defensively so the note's text
+                // shows up immediately instead of only after the user
+                // happens to tap the editor themselves.
+                if (('ontouchstart' in window) || navigator.maxTouchPoints > 0) {
+                    const edEl = document.querySelector('#editModal .lne-editor');
+                    if (edEl) {
+                        edEl.style.transform = 'translateZ(0)';
+                        void edEl.offsetHeight; // force synchronous layout/repaint
+                        requestAnimationFrame(() => { edEl.style.transform = ''; });
+                    }
+                }
                 setTimeout(() => { if (typeof hljs !== 'undefined') hljs.highlightAll(); fixCodeBlockStyles(); }, 100);
             } catch (e) {
                 console.error('Error setting content:', e);
@@ -3938,3 +3960,4 @@ window.encryption = encryption;
 window.exportNote = exportNote;
 window.importNotesWithFormat = importNotesWithFormat;
 window.getCurrentNoteId = () => currentNoteId;
+

@@ -1,22 +1,22 @@
 # Robots.txt for Local Notes - Secure Note Taking App
-# Updated: 2026-04-21
+# Updated: 2026-08-22
 
 # Global rules — allow all content pages
 User-agent: *
 Allow: /
 Crawl-delay: 0
 
-# Disallow technical/asset directories to preserve crawl budget
-Disallow: /css/
-Disallow: /fonts/
-Disallow: /js/
+# Disallow only non-rendering-critical technical directories. CSS/JS/fonts
+# are intentionally NOT blocked here — Google's own guidance since 2015 is
+# that disallowing render-critical resources actively harms how well its
+# algorithms can render and index the page, which outweighs any crawl-budget
+# savings from blocking them (https://developers.google.com/search/blog/2014/10/updating-our-technical-webmaster).
 Disallow: /editor_news/
 Disallow: /lottiesnimstion/
 Disallow: /json/
 Disallow: /.vscode/
 Disallow: /cookies_banner_universal/
 Disallow: /landing/
-Disallow: /localnoteseditor/
 
 # Specific rules for Google
 User-agent: Googlebot
