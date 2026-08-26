@@ -1874,16 +1874,19 @@ function openModal(noteId, noteContent, noteCreationTime) {
                 // contenteditable content without actually compositing it to
                 // screen until something forces a repaint — a real touch
                 // does this, but a JS-driven .focus() call alone doesn't
-                // always. Nudge a repaint defensively so the note's text
-                // shows up immediately instead of only after the user
-                // happens to tap the editor themselves.
+                // always. .lne-editor now also has a persistent compositing
+                // layer (see editor-modal.css) so it isn't fighting the
+                // modal's own ~300ms entrance animation for a paint; this
+                // just forces an extra paint pass right away and once more
+                // after that entrance animation has actually finished —
+                // removing the nudge one frame in, like before, undid it
+                // while the modal was still mid-animation.
                 if (('ontouchstart' in window) || navigator.maxTouchPoints > 0) {
                     const edEl = document.querySelector('#editModal .lne-editor');
-                    if (edEl) {
-                        edEl.style.transform = 'translateZ(0)';
-                        void edEl.offsetHeight; // force synchronous layout/repaint
-                        requestAnimationFrame(() => { edEl.style.transform = ''; });
-                    }
+                    const forceRepaint = () => { if (edEl) void edEl.offsetHeight; };
+                    forceRepaint();
+                    requestAnimationFrame(forceRepaint);
+                    setTimeout(forceRepaint, 350); // after modal-content's entrance animation ends
                 }
                 setTimeout(() => { if (typeof hljs !== 'undefined') hljs.highlightAll(); fixCodeBlockStyles(); }, 100);
             } catch (e) {
@@ -3997,4 +4000,3 @@ window.encryption = encryption;
 window.exportNote = exportNote;
 window.importNotesWithFormat = importNotesWithFormat;
 window.getCurrentNoteId = () => currentNoteId;
-

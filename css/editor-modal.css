@@ -221,6 +221,21 @@
         scrollbar-width: none !important;
     }
 
+    /* Mobile WebKit/Blink sometimes paint newly-set contenteditable content
+       without actually compositing it to screen until *something* forces a
+       repaint — a real touch does this, which is why the note is invisible
+       until you tap it once. Promoting the editor to its own persistent
+       compositing layer (instead of a one-off JS nudge right as the modal's
+       entrance animation is still running) keeps it correctly painted the
+       whole time, independent of the modal's own opacity/transform/
+       backdrop-filter animation layers. */
+    #editModal .modal-content .lne-editor {
+        transform: translateZ(0);
+        -webkit-transform: translateZ(0);
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+    }
+
     /* Bottom action bar */
     #editModal .modal-buttons-container {
         flex-shrink: 0;
