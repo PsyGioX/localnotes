@@ -1785,13 +1785,7 @@ function openModal(noteId, noteContent, noteCreationTime) {
 
     // iOS Safari: save scroll position before locking body
     const scrollY = window.scrollY;
-    modal.style.display = 'block';
-    document.body.classList.add('modal-open');
     document.body.dataset.scrollY = scrollY;
-
-    if (responsiveManager?.isTabletDevice) {
-        setTimeout(() => responsiveManager.applyFullscreenModal(modal), 100);
-    }
 
     currentNoteId = noteId || null;
 
@@ -1839,6 +1833,17 @@ function openModal(noteId, noteContent, noteCreationTime) {
     waitForEditor()
         .then(() => {
             try {
+                // 1) Populate the editor FIRST, while the modal is still
+                //    display:none / not yet part of any paint. This is the
+                //    actual fix for "text invisible until first touch": the
+                //    old code showed the (empty/stale) modal, THEN mutated
+                //    the now-visible contenteditable's innerHTML a tick
+                //    later — some mobile WebKit/Blink builds fail to
+                //    composite that second mutation until something (a real
+                //    touch) forces a repaint. Writing the content before the
+                //    modal is ever shown means its very first paint already
+                //    contains the real text — there's no visible-then-
+                //    mutated step left to race.
                 if (noteId && noteContent) {
                     let content = validateAndFixImages(noteContent);
                     content = fixChecklistStructure(content);
@@ -1848,6 +1853,16 @@ function openModal(noteId, noteContent, noteCreationTime) {
                     localNotesEditorInstance.setContent('');
                     currentNoteId = null;
                 }
+
+                // 2) NOW reveal the modal — the editor already has its final
+                //    content, so this first paint is the only one it needs.
+                modal.style.display = 'block';
+                document.body.classList.add('modal-open');
+
+                if (responsiveManager?.isTabletDevice) {
+                    setTimeout(() => responsiveManager.applyFullscreenModal(modal), 100);
+                }
+
                 localNotesEditorInstance.focus();
                 // Land the cursor — and the scroll position — at the very
                 // start of the note. Calling .focus() alone leaves the
@@ -1870,23 +1885,15 @@ function openModal(noteId, noteContent, noteCreationTime) {
                         if (scrollAncestor) scrollAncestor.scrollTop = 0;
                     }
                 } catch (e) { /* non-critical — worst case the old default behaviour applies */ }
-                // iOS/mobile WebKit occasionally paints newly-set
-                // contenteditable content without actually compositing it to
-                // screen until something forces a repaint — a real touch
-                // does this, but a JS-driven .focus() call alone doesn't
-                // always. .lne-editor now also has a persistent compositing
-                // layer (see editor-modal.css) so it isn't fighting the
-                // modal's own ~300ms entrance animation for a paint; this
-                // just forces an extra paint pass right away and once more
-                // after that entrance animation has actually finished —
-                // removing the nudge one frame in, like before, undid it
-                // while the modal was still mid-animation.
+                // Extra safety net on top of (1): force a couple of repaints
+                // anyway, in case some browser still needs a nudge even with
+                // content set before the reveal.
                 if (('ontouchstart' in window) || navigator.maxTouchPoints > 0) {
                     const edEl = document.querySelector('#editModal .lne-editor');
                     const forceRepaint = () => { if (edEl) void edEl.offsetHeight; };
                     forceRepaint();
                     requestAnimationFrame(forceRepaint);
-                    setTimeout(forceRepaint, 350); // after modal-content's entrance animation ends
+                    setTimeout(forceRepaint, 350);
                 }
                 setTimeout(() => { if (typeof hljs !== 'undefined') hljs.highlightAll(); fixCodeBlockStyles(); }, 100);
             } catch (e) {
