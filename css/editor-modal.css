@@ -1,4 +1,4 @@
-﻿/* =============================================================================
+/* =============================================================================
    EDITOR MODAL — Mobile layout
    Covers: iOS Safari, Android Chrome, Samsung Internet, Firefox Android,
            Yandex Browser, Opera Mobile
@@ -108,6 +108,22 @@
 
 /* ── MOBILE FULL-SCREEN EDITOR ─────────────────────────────────────────────── */
 @media (max-width: 768px) {
+    /* The note editor's entrance animation (opacity+transform on
+       .modal-content, opacity+backdrop-filter on .modal) combined with real
+       note content being painted into a nested contenteditable is what was
+       still leaving the text invisible until the first tap, even with a
+       persistent compositing layer + repaint nudges on .lne-editor below —
+       some mobile WebKit/Blink builds simply don't reliably composite that
+       combination in time. Removing the entrance animation for THIS modal on
+       touch devices removes the race condition itself rather than trying to
+       out-time it. It still opens instantly, just without the slide/fade. */
+    #editModal.modal {
+        animation: none !important;
+    }
+    #editModal .modal-content {
+        animation: none !important;
+    }
+
     #editModal .modal-content {
         display: grid !important;
         grid-template-rows: minmax(0, 1fr) auto;
