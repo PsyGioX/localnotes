@@ -4,7 +4,7 @@
    ══════════════════════════════════════════════════════════════════ */
 
 /* ── 4:3 Мониторы (1280×960, 1024×768, 800×600) ─────────────────── */
-@media (min-aspect-ratio: 4/3) and (max-aspect-ratio: 4/3) {
+@media (min-aspect-ratio: 1.3) and (max-aspect-ratio: 1.5) {
     
     /* Навигация и контейнеры */
     .info-app {
@@ -140,7 +140,7 @@
 }
 
 /* ── 1:1 Квадратные мониторы (1024×1024, 800×800) ───────────────── */
-@media (min-aspect-ratio: 1/1) and (max-aspect-ratio: 1/1) {
+@media (min-aspect-ratio: 0.85) and (max-aspect-ratio: 1.15) {
     
     /* Навигация */
     .info-app {
@@ -416,7 +416,7 @@
 }
 
 /* ── 5:4 Мониторы (1280×1024, 1024×819) ─────────────────────────── */
-@media (min-aspect-ratio: 5/4) and (max-aspect-ratio: 5/4) {
+@media (min-aspect-ratio: 1.15) and (max-aspect-ratio: 1.3) {
     
     /* Навигация */
     .info-app {
@@ -524,7 +524,7 @@
 }
 
 /* ── Низкое разрешение квадратных мониторов ─────────────────────── */
-@media (max-width: 1024px) and (min-aspect-ratio: 4/3) and (max-aspect-ratio: 5/4) {
+@media (max-width: 1024px) and (min-aspect-ratio: 0.85) and (max-aspect-ratio: 1.5) {
     
     .info-app {
         height: 65px;
@@ -540,20 +540,41 @@
         font-size: 1.5em;
     }
     
-    .sticky {
+    /* Stack the add/search bar instead of squeezing everything into one
+       row: below 1024px there isn't room for 5 buttons + a search field
+       side by side on a boxy (non-widescreen) monitor without either the
+       search field shrinking to near-nothing or the buttons clipping /
+       overlapping it. Matches the mobile layout used at max-width:768px. */
+    .center_nav .sticky {
+        flex-direction: column !important;
         padding: 8px 12px;
         gap: 6px;
+    }
+    
+    .search-wrap {
+        width: 100%;
+        flex: none;
     }
     
     #searchInput {
         height: 40px;
         font-size: 13px;
+        width: 100%;
+    }
+    
+    .block_btn {
+        width: 100%;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
     }
     
     .block_btn button {
+        flex: 0 0 auto;
         height: 38px;
         font-size: 12px;
         padding: 0 8px;
+        white-space: nowrap;
     }
     
     #notesContainer.default-view {
@@ -608,7 +629,7 @@
 }
 
 /* ── Высокое разрешение квадратных мониторов ────────────────────── */
-@media (min-width: 1600px) and (min-aspect-ratio: 4/3) and (max-aspect-ratio: 5/4) {
+@media (min-width: 1600px) and (min-aspect-ratio: 0.85) and (max-aspect-ratio: 1.5) {
     
     #notesContainer.default-view {
         grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -646,10 +667,10 @@
 }
 
 /* ── Портретная ориентация квадратных мониторов ─────────────────── */
-@media (orientation: portrait) and (min-aspect-ratio: 4/3) and (max-aspect-ratio: 5/4) {
+@media (orientation: portrait) and (min-aspect-ratio: 0.85) and (max-aspect-ratio: 1.5) {
     
-    .sticky {
-        flex-direction: column;
+    .center_nav .sticky {
+        flex-direction: column !important;
     }
     
     .search-wrap {
@@ -660,6 +681,7 @@
     .block_btn {
         width: 100%;
         overflow-x: auto;
+        flex-wrap: nowrap;
     }
     
     #notesContainer.default-view {
@@ -683,7 +705,7 @@
 }
 
 /* ── Ландшафтная ориентация квадратных мониторов ────────────────── */
-@media (orientation: landscape) and (min-aspect-ratio: 4/3) and (max-aspect-ratio: 5/4) {
+@media (orientation: landscape) and (min-aspect-ratio: 0.85) and (max-aspect-ratio: 1.5) {
     
     #notesContainer.default-view {
         grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -695,7 +717,7 @@
 }
 
 /* ── Дополнительные оптимизации для квадратных экранов ──────────── */
-@media (min-aspect-ratio: 4/3) and (max-aspect-ratio: 5/4) {
+@media (min-aspect-ratio: 0.85) and (max-aspect-ratio: 1.5) {
     
     /* Уменьшаем отступы для экономии места */
     .app-notes-center {

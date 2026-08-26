@@ -1849,6 +1849,27 @@ function openModal(noteId, noteContent, noteCreationTime) {
                     currentNoteId = null;
                 }
                 localNotesEditorInstance.focus();
+                // Land the cursor — and the scroll position — at the very
+                // start of the note. Calling .focus() alone leaves the
+                // browser to pick a caret position on its own, which on
+                // mobile WebKit/Chrome regularly ends up at the very end of
+                // the note's content, silently scrolling the editor body
+                // down there too. The user then has to notice and scroll
+                // back up manually just to see the note from the top.
+                try {
+                    const edEl = localNotesEditorInstance.ed;
+                    if (edEl) {
+                        const range = document.createRange();
+                        range.selectNodeContents(edEl);
+                        range.collapse(true);
+                        const sel = window.getSelection();
+                        sel.removeAllRanges();
+                        sel.addRange(range);
+                        edEl.scrollTop = 0;
+                        const scrollAncestor = edEl.closest('.lne-body') || edEl.parentElement;
+                        if (scrollAncestor) scrollAncestor.scrollTop = 0;
+                    }
+                } catch (e) { /* non-critical — worst case the old default behaviour applies */ }
                 // iOS/mobile WebKit occasionally paints newly-set
                 // contenteditable content without actually compositing it to
                 // screen until something forces a repaint — a real touch
@@ -3705,6 +3726,22 @@ async function importNotesFiles(files) {
 // ============================================================================
 function initializeEventListeners() {
     const eventType = pointerManager.getEventType();
+
+    // Footer button bar ("Список" / "Доска задач" / "Блокировка") — on some
+    // mobile browsers, once this row overflows and needs horizontal
+    // scrolling, the very first button (view toggle) can end up scrolled
+    // out of view on initial paint, forcing the user to swipe left just to
+    // reach it. Pin the scroll position to the start explicitly rather than
+    // trusting the browser's default, and re-pin after anything that could
+    // resize/re-layout the row.
+    const pinFooterButtonsScroll = () => {
+        const viewer = document.querySelector('.btn_view_div');
+        if (viewer) viewer.scrollLeft = 0;
+    };
+    pinFooterButtonsScroll();
+    requestAnimationFrame(pinFooterButtonsScroll);
+    window.addEventListener('load', pinFooterButtonsScroll);
+    window.addEventListener('orientationchange', () => setTimeout(pinFooterButtonsScroll, 150));
 
     const addBtn = document.getElementById('addNoteButton');
     if (addBtn) addBtn.addEventListener(eventType, e => { e.preventDefault(); openModal(); });
