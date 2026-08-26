@@ -116,49 +116,91 @@
     pointer-events: none;
 }
 
-/* Mobile: icon-only, larger tap targets, horizontal scroll */
-@media (max-width: 600px) {
-    .lne-templates-row {
-        padding: 4px 6px;
-        gap: 5px;
-    }
-    .lne-tpl-label { display: none; }
-    .lne-tpl-group-label {
-        width: 26px; height: 26px;
-        font-size: 14px;
-        color: rgba(174,252,110,.7);
-        background: rgba(174,252,110,.07);
-        border-radius: 6px;
-        margin: 0 2px 0 0;
-    }
-    .lne-tpl-btn {
-        height: 34px !important;
-        padding: 0 10px !important;
-        border-radius: 8px !important;
-        font-size: 12px;
-        border-color: rgba(174,252,110,.2) !important;
-    }
-    .lne-tpl-btn .lne-btn-label { display: none; }
-    .lne-tpl-btn i { font-size: 16px !important; }
-    .lne-tpl-btn {
-        width: 38px !important;
-        padding: 0 !important;
-        justify-content: center !important;
-    }
-    /* Separator becomes smaller on mobile */
-    .lne-templates-row .lne-sep {
-        height: 16px;
-        margin: 0 2px;
-    }
+/* Anchor for the dropdown panel below */
+.lne-templates-row { position: relative; }
+
+/* Templates always collapse behind a single "Templates" toggle button
+   that opens a dropdown — simpler and more robust than conditionally
+   switching between an inline row and a dropdown per breakpoint (that
+   used to fight with `.lne-btn`'s own `display` rule and could show
+   both at once). Same interaction pattern as the app's own "More
+   actions" (⋯) menu. */
+.lne-templates-row .lne-tpl-label { display: none; }
+
+button.lne-tpl-toggle.lne-btn {
+    display: inline-flex !important;
+    flex-shrink: 0 !important;
+    flex-grow: 0 !important;
+    flex-basis: auto !important;
+    width: auto !important;
+    height: 32px !important;
+    padding: 0 12px !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    border-radius: 8px !important;
+    border: 1px solid rgba(174,252,110,.2) !important;
+    background: rgba(174,252,110,.05) !important;
+    color: var(--text-color, #e0e0e0) !important;
+    white-space: nowrap !important;
+    line-height: 1 !important;
+    box-sizing: border-box !important;
+}
+.lne-tpl-toggle .lne-btn-label { display: inline !important; font-size: 12px !important; font-weight: 500 !important; }
+.lne-tpl-toggle i { font-size: 14px !important; width: auto !important; height: auto !important; flex: none !important; }
+.lne-tpl-toggle-caret { font-size: 9px !important; margin-left: 1px !important; transition: transform .15s ease; }
+.lne-tpl-toggle[aria-expanded="true"] .lne-tpl-toggle-caret { transform: rotate(180deg); }
+.lne-tpl-toggle[aria-expanded="true"] {
+    background: rgba(174,252,110,.16) !important;
+    border-color: rgba(174,252,110,.45) !important;
+    color: #aefc6e !important;
 }
 
-/* Tablet: show labels, slightly larger */
-@media (min-width: 601px) and (max-width: 900px) {
-    .lne-templates-row { padding: 4px 4px; gap: 3px; }
-    .lne-tpl-btn { height: 30px !important; padding: 0 7px !important; }
-    .lne-tpl-btn .lne-btn-label { font-size: 10px; }
-    .lne-tpl-label { font-size: 9px; }
+.lne-tpl-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    position: fixed;
+    z-index: 99999;
+    padding: 8px;
+    border-radius: 12px;
+    background: var(--modal-bg, #1a1a1a);
+    border: 1px solid var(--border-color, #272727);
+    box-shadow: 0 12px 32px rgba(0,0,0,.4);
+    overflow-y: auto;
+    opacity: 0; visibility: hidden;
+    transform: translateY(-6px);
+    transition: opacity .16s ease, transform .16s ease, visibility .16s;
 }
+.lne-tpl-menu.open { opacity: 1; visibility: visible; transform: translateY(0); }
+.lne-tpl-menu .lne-tpl-group-label {
+    display: flex;
+    width: auto; height: auto;
+    justify-content: flex-start;
+    gap: 6px;
+    padding: 7px 4px 3px;
+    margin: 0;
+}
+.lne-tpl-menu .lne-tpl-group-label:first-child { padding-top: 2px; }
+.lne-tpl-group-text {
+    display: inline;
+    font-size: 10px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
+    color: rgba(174,252,110,.55);
+}
+.lne-tpl-menu .lne-sep { display: none; }
+button.lne-tpl-btn.lne-btn {
+    width: 100% !important;
+    height: 40px !important;
+    padding: 0 10px !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    justify-content: flex-start !important;
+    box-sizing: border-box !important;
+}
+.lne-tpl-menu .lne-tpl-btn .lne-btn-label { display: inline; font-size: 13px; }
+.lne-tpl-menu .lne-tpl-btn i { font-size: 15px; }
 
 /* Light theme template row */
 [data-theme="light"] .lne-templates-row {
@@ -178,72 +220,21 @@
     color: #28a745 !important;
 }
 [data-theme="light"] .lne-tpl-count { box-shadow: 0 0 0 2px #fff; }
-@media (max-width: 600px) {
-    [data-theme="light"] .lne-tpl-group-label {
-        background: rgba(40,167,69,.1);
-        color: #28a745;
-    }
+[data-theme="light"] .lne-tpl-toggle {
+    border-color: rgba(40,167,69,.2) !important;
+    background: rgba(40,167,69,.05) !important;
+    color: #212529 !important;
 }
-
-/* Scroll-hint fade for the horizontally-scrollable row, so it's clear
-   there are more template buttons off-screen */
-@media (max-width: 900px) {
-    .lne-templates-row {
-        -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 22px), transparent 100%);
-                mask-image: linear-gradient(to right, #000 calc(100% - 22px), transparent 100%);
-    }
+[data-theme="light"] .lne-tpl-toggle[aria-expanded="true"] {
+    background: rgba(40,167,69,.12) !important;
+    border-color: rgba(40,167,69,.4) !important;
+    color: #28a745 !important;
 }
-
-/* Short viewports (landscape phones, square windows, split-screen) —
-   shrink the row itself so it doesn't eat the space needed for the
-   editor body */
-@media (max-height: 480px) {
-    .lne-templates-row { padding: 3px 4px; gap: 3px; }
-    .lne-tpl-label { display: none; }
-    .lne-tpl-group-label { width: 20px; height: 20px; font-size: 12px; margin: 0 1px 0 0; }
-    .lne-tpl-btn {
-        height: 26px !important; width: 28px !important;
-        padding: 0 !important; justify-content: center !important;
-    }
-    .lne-tpl-btn .lne-btn-label { display: none; }
-    .lne-tpl-btn i { font-size: 14px !important; }
-    .lne-templates-row .lne-sep { height: 12px; margin: 0 1px; }
-    .lne-tpl-count { top: -4px; right: -4px; min-width: 13px; height: 13px; font-size: 8px; }
+[data-theme="light"] .lne-tpl-menu {
+    background: var(--modal-bg, #fff);
+    border-color: var(--border-color, #dee2e6);
 }
-
-/* Tiny / square screens: wrap the buttons into a compact grid instead
-   of forcing side-scrolling through a single line — a short swipe row
-   is awkward to browse on a square surface. Triggers on very narrow
-   widths, and on any width once the screen is roughly square or wider
-   than tall isn't the case (i.e. not a normal tall phone). */
-@media (max-width: 380px), (max-height: 420px) and (max-aspect-ratio: 4/3) {
-    .lne-templates-row {
-        flex-wrap: wrap;
-        overflow: visible;
-        row-gap: 4px;
-        -webkit-mask-image: none;
-                mask-image: none;
-    }
-    .lne-templates-row .lne-sep { display: none; }
-    .lne-tpl-group-label { margin: 0 3px 0 6px; }
-    .lne-tpl-group-label:first-child { margin-left: 0; }
-}
-
-/* Container-query fallback: same compact/wrap treatment keyed off the
-   editor's own box, for when it's dropped into a small square widget
-   inside an otherwise large page (viewport-based queries won't catch
-   that case) */
-@container lne (max-width: 380px) {
-    .lne-templates-row {
-        flex-wrap: wrap;
-        overflow: visible;
-        row-gap: 4px;
-        -webkit-mask-image: none;
-                mask-image: none;
-    }
-    .lne-templates-row .lne-sep { display: none; }
-    .lne-tpl-btn { width: 34px !important; }
-}
+[data-theme="light"] .lne-tpl-menu .lne-tpl-group-text { color: rgba(40,167,69,.7); }
 
 .lne-grp { display: flex; align-items: center; gap: 1px; }
 .lne-sep { width: 1px; height: 20px; background: var(--border-color, #333); margin: 0 3px; flex-shrink: 0; }

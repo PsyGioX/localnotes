@@ -183,12 +183,19 @@ class LocalNotesEditor {
         GE +
         '</div>' +
 
-        /* Row 3 — Templates */
+        /* Row 3 — Templates
+           `.lne-tpl-menu` flattens into the row via display:contents on
+           wide screens (same markup/behaviour as before). On small or
+           square screens it becomes a real dropdown panel opened by
+           `.lne-tpl-toggle`, so nothing stays unreachable off-screen —
+           same pattern as the app's own "More actions" (⋯) menu. */
         '<div class="lne-toolbar-row lne-templates-row">' +
         '<span class="lne-tpl-label">' + _('tplTemplates','Templates') + ':</span>' +
+        '<button class="lne-btn lne-tpl-toggle" type="button" aria-haspopup="true" aria-expanded="false" title="' + _('tplTemplates','Templates') + '"><i class="bi bi-collection"></i><span class="lne-btn-label">' + _('tplTemplates','Templates') + '</span><i class="bi bi-chevron-down lne-tpl-toggle-caret"></i></button>' +
+        '<div class="lne-tpl-menu">' +
 
         /* Business */
-        '<span class="lne-tpl-group-label"><i class="bi bi-briefcase"></i></span>' +
+        '<span class="lne-tpl-group-label"><i class="bi bi-briefcase"></i><span class="lne-tpl-group-text">' + _('tplGroupBusiness','Business') + '</span></span>' +
         '<button class="lne-btn lne-tpl-btn" data-cmd="tplMeeting"       title="' + _('tplMeeting','Meeting notes') + '"><i class="bi bi-people"></i><span class="lne-btn-label">' + _('tplMeeting','Meeting') + '</span></button>' +
         '<button class="lne-btn lne-tpl-btn" data-cmd="tplProject"       title="' + _('tplProject','Project plan') + '"><i class="bi bi-kanban"></i><span class="lne-btn-label">' + _('tplProject','Project') + '</span></button>' +
         '<button class="lne-btn lne-tpl-btn" data-cmd="tplReport"        title="' + _('tplReport','Status report') + '"><i class="bi bi-file-earmark-bar-graph"></i><span class="lne-btn-label">' + _('tplReport','Report') + '</span></button>' +
@@ -196,14 +203,14 @@ class LocalNotesEditor {
         '<div class="lne-sep"></div>' +
 
         /* Study */
-        '<span class="lne-tpl-group-label"><i class="bi bi-mortarboard"></i></span>' +
+        '<span class="lne-tpl-group-label"><i class="bi bi-mortarboard"></i><span class="lne-tpl-group-text">' + _('tplGroupStudy','Study') + '</span></span>' +
         '<button class="lne-btn lne-tpl-btn" data-cmd="tplLecture"       title="' + _('tplLecture','Lecture notes') + '"><i class="bi bi-journal-text"></i><span class="lne-btn-label">' + _('tplLecture','Lecture') + '</span></button>' +
         '<button class="lne-btn lne-tpl-btn" data-cmd="tplFlashcard"     title="' + _('tplFlashcard','Flashcard') + '"><i class="bi bi-card-text"></i><span class="lne-btn-label">' + _('tplFlashcard','Flashcard') + '</span></button>' +
         '<button class="lne-btn lne-tpl-btn" data-cmd="tplResearch"      title="' + _('tplResearch','Research notes') + '"><i class="bi bi-search-heart"></i><span class="lne-btn-label">' + _('tplResearch','Research') + '</span></button>' +
         '<div class="lne-sep"></div>' +
 
         /* Planning */
-        '<span class="lne-tpl-group-label"><i class="bi bi-calendar3"></i></span>' +
+        '<span class="lne-tpl-group-label"><i class="bi bi-calendar3"></i><span class="lne-tpl-group-text">' + _('tplGroupPlanning','Planning') + '</span></span>' +
         '<button class="lne-btn lne-tpl-btn" data-cmd="tplDaily"         title="' + _('tplDaily','Daily planner') + '"><i class="bi bi-sun"></i><span class="lne-btn-label">' + _('tplDaily','Daily') + '</span></button>' +
         '<button class="lne-btn lne-tpl-btn" data-cmd="tplWeekly"        title="' + _('tplWeekly','Weekly review') + '"><i class="bi bi-calendar-week"></i><span class="lne-btn-label">' + _('tplWeekly','Weekly') + '</span></button>' +
         '<button class="lne-btn lne-tpl-btn" data-cmd="tplGoals"         title="' + _('tplGoals','Goals & OKR') + '"><i class="bi bi-trophy"></i><span class="lne-btn-label">' + _('tplGoals','Goals') + '</span></button>' +
@@ -211,8 +218,9 @@ class LocalNotesEditor {
         '<div class="lne-sep"></div>' +
 
         /* Custom (user-created) */
-        '<span class="lne-tpl-group-label"><i class="bi bi-bookmark-star"></i></span>' +
+        '<span class="lne-tpl-group-label"><i class="bi bi-bookmark-star"></i><span class="lne-tpl-group-text">' + _('tplGroupCustom','My') + '</span></span>' +
         '<button class="lne-btn lne-tpl-btn lne-tpl-btn-custom" data-cmd="tplCustomManage" title="' + _('tplCustomManage','My templates') + '"><i class="bi bi-collection"></i><span class="lne-btn-label">' + _('tplCustom','My') + '</span><span class="lne-tpl-count" style="display:none">0</span></button>' +
+        '</div>' +
         '</div>';
 
         this._colorBars();
@@ -248,6 +256,72 @@ class LocalNotesEditor {
         if (selH) { selH.addEventListener('mousedown', function() { self._saveRange(); }); selH.addEventListener('change', function(e) { if (!e.target.value) return; self._restoreRange(); self._saveSnap(); document.execCommand('formatBlock', false, e.target.value); e.target.value = ''; self._syncState(); }); }
         if (selF) { selF.addEventListener('mousedown', function() { self._saveRange(); }); selF.addEventListener('change', function(e) { if (!e.target.value) return; self._restoreRange(); self._expandWordIfCollapsed(); self._saveSnap(); document.execCommand('fontName', false, e.target.value); e.target.value = ''; self._syncState(); var isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0); if (!isTouch) self.ed.focus(); }); }
         if (selS) { selS.addEventListener('mousedown', function() { self._saveRange(); }); selS.addEventListener('change', function(e) { if (!e.target.value) return; self._restoreRange(); self._applySize(e.target.value + 'px'); e.target.value = ''; var isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0); if (!isTouch) self.ed.focus(); }); }
+
+        // Templates dropdown. Rendered as a "portal" — moved to
+        // document.body and positioned with `position:fixed` computed from
+        // the toggle button's own screen position — instead of staying
+        // nested inside the toolbar. The editor wrapper clips overflow for
+        // its rounded corners, and note-editing runs inside a modal with
+        // its own stacking context, so a dropdown left in place would get
+        // clipped or painted behind the modal; moving it to <body> with a
+        // very high z-index sidesteps both problems entirely.
+        var tplToggle = this.toolbar.querySelector('.lne-tpl-toggle');
+        var tplMenu = this.toolbar.querySelector('.lne-tpl-menu');
+        if (tplToggle && tplMenu) {
+            var positionTplMenu = function() {
+                var r = tplToggle.getBoundingClientRect();
+                var margin = 8;
+                var width = Math.min(320, window.innerWidth - margin * 2);
+                var left = r.left;
+                if (left + width > window.innerWidth - margin) left = window.innerWidth - margin - width;
+                if (left < margin) left = margin;
+                var maxHeight = Math.min(420, window.innerHeight * 0.6);
+                var top = r.bottom + 6;
+                if (top + maxHeight > window.innerHeight - margin) {
+                    // Not enough room below the button — open upward instead.
+                    top = Math.max(margin, r.top - 6 - maxHeight);
+                }
+                tplMenu.style.left = left + 'px';
+                tplMenu.style.top = top + 'px';
+                tplMenu.style.width = width + 'px';
+                tplMenu.style.maxHeight = maxHeight + 'px';
+            };
+            var closeTplMenu = function() {
+                tplMenu.classList.remove('open');
+                tplToggle.setAttribute('aria-expanded', 'false');
+            };
+            var openTplMenu = function() {
+                if (tplMenu.parentNode !== document.body) document.body.appendChild(tplMenu);
+                positionTplMenu();
+                tplMenu.classList.add('open');
+                tplToggle.setAttribute('aria-expanded', 'true');
+            };
+            tplToggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (tplMenu.classList.contains('open')) closeTplMenu();
+                else openTplMenu();
+            });
+            // Close once an actual template button inside is clicked, so the
+            // panel doesn't linger open over the freshly-inserted content.
+            tplMenu.addEventListener('click', function(e) {
+                if (e.target.closest('.lne-tpl-btn')) closeTplMenu();
+            });
+            document.addEventListener('click', function(e) {
+                if (!tplMenu.classList.contains('open')) return;
+                if (tplMenu.contains(e.target) || tplToggle.contains(e.target)) return;
+                closeTplMenu();
+            });
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && tplMenu.classList.contains('open')) closeTplMenu();
+            });
+            window.addEventListener('resize', function() {
+                if (tplMenu.classList.contains('open')) positionTplMenu();
+            });
+            window.addEventListener('scroll', function() {
+                if (tplMenu.classList.contains('open')) positionTplMenu();
+            }, true);
+        }
     }
 
     _exec(cmd, btn) {
