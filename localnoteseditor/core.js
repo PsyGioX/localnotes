@@ -44,6 +44,15 @@ class LocalNotesEditor {
         this.isRec = false; this._range = null;
         this._foreColor = '#e74c3c'; this._hiliteColor = '#f1c40f';
         this._findMatches = []; this._findIdx = 0;
+        // Mobile virtual keyboards (Gboard, SwiftKey, iOS predictive text) type via
+        // IME composition: compositionstart -> several 'input' events while the
+        // underlined candidate text is still being edited -> compositionend.
+        // Any DOM write we do in between (querySelectorAll + setAttribute, etc.)
+        // makes the browser treat the contenteditable as "changed under it" and it
+        // collapses the caret to the end of the field — that's the mobile
+        // flicker/cursor-jump bug. We defer all snapshot/sync work until the
+        // composition actually ends.
+        this._composing = false;
         this.init();
     }
 
@@ -615,19 +624,36 @@ class LocalNotesEditor {
     // ── Undo/Redo ────────────────────────────────────────────────────────
 
     // Браузер теряет src у iframe при innerHTML сериализации — сохраняем в data-src
-    _snapEncode() {
+    //
+    // `full` (default false) forces every element to be synced even if it's
+    // currently focused — used by getContent() so the note is never saved
+    // without whatever's still being typed. The default (false) path, used on
+    // every keystroke via _saveSnap(), deliberately SKIPS the focused cl-text
+    // input and skips no-op writes: on mobile, calling setAttribute('value', …)
+    // on an <input> the user is actively typing into can collapse its caret to
+    // the end, and doing 5+ querySelectorAll + N DOM writes on every single
+    // keystroke (including ones that changed nothing) is what caused the
+    // visible flicker on longer/checklist-heavy (template) notes. The skipped
+    // input's attribute is instead synced on its own 'blur' and by this same
+    // method with full=true when the note is actually saved.
+    _snapEncode(full) {
+        var active = full ? null : document.activeElement;
         this.ed.querySelectorAll('iframe').forEach(function(f) {
-            if (f.src && f.src !== 'about:blank') f.setAttribute('data-src', f.src);
+            if (f.src && f.src !== 'about:blank' && f.getAttribute('data-src') !== f.src) {
+                f.setAttribute('data-src', f.src);
+            }
         });
         // Sync cl-text input values to HTML attribute so innerHTML captures them
         this.ed.querySelectorAll('.cl-item .cl-text').forEach(function(inp) {
-            inp.setAttribute('value', inp.value);
+            if (inp === active) return;
+            if (inp.getAttribute('value') !== inp.value) inp.setAttribute('value', inp.value);
         });
         // Sync cl-cb checked state to attribute
         this.ed.querySelectorAll('.cl-item .cl-cb').forEach(function(cb) {
-            cb.setAttribute('data-checked', cb.checked ? 'true' : 'false');
-            if (cb.checked) cb.setAttribute('checked', '');
-            else cb.removeAttribute('checked');
+            var want = cb.checked ? 'true' : 'false';
+            if (cb.getAttribute('data-checked') !== want) cb.setAttribute('data-checked', want);
+            if (cb.checked) { if (!cb.hasAttribute('checked')) cb.setAttribute('checked', ''); }
+            else { if (cb.hasAttribute('checked')) cb.removeAttribute('checked'); }
         });
     }
 
@@ -744,7 +770,17 @@ class LocalNotesEditor {
         this.ed.addEventListener('mouseup',   function() { self._saveRange(); self._syncState(); });
         this.ed.addEventListener('keyup',     function() { self._saveRange(); self._syncState(); });
         this.ed.addEventListener('click',     function() { self._saveRange(); self._syncState(); });
-        this.ed.addEventListener('input',     function() { self._saveSnap(); self._updateStatusbar(); self._onWikiLinkTyping(); });
+        // While the user is mid-composition (still picking a candidate word on a
+        // mobile keyboard), don't touch the DOM at all — just wait.
+        this.ed.addEventListener('compositionstart', function() { self._composing = true; });
+        this.ed.addEventListener('compositionend', function() {
+            self._composing = false;
+            self._saveSnap(); self._updateStatusbar(); self._onWikiLinkTyping();
+        });
+        this.ed.addEventListener('input', function() {
+            if (self._composing) return; // deferred to 'compositionend' above
+            self._saveSnap(); self._updateStatusbar(); self._onWikiLinkTyping();
+        });
         this.ed.addEventListener('focus',     function() { if (!self.ed.innerHTML) self.ed.innerHTML = '<p><br></p>'; });
     }
 
@@ -787,6 +823,13 @@ class LocalNotesEditor {
     }
 
     _onKey(e) {
+        // Mobile IMEs (Gboard, SwiftKey, iOS predictive text) fire a keydown for
+        // Enter/Backspace/etc. to confirm a composition candidate, with
+        // e.isComposing true (or the legacy keyCode 229 on older Android
+        // WebViews). Handling that as a "real" Enter here is what inserts a
+        // stray blank line / new checklist item and leaves the caret in the
+        // wrong place — let the browser's own composition handling deal with it.
+        if (e.isComposing || e.keyCode === 229) return;
         // Wiki-link autocomplete popup owns arrow/enter/escape while open
         if (this._wikiPopup) {
             if (e.key === 'ArrowDown') { e.preventDefault(); this._wikiPopupMove(1); return; }
@@ -967,15 +1010,25 @@ class LocalNotesEditor {
         cb.addEventListener('change', toggleCheck);
         cb.addEventListener('touchend', function() { cb.checked = !cb.checked; toggleCheck(); }, { passive: true });
 
-        // Save on input — dispatch to editor so standard save pipeline fires
-        inp.addEventListener('input', function() {
-            inp.setAttribute('value', inp.value);
-            var ev = new Event('input', { bubbles: false });
-            self.ed.dispatchEvent(ev);
-        });
+        // The native 'input' event from typing in this <input> already bubbles
+        // up to the editor's own 'input' listener (_wireEditor), which calls
+        // _saveSnap()/_updateStatusbar(). Re-dispatching a second synthetic
+        // 'input' event here just ran that same (DOM-mutating) work twice per
+        // keystroke — extra jank on mobile for no benefit. Only sync this
+        // input's HTML attribute here (cheap, local); the full snapshot pass
+        // happens once via the bubbled event.
+        inp.addEventListener('input', function() { inp.setAttribute('value', inp.value); });
+        // Also sync on blur so the attribute is guaranteed current the moment
+        // focus leaves — _snapEncode() intentionally skips the *currently
+        // focused* cl-text input while typing (see _snapEncode) to avoid
+        // resetting its caret on mobile, so this is where that value lands.
+        inp.addEventListener('blur', function() { inp.setAttribute('value', inp.value); });
 
         // Enter key → insert new checklist item after
         inp.addEventListener('keydown', function(e) {
+            // Ignore the Enter/Backspace a mobile IME sends to confirm a
+            // composition candidate — see _onKey for the full explanation.
+            if (e.isComposing || e.keyCode === 229) return;
             if (e.key === 'Enter') {
                 e.preventDefault();
                 var newItem = self._makeChecklistItem('');
@@ -2893,7 +2946,15 @@ class LocalNotesEditor {
             cb.addEventListener('touchend', function() { cb.checked = !cb.checked; toggleCheck(); }, { passive: true });
 
             if (inp && inp.tagName === 'INPUT') {
+                // Same reasoning as _makeChecklistItem: keep the HTML attribute
+                // in sync without re-triggering a full editor-wide snapshot on
+                // every keystroke, and never while an IME composition is active.
+                inp.addEventListener('input', function() { inp.setAttribute('value', inp.value); });
+                inp.addEventListener('blur',  function() { inp.setAttribute('value', inp.value); });
                 inp.addEventListener('keydown', function(e) {
+                    // Ignore the Enter/Backspace a mobile IME sends to confirm a
+                    // composition candidate — see _onKey for the full explanation.
+                    if (e.isComposing || e.keyCode === 229) return;
                     if (e.key === 'Enter') {
                         e.preventDefault();
                         var newItem = self._makeChecklistItem('');
@@ -3600,7 +3661,7 @@ class LocalNotesEditor {
     // ── Public API ───────────────────────────────────────────────────────
 
     getContent() {
-        this._snapEncode();
+        this._snapEncode(true);
         return this._cleanForSave(this.ed.innerHTML);
     }
     getText()     { return this.ed.innerText; }
@@ -3673,4 +3734,3 @@ class LocalNotesEditor {
 }
 
 if (typeof module !== 'undefined' && module.exports) module.exports = LocalNotesEditor;
-
