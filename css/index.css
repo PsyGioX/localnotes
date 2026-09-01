@@ -1182,9 +1182,6 @@ i {
     color: var(--button-text);
     border-color: var(--primary-color);
 }
-[data-theme="light"] #importButton:hover {
-    color: var(--button-hover);
-}
 [data-theme="light"] .welcome-message {
     background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
     border-color: #dee2e6;
