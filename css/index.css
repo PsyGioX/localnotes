@@ -161,6 +161,10 @@ i {
     color: var(--primary-color);
 }
 
+i:hover {
+    color: var(--text-color);
+}
+
 .info-app {
     display: flex;
     justify-content: center;
