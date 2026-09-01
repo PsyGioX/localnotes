@@ -156,6 +156,10 @@ body {
     .note.hidden {
         display: none !important;
     }
+
+i {
+    color: var(--primary-color);
+}
 .info-app {
     display: flex;
     justify-content: center;
