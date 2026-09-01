@@ -160,6 +160,10 @@ body {
 i {
     color: var(--primary-color);
 }
+button {
+    color: var(--text-color);
+}
+
 .info-app {
     display: flex;
     justify-content: center;
