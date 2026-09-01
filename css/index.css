@@ -2523,8 +2523,6 @@ footer a:hover { color: var(--primary-color); }
     50%       { opacity: .7; transform: scale(.96); }
 }
 @media (hover:hover) {
-    #addNoteButton:hover, #importButton:hover, #clearAllButton:hover,
-    #toggleViewButton:hover { background-color: #202020; }
     .editBtn:hover, .deleteBtn:hover, .exportBtn:hover { background: var(--button-hover); }
 }
 .tox .tox-edit-area iframe body {
