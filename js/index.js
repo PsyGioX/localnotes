@@ -2415,6 +2415,13 @@ async function _loadNotesImpl() {
             });
             await window.taskBoard.render(notes);
             if (viewer) viewer.style.display = notes.length ? '' : '';
+            // Task board bypasses the normal grid, but the "All notes"
+            // sidebar always reads from _notesRenderState — keep it in
+            // sync here too, or switching workspace/tag filter while the
+            // board is open leaves the sidebar showing stale notes.
+            _notesRenderState.all = notes;
+            _notesRenderState.allTags = typeof getTags === 'function' ? await getTags() : [];
+            _notesRenderState.rendered = notes.length;
             return;
         } catch (e) {
             console.error('Task board render error:', e);
@@ -2461,6 +2468,14 @@ async function _loadNotesImpl() {
                 localStorage.setItem('quickEditMode', '0');
                 if (typeof applyQuickEditMode === 'function') applyQuickEditMode();
             }
+            // Reset the render state before returning — otherwise it still
+            // holds the previous workspace/filter's notes, and the "All
+            // notes" sidebar (which reads _notesRenderState.all directly)
+            // keeps showing that stale list instead of the now-empty one.
+            _notesRenderState.all = [];
+            _notesRenderState.allTags = [];
+            _notesRenderState.rendered = 0;
+            renderLoadMoreButton();
             return;
         }
 
