@@ -157,10 +157,6 @@ body {
         display: none !important;
     }
 
-.sticky > i {
-    color: var(--primary-color);
-}
-
 .info-app {
     display: flex;
     justify-content: center;
