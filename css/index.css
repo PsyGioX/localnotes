@@ -1949,8 +1949,8 @@ footer a:hover { color: var(--primary-color); }
 }
 [data-theme="light"] #clearAllButton {
     background: rgba(220, 53, 69, 0.15) !important;
-       border-color: #ff0000;
-        color: #dc3545 !important;
+       border-color: var(--primary-color);
+       color: var(--button-text);
 }
 .block_btn {
     scrollbar-width: thin;
