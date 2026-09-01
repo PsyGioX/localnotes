@@ -157,6 +157,10 @@ body {
         display: none !important;
     }
 
+.export-icon > i {
+    color: (--text-color);
+}
+
 .info-app {
     display: flex;
     justify-content: center;
