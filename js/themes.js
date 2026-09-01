@@ -191,7 +191,13 @@ class ThemeManager {
         const modal = document.getElementById('themeModal');
         if (modal) {
             modal.style.display = 'none';
-            document.body.style.overflow = 'auto';
+            // Clear the inline override rather than hardcoding 'auto' —
+            // hardcoding it here made body.style.overflow a permanent
+            // inline 'auto' on both axes after the first open/close,
+            // which desyncs position:sticky elements from real scrolling
+            // for the rest of the session. Clearing it restores whatever
+            // the stylesheet actually specifies.
+            document.body.style.overflow = '';
         }
     }
 

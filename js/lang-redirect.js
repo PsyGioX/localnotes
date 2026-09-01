@@ -128,7 +128,7 @@ function showMainPage() {
     originalLog('%c' +
         '╔═══════════════════════════════════════════════════════════╗\n' +
         '║                                                           ║\n' +
-        '║              📝  LOCAL NOTES - SECURE NOTES  📝            ║\n' +
+        '║              <i class="bi bi-filetype-md"></i>  LOCAL NOTES - SECURE NOTES  <i class="bi bi-filetype-md"></i>            ║\n' +
         '║                                                           ║\n' +
         '╚═══════════════════════════════════════════════════════════╝',
         'color: #4CAF50; font-weight: bold; font-size: 12px; font-family: monospace;');
@@ -146,7 +146,7 @@ function showMainPage() {
     originalLog('%c   ✓ Search with transliteration', 'color: #666; font-size: 12px;');
 
     originalLog('%c\n📊 INFORMATION', 'color: #9C27B0; font-size: 16px; font-weight: bold;');
-    originalLog('%c   Version:  1.9.10', 'color: #666; font-size: 12px;');
+    originalLog('%c   Version:  1.9.13', 'color: #666; font-size: 12px;');
     originalLog('%c   Author:   PsyGioX', 'color: #666; font-size: 12px;');
     originalLog('%c   Website:  https://localnotes-three.vercel.app/', 'color: #666; font-size: 12px;');
     originalLog('%c   GitHub:   https://github.com/PsyGioX/localnotes', 'color: #666; font-size: 12px;');

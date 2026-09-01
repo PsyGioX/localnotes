@@ -1,0 +1,112 @@
+/* ============================================================================
+   Interactive onboarding guide (spotlight tour)
+   ============================================================================
+   Replaces the old single-line static "Show instructions" alert with a real
+   step-by-step tour: a dimmed backdrop with a cut-out spotlight around each
+   toolbar button in turn, and a small card explaining what it does.
+   ========================================================================= */
+
+.ln-tour-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: transparent;
+}
+
+.ln-tour-cutout {
+    position: fixed;
+    border-radius: 12px;
+    /* A huge spread on an inset-free box-shadow, applied to a transparent
+       box exactly the size of the target element, dims everything else on
+       the page while leaving the target itself untouched — the standard
+       "spotlight" trick, no SVG masks or extra overlay layers needed. */
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
+    transition: top 0.25s ease, left 0.25s ease, width 0.25s ease, height 0.25s ease;
+    pointer-events: none;
+}
+
+.ln-tour-tooltip {
+    position: fixed;
+    z-index: 10001;
+    width: 320px;
+    max-width: calc(100vw - 32px);
+    background: var(--modal-bg, #1e1e1e);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    padding: 18px 20px;
+    transition: top 0.25s ease, left 0.25s ease;
+}
+
+.ln-tour-progress {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    letter-spacing: 0.02em;
+    margin-bottom: 6px;
+}
+
+.ln-tour-title {
+    margin: 0 0 6px;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-color);
+}
+
+.ln-tour-text {
+    margin: 0 0 16px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+}
+
+.ln-tour-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.ln-tour-skip {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 8px 4px;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+.ln-tour-skip:hover { color: var(--text-color); }
+
+.ln-tour-nav {
+    display: flex;
+    gap: 8px;
+}
+
+.ln-tour-back,
+.ln-tour-next {
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    cursor: pointer;
+    border: 1px solid var(--button-border);
+}
+
+.ln-tour-back {
+    background: var(--button-bg);
+    color: var(--text-color);
+}
+.ln-tour-back:hover { background: var(--button-hover); }
+
+.ln-tour-next {
+    background: var(--primary-color, #28a745);
+    color: #fff;
+    border-color: var(--primary-color, #28a745);
+}
+.ln-tour-next:hover { filter: brightness(1.08); }
+
+@media (max-width: 480px) {
+    .ln-tour-tooltip { width: calc(100vw - 32px); padding: 16px; }
+}

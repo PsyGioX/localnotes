@@ -93,10 +93,18 @@
     }
 
     function stripPreview(html, maxLen) {
+        // textContent has no notion of block-level layout, so adjacent
+        // <p>/<div> blocks (e.g. the note's title paragraph followed by its
+        // first body paragraph) collapse into one run-on word once tags are
+        // stripped — "Note A" + "content A" became "Note Acontent A" in the
+        // task board preview. Insert a separator at block boundaries first.
+        const withBreaks = (html || '')
+            .replace(/<\/(p|div|h[1-6]|li|blockquote|pre|tr|td|th)>/gi, '</$1> ')
+            .replace(/<br\s*\/?>/gi, ' ');
         const d = document.createElement('div');
         d.innerHTML = typeof DOMPurify !== 'undefined'
-            ? DOMPurify.sanitize(html || '', { ALLOWED_TAGS: [], ALLOWED_ATTR: [] })
-            : (html || '');
+            ? DOMPurify.sanitize(withBreaks, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] })
+            : withBreaks;
         let text = (d.textContent || '').replace(/\s+/g, ' ').trim();
         if (!text) text = t('taskUntitled', 'Untitled');
         return text.length > maxLen ? text.slice(0, maxLen) + '…' : text;

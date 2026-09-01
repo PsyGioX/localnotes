@@ -568,7 +568,7 @@ img {
 
 /* ── 28. LARGE PHONES / PHABLETS (> 428px — iPhone Pro Max, Pixel 7 Pro) ───── */
 @media (min-width: 428px) and (max-width: 767px) {
-    #notesContainer.default-view .note { height: 420px !important; }
+    #notesContainer.default-view .note { height: auto !important; min-height: 160px !important; max-height: 420px !important; }
 }
 
 /* ── 29. HUAWEI BROWSER / HARMONY OS ──────────────────────────────────────── */

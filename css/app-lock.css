@@ -786,6 +786,40 @@ button.ln-lock-file-label:active {
     color: var(--primary-color, #aefc6e);
 }
 
+/* Small always-on badge signalling "there are settings behind this button"
+   — previously that was only in the title tooltip, which touch devices
+   never show, so holding/right-clicking to reach settings was undiscoverable
+   until you stumbled into it by accident. */
+@keyframes ln-lock-gear-badge-pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.25); opacity: 0.75; }
+}
+.ln-lock-gear-badge {
+    position: absolute !important;
+    top: 3px;
+    right: 3px;
+    width: 14px;
+    height: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    border-radius: 50%;
+    background: var(--modal-bg, #1e1e1e);
+    border: 1px solid var(--primary-color, #aefc6e);
+    color: var(--primary-color, #aefc6e);
+    box-shadow: 0 0 0 2px var(--button-bg, #1a1a1a);
+    pointer-events: none;
+    z-index: 2 !important;
+    /* Draws attention the first couple of times it appears (e.g. right
+       after enabling lock), then stays put as a quiet static cue. */
+    animation: ln-lock-gear-badge-pulse 1.1s ease-in-out 2;
+}
+[data-theme="light"] .ln-lock-gear-badge {
+    background: #fff;
+    box-shadow: 0 0 0 2px var(--button-bg, #f8f9fa);
+}
+
 @media (max-width: 768px) {
     .ln-lss-mode-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
     .ln-lss-mode-card { padding: 12px 8px; }

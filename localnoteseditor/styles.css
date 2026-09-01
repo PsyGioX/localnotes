@@ -1455,6 +1455,26 @@ textarea.lne-inp { resize: vertical; }
     /* Toolbar — single scrollable row, no wrapping; sticky so it stays visible while scrolling */
     .lne-toolbar { padding: 0; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: none; position: sticky; top: 0; z-index: 10; }
     .lne-toolbar::-webkit-scrollbar { display: none; }
+    /* Visual cue that the row scrolls horizontally — otherwise controls past
+       the edge (font size, insert image/video/table, etc.) just look cut
+       off with no indication there's more to reach. Purely decorative:
+       a soft fade over the last ~28px. Anchored to the scroll container's
+       own box (not its scrolling content), so it stays put at the visible
+       right edge regardless of scroll position; pointer-events:none keeps
+       it from ever intercepting taps on the toolbar underneath. */
+    .lne-toolbar { position: relative; }
+    .lne-toolbar::after {
+        content: '';
+        position: absolute;
+        top: 0; right: 0;
+        width: 28px;
+        height: 100%;
+        pointer-events: none;
+        background: linear-gradient(to right, transparent, var(--bg-secondary, #111) 85%);
+    }
+    [data-theme="light"] .lne-toolbar::after {
+        background: linear-gradient(to right, transparent, #f8f9fa 85%);
+    }
     .lne-toolbar-row { flex-wrap: nowrap !important; padding: 4px 8px; min-width: max-content; }
     .lne-toolbar-row + .lne-toolbar-row { border-top: none; border-left: 1px solid var(--border-color, #272727); }
     .lne-sep { margin: 0 2px; }

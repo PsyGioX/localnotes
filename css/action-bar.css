@@ -1,0 +1,125 @@
+/* ============================================================================
+   Action bar (.btn_view_div: List/Grid toggle + Task Board + Lock) redesign
+   ============================================================================
+   Previously each of the three buttons carried its own 2px colored border,
+   its own border-radius, its own box-shadow and hover-lift animation —
+   three separate pill buttons sitting side by side, each with a generous
+   min-width (up to 360px / 200px / 200px), which read as "stretched" and
+   as mismatched borders bumping into each other rather than one control.
+   This file turns them into a single segmented control: one shared
+   container border, thin dividers between segments, no per-button borders
+   or shadows, and a collapse toggle to shrink the whole bar down to a
+   slim strip when it's not needed.
+   ========================================================================= */
+
+.btn_view_div {
+    background: var(--card-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 14px !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    padding: 6px !important;
+    gap: 0 !important;
+}
+[data-theme="dark"] .btn_view_div {
+    box-shadow: 0 2px 14px rgba(0, 0, 0, 0.35) !important;
+}
+
+/* Segments: no individual border/shadow/lift — just a shared surface with
+   a background tint on hover/active and a thin divider between them. */
+.btn_view_div #toggleViewButton,
+.btn_view_div #toggleTaskBoardButton,
+.btn_view_div #appLockBtn {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: 42px !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    border-radius: 10px !important;
+    transform: none !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    font-size: 14px !important;
+}
+.btn_view_div #toggleTaskBoardButton {
+    border-left: 1px solid var(--border-color) !important;
+    border-radius: 0 !important;
+}
+.btn_view_div #appLockBtn {
+    border-left: 1px solid var(--border-color) !important;
+    border-radius: 0 !important;
+}
+.btn_view_div > *:last-child {
+    border-radius: 0 10px 10px 0 !important;
+}
+.btn_view_div #toggleViewButton {
+    border-radius: 10px 0 0 10px !important;
+}
+.btn_view_div #toggleViewButton:hover,
+.btn_view_div #toggleTaskBoardButton:hover,
+.btn_view_div #appLockBtn:hover {
+    background: rgba(174, 252, 110, 0.1) !important;
+    transform: none !important;
+}
+.btn_view_div #toggleTaskBoardButton.active {
+    background: rgba(174, 252, 110, 0.16) !important;
+}
+.btn_view_div #toggleViewButton::before { display: none !important; }
+.btn_view_div #appLockBtn.ln-lock-active { color: var(--primary-color, #aefc6e) !important; }
+
+/* Sits right under the sticky header with actual breathing room, instead
+   of being jammed against it. */
+.app-notes-center .btn_view_div {
+    margin: 16px 0 4px !important;
+}
+
+/* ── Collapse toggle ──────────────────────────────────────────────────── */
+.btn_view_div .ln-actionbar-collapse {
+    flex: 0 0 auto !important;
+    width: 32px !important;
+    height: 42px !important;
+    min-width: 32px !important;
+    border: none !important;
+    border-left: 1px solid var(--border-color) !important;
+    background: transparent !important;
+    border-radius: 0 10px 10px 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    color: var(--text-secondary, #888) !important;
+    transition: background 0.2s ease, transform 0.25s ease !important;
+}
+.btn_view_div .ln-actionbar-collapse:hover {
+    background: rgba(174, 252, 110, 0.1) !important;
+}
+.btn_view_div.ln-collapsed .ln-actionbar-collapse {
+    transform: rotate(180deg) !important;
+}
+.btn_view_div.ln-collapsed {
+    padding: 4px !important;
+}
+.btn_view_div.ln-collapsed #toggleViewButton,
+.btn_view_div.ln-collapsed #toggleTaskBoardButton,
+.btn_view_div.ln-collapsed #appLockBtn {
+    display: none !important;
+}
+.btn_view_div.ln-collapsed .ln-actionbar-collapse {
+    border-left: none !important;
+    width: 100% !important;
+    border-radius: 8px !important;
+}
+
+@media (max-width: 700px) {
+    .btn_view_div {
+        border-radius: 16px 16px 0 0 !important;
+        padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px)) 6px !important;
+    }
+    .btn_view_div.ln-collapsed {
+        min-height: 0 !important;
+        padding: 4px calc(4px + env(safe-area-inset-bottom, 0px)) !important;
+    }
+}

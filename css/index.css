@@ -23,7 +23,7 @@
     font-display: optional;
 }
 * { box-sizing: border-box; }
-html, body { overflow-x: hidden; width: 100%; max-width: 100%; }
+html, body { overflow-x: clip; width: 100%; max-width: 100%; }
 body { margin: 0; padding: 0; }
 body.modal-open { overflow: hidden; }
 :root {
@@ -100,6 +100,7 @@ body.modal-open { overflow: hidden; }
     --bg-color: #ffffff;
     --card-bg: #ffffff;
     --border-color: #dee2e6;
+    --button-border: #dee2e6;
     --input-bg: #ffffff;
     --button-bg: #f8f9fa;
     --button-hover: #e9ecef;
@@ -109,6 +110,11 @@ body.modal-open { overflow: hidden; }
     --footer-text: #6c757d;
     --gradient-primary: linear-gradient(135deg, #28a745 0%, #20c997 100%);
     --note-footer-bg: #ffffff;
+    --input-text: #212529;
+    --bg-secondary: #f8f9fa;
+    --gradient-card: linear-gradient(135deg, #ffffff 0%, #f5f7f5 100%);
+    --scrollbar-track: #f1f1f1;
+    --scrollbar-thumb: #c7cbd1;
 }
 [data-theme="light"] .logo { filter: brightness(0) saturate(100%) invert(27%) sepia(51%) saturate(2878%) hue-rotate(346deg) brightness(104%) contrast(97%); }
 ::-webkit-scrollbar { width: 5px; }
@@ -126,7 +132,12 @@ body {
     background: var(--bg-color);
     color: var(--text-color);
     transition: background-color 0.3s ease, color 0.3s ease;
-    overflow-x: hidden;
+    /* overflow-x: clip, not hidden — hidden establishes a scrolling box
+       that desyncs position:sticky children from any scrollIntoView()
+       triggered scroll (Tab focus, back/forward restore, Ctrl+F, etc).
+       clip suppresses horizontal overflow the same way without that
+       side effect. See the html,body rule above for the full story. */
+    overflow-x: clip;
 }
     .search-highlight {
         background-color: rgba(174, 252, 110, 0.3) !important;
@@ -264,6 +275,20 @@ body {
 @media (hover: hover) and (pointer: fine) and (min-width: 769px) {
     .search-shortcut-hint { display: block; }
     #searchInput { padding-right: 64px; }
+    /* The fixed bottom tab-bar is a mobile pattern (thumb-reachable actions).
+       On desktop it has no such purpose and was staying pinned to the
+       viewport bottom, permanently overlapping the page footer beneath it.
+       Put it back in normal flow, right after the notes grid. */
+    .btn_view_div {
+        position: static !important;
+        width: auto !important;
+        min-height: 0 !important;
+        margin-top: 24px;
+        padding: 12px 16px;
+        border-top: 1px solid var(--border-color, rgba(174, 252, 110, 0.1));
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
 }
 .search-stats {
     display: none;
@@ -480,13 +505,49 @@ body {
     opacity: .7;
 }
 #notesContainer.default-view .note {
-    height: 450px;
+    /* Was a fixed 450px — meant a single short note (or a grid with only
+       one or two notes) rendered as one mostly-empty card the size of the
+       whole viewport. Cards now size to their content, with a floor so
+       very short notes don't look collapsed and a ceiling so very long
+       notes still clip consistently with the rest of the grid. */
+    height: auto;
+    min-height: 180px;
+    max-height: 450px;
     overflow: hidden;
 }
 #notesContainer.default-view .note.has-video {
-    height: 450px;
+    height: auto;
+    min-height: 180px;
+    max-height: 450px;
     overflow: hidden;
 }
+
+/* ─── Load more notes (pagination) ──────────────────────────────────────── */
+.ln-load-more-btn {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    margin-top: 8px;
+    padding: 14px 20px;
+    min-height: 48px;
+    border: 1px solid var(--button-border);
+    border-radius: 12px;
+    background: var(--button-bg);
+    color: var(--text-color);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+.ln-load-more-btn:hover {
+    background: var(--button-hover);
+    border-color: var(--primary-color);
+}
+.ln-load-more-btn:active { transform: scale(0.98); }
+#notesContainer.full-width-view .ln-load-more-btn { grid-column: unset; }
 #notesContainer.default-view .note.has-video .noteContent {
     overflow-y: auto;
     flex: 1;
@@ -1571,11 +1632,15 @@ footer a:hover { color: var(--primary-color); }
         padding: 0 6px !important;
     }
     #notesContainer.default-view .note {
-        height: 400px !important;
+        height: auto !important;
+        min-height: 160px !important;
+        max-height: 400px !important;
         border-radius: 12px !important;
     }
     #notesContainer.default-view .note.has-video {
-        height: 400px !important;
+        height: auto !important;
+        min-height: 160px !important;
+        max-height: 400px !important;
         overflow: hidden !important;
     }
     #notesContainer.default-view .note.has-video .noteContent {
@@ -3650,7 +3715,7 @@ footer a:hover { color: var(--primary-color); }
     gap: 10px;
 }
 .modal-content-error h3::before {
-    content: '🔒';
+    content: '<i class="bi bi-file-earmark-lock"></i>';
     font-size: 1.3rem;
 }
 .modal-content-error p {

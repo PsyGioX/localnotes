@@ -283,7 +283,7 @@ function updateButtonTexts() {
             || 'Lock';
         const isActive = window.AppLock && window.AppLock.isEnabled();
         appLockBtn.innerHTML = isActive
-            ? `<i class="bi bi-shield-lock-fill"></i> ${lockLabel}`
+            ? `<i class="bi bi-shield-lock-fill"></i> ${lockLabel}<i class="bi bi-gear-fill ln-lock-gear-badge" aria-hidden="true"></i>`
             : `<i class="bi bi-shield-lock"></i> ${lockLabel}`;
         const titleHint = langData.lockNowTitle
             || (typeof window.t === 'function' ? window.t('lockNowTitle') : null);

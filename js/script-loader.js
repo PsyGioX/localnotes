@@ -1,24 +1,22 @@
-// Load scripts sequentially to ensure proper order
-function loadScriptsSequentially(scripts, index) {
-    index = index || 0;
-    if (index >= scripts.length) return;
-
-    var script = document.createElement('script');
-    script.src = scripts[index];
-    script.async = false;
-    script.onload = function() {
-        loadScriptsSequentially(scripts, index + 1);
-    };
-    script.onerror = function() {
-        console.error('Failed to load: ' + scripts[index]);
-        loadScriptsSequentially(scripts, index + 1);
-    };
-    document.head.appendChild(script);
+// Scripts download in parallel but still execute in this exact order —
+// async=false on a dynamically created <script> guarantees ordered
+// execution without forcing ordered *downloads*. The previous version
+// chained each script's creation off the previous one's onload, which
+// meant 13 full network round-trips happening one at a time instead of
+// concurrently; this keeps the same execution guarantee at a fraction
+// of the load time.
+function loadScriptsInOrder(scripts) {
+    scripts.forEach(function (src) {
+        var script = document.createElement('script');
+        script.src = src;
+        script.async = false;
+        script.onerror = function() { console.error('Failed to load: ' + src); };
+        document.head.appendChild(script);
+    });
 }
 
 // Load scripts after DOM is ready
 var scripts = [
-    '/js/magicurl.js?v=1.9.13',
     '/js/highlight.min.js?v=1.9.13',
     '/js/translations.js?v=1.9.13',
     '/js/img.js?v=1.9.13',
@@ -30,11 +28,14 @@ var scripts = [
     '/js/task-board.js?v=1.9.13',
     '/js/index.js?v=1.9.13',
     '/js/command-palette.js?v=1.9.13',
-    '/js/share-target.js?v=1.9.13'
+    '/js/share-target.js?v=1.9.13',
+    '/js/onboarding-tour.js?v=1.9.13',
+    '/js/action-bar.js?v=1.9.13',
+    '/js/sidebar.js?v=1.9.13'
 ];
 
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() { loadScriptsSequentially(scripts); });
+    document.addEventListener('DOMContentLoaded', function() { loadScriptsInOrder(scripts); });
 } else {
-    loadScriptsSequentially(scripts);
+    loadScriptsInOrder(scripts);
 }

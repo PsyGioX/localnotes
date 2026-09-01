@@ -637,7 +637,9 @@
     }
     
     #notesContainer.default-view .note {
-        height: 450px;
+        height: auto;
+        min-height: 180px;
+        max-height: 450px;
     }
     
     .noteContent {

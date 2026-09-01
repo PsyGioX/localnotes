@@ -124,6 +124,21 @@
         animation: none !important;
     }
 
+    /* Even non-animated, backdrop-filter: blur() still costs the compositor
+       a frame to compute the very first time the modal goes from
+       display:none to visible — and frame-by-frame testing (plain mobile
+       viewport AND full iPhone 13 touch emulation, i.e. with the repaint
+       nudges above already active) still caught a single-frame ghost of
+       the page behind bleeding through at exactly that moment. Dropping
+       the blur on touch devices removes that remaining compositor work
+       instead of racing it with yet another repaint nudge. The scrim
+       stays dark enough to read as a modal without it. */
+    #editModal.modal {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        background: rgba(10, 10, 12, 0.88) !important;
+    }
+
     #editModal .modal-content {
         display: grid !important;
         grid-template-rows: minmax(0, 1fr) auto;

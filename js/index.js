@@ -2003,77 +2003,51 @@ function loadNotes() {
     return _loadNotesQueue;
 }
 
-async function _loadNotesImpl() {
-    const viewer = document.querySelector('.btn_view_div');
+// ─── Paginated note rendering ─────────────────────────────────────────────
+// Renders notes in batches instead of building every single note card into
+// the DOM at once — with hundreds of notes that was a real memory/parse-time
+// cost paid up front for cards the user may never scroll down to see.
+let _notesRenderState = { all: [], allTags: [], rendered: 0 };
+
+function renderLoadMoreButton() {
     const notesContainer = document.getElementById('notesContainer');
-    const notesCenter = document.querySelector('.notes_center');
     if (!notesContainer) return;
-
-    const tbToolbar = document.getElementById('taskBoardToolbar');
-    if (tbToolbar) tbToolbar.remove();
-    if (notesCenter) notesCenter.classList.remove('task-board-center');
-
-    if (window.taskBoard && window.taskBoard.isActive()) {
-        try {
-            const allNotes = await notesDB.getAllNotes();
-            const notes = typeof applyTagFilter === 'function' ? applyTagFilter(allNotes) : allNotes;
-            notes.sort((a, b) => {
-                if (a.pinned && !b.pinned) return -1;
-                if (!a.pinned && b.pinned) return 1;
-                return b.lastModified - a.lastModified;
+    let btn = document.getElementById('loadMoreNotesBtn');
+    const remaining = _notesRenderState.all.length - _notesRenderState.rendered;
+    if (remaining <= 0) {
+        if (btn) btn.remove();
+        return;
+    }
+    if (!btn) {
+        btn = document.createElement('button');
+        btn.id = 'loadMoreNotesBtn';
+        btn.type = 'button';
+        btn.className = 'ln-load-more-btn';
+        btn.addEventListener('click', function () {
+            const container = document.getElementById('notesContainer');
+            if (!container) return;
+            const nextEnd = Math.min(_notesRenderState.rendered + 30, _notesRenderState.all.length);
+            _notesRenderState.all.slice(_notesRenderState.rendered, nextEnd).forEach(function (note) {
+                const noteEl = buildNoteCardElement(note, _notesRenderState.allTags);
+                container.insertBefore(noteEl, btn);
             });
-            await window.taskBoard.render(notes);
-            if (viewer) viewer.style.display = notes.length ? '' : '';
-            return;
-        } catch (e) {
-            console.error('Task board render error:', e);
-        }
-    }
-
-    notesContainer.innerHTML = '';
-    notesContainer.classList.remove('task-board-view');
-    
-    // Восстанавливаем правильный режим отображения (сетка или список)
-    const savedViewMode = localStorage.getItem('viewMode');
-    if (savedViewMode === 'list') {
-        notesContainer.classList.add('full-width-view');
-        notesContainer.classList.remove('default-view');
-    } else {
-        notesContainer.classList.add('default-view');
-        notesContainer.classList.remove('full-width-view');
-    }
-    
-    // Обновляем текст кнопки переключения вида
-    if (window.appUtils && typeof window.appUtils.updateToggleViewButton === 'function') {
-        window.appUtils.updateToggleViewButton();
-    }
-
-    try {
-        const allNotes = await notesDB.getAllNotes();
-        // Apply tag filter
-        const notes = typeof applyTagFilter === 'function' ? applyTagFilter(allNotes) : allNotes;
-        // Sort: pinned first, then by lastModified
-        notes.sort((a, b) => {
-            if (a.pinned && !b.pinned) return -1;
-            if (!a.pinned && b.pinned) return 1;
-            return b.lastModified - a.lastModified;
+            _notesRenderState.rendered = nextEnd;
+            renderLoadMoreButton();
+            setTimeout(function () {
+                if (typeof hljs !== 'undefined') hljs.highlightAll();
+                initCodeBlockCopyButtons(container);
+                fixCodeBlockStyles(container);
+            }, 100);
         });
-        notes.forEach(note => { if (note.content) note.content = validateAndFixImages(note.content); });
+        notesContainer.appendChild(btn);
+    } else {
+        notesContainer.appendChild(btn);
+    }
+    const label = (typeof t === 'function' ? t('loadMoreNotes') : null) || 'Load more notes';
+    btn.innerHTML = '<i class="bi bi-chevron-down"></i> ' + label + ' (' + remaining + ')';
+}
 
-        if (notes.length === 0) {
-            if (viewer) viewer.style.display = 'none';
-            showWelcomeMessage();
-            return;
-        }
-
-        if (viewer) viewer.style.display = '';
-        const existingWelcome = document.querySelector('.welcome-message');
-        if (existingWelcome) existingWelcome.remove();
-
-        // Get all tags for rendering
-        const allTags = typeof getTags === 'function' ? await getTags() : [];
-
-        notes.forEach(note => {
+function buildNoteCardElement(note, allTags) {
             const noteEl = document.createElement('div');
             noteEl.classList.add('note');
             noteEl.dataset.noteId = note.id;
@@ -2384,17 +2358,20 @@ async function _loadNotesImpl() {
             expBtn.innerHTML = typeof t === 'function' ? t('export') : 'Export';
             expBtn.onclick = () => showExportOptions(note.content);
 
-            // Share button — hands the note's title + plain text off to the OS
-            // share sheet (navigator.share), the same mechanism this app now
-            // also receives shares through (Web Share Target). There's no
-            // hosted URL to share since Local Notes is fully local/encrypted —
-            // this shares the note's content as text, not a link to a server.
+            // Share button — opens Local Notes' own share modal (styled like
+            // the export modal) instead of jumping straight to the OS share
+            // sheet, so the choice of Copy Link / Copy Text / More is
+            // consistent across every platform rather than whatever each OS
+            // happens to present. There's no hosted URL to share since Local
+            // Notes is fully local/encrypted — see buildShareableNoteLink's
+            // comment for how the "link" is actually just the note encoded
+            // into the URL fragment.
             const shareBtn = document.createElement('button'); shareBtn.classList.add('shareBtn');
             const shareLabel = (typeof t === 'function' ? t('shareNote') : null) || 'Share';
             shareBtn.title = shareLabel;
             shareBtn.innerHTML = '<i class="bi bi-share"></i>';
             shareBtn.setAttribute('aria-label', shareLabel);
-            shareBtn.onclick = () => shareNoteContent(note);
+            shareBtn.onclick = () => showShareOptions(note);
 
             // Screenshot button
             const ssBtn = document.createElement('button'); ssBtn.classList.add('screenshotBtn');
@@ -2414,8 +2391,95 @@ async function _loadNotesImpl() {
             noteEl.appendChild(btns);
 
             if (quickEditActive) enableQuickEditOnNote(noteEl);
+            return noteEl;
+}
+
+async function _loadNotesImpl() {
+    const viewer = document.querySelector('.btn_view_div');
+    const notesContainer = document.getElementById('notesContainer');
+    const notesCenter = document.querySelector('.notes_center');
+    if (!notesContainer) return;
+
+    const tbToolbar = document.getElementById('taskBoardToolbar');
+    if (tbToolbar) tbToolbar.remove();
+    if (notesCenter) notesCenter.classList.remove('task-board-center');
+
+    if (window.taskBoard && window.taskBoard.isActive()) {
+        try {
+            const allNotes = await notesDB.getAllNotes();
+            const notes = typeof applyTagFilter === 'function' ? applyTagFilter(allNotes) : allNotes;
+            notes.sort((a, b) => {
+                if (a.pinned && !b.pinned) return -1;
+                if (!a.pinned && b.pinned) return 1;
+                return b.lastModified - a.lastModified;
+            });
+            await window.taskBoard.render(notes);
+            if (viewer) viewer.style.display = notes.length ? '' : '';
+            return;
+        } catch (e) {
+            console.error('Task board render error:', e);
+        }
+    }
+
+    notesContainer.innerHTML = '';
+    notesContainer.classList.remove('task-board-view');
+    
+    // Восстанавливаем правильный режим отображения (сетка или список)
+    const savedViewMode = localStorage.getItem('viewMode');
+    if (savedViewMode === 'list') {
+        notesContainer.classList.add('full-width-view');
+        notesContainer.classList.remove('default-view');
+    } else {
+        notesContainer.classList.add('default-view');
+        notesContainer.classList.remove('full-width-view');
+    }
+    
+    // Обновляем текст кнопки переключения вида
+    if (window.appUtils && typeof window.appUtils.updateToggleViewButton === 'function') {
+        window.appUtils.updateToggleViewButton();
+    }
+
+    try {
+        const allNotes = await notesDB.getAllNotes();
+        // Apply tag filter
+        const notes = typeof applyTagFilter === 'function' ? applyTagFilter(allNotes) : allNotes;
+        // Sort: pinned first, then by lastModified
+        notes.sort((a, b) => {
+            if (a.pinned && !b.pinned) return -1;
+            if (!a.pinned && b.pinned) return 1;
+            return b.lastModified - a.lastModified;
+        });
+        notes.forEach(note => { if (note.content) note.content = validateAndFixImages(note.content); });
+
+        if (notes.length === 0) {
+            if (viewer) viewer.style.display = 'none';
+            showWelcomeMessage();
+            // Nothing left for Quick Edit to act on — don't leave the
+            // toggle stuck showing "ON" with no notes behind it.
+            if (typeof quickEditActive !== 'undefined' && quickEditActive) {
+                quickEditActive = false;
+                localStorage.setItem('quickEditMode', '0');
+                if (typeof applyQuickEditMode === 'function') applyQuickEditMode();
+            }
+            return;
+        }
+
+        if (viewer) viewer.style.display = '';
+        const existingWelcome = document.querySelector('.welcome-message');
+        if (existingWelcome) existingWelcome.remove();
+
+        // Get all tags for rendering
+        const allTags = typeof getTags === 'function' ? await getTags() : [];
+
+        const PAGE_SIZE = 30;
+        _notesRenderState.all = notes;
+        _notesRenderState.allTags = allTags;
+        _notesRenderState.rendered = Math.min(PAGE_SIZE, notes.length);
+        notes.slice(0, _notesRenderState.rendered).forEach(note => {
+            const noteEl = buildNoteCardElement(note, allTags);
             notesContainer.appendChild(noteEl);
         });
+        renderLoadMoreButton();
 
         setTimeout(() => { if (typeof hljs !== 'undefined') hljs.highlightAll(); initCodeBlockCopyButtons(notesContainer); fixCodeBlockStyles(notesContainer); }, 200);
     } catch (e) {
@@ -2481,6 +2545,11 @@ function showWelcomeMessage() {
 }
 
 function showWelcomeInstructions() {
+    if (typeof window.startInteractiveGuide === 'function') {
+        window.startInteractiveGuide();
+        return;
+    }
+    // Fallback in the unlikely event onboarding-tour.js hasn't loaded yet
     showCustomAlert(
         typeof t === 'function' ? t('welcomeInstructionsTitle') || 'How to get started' : 'How to get started',
         typeof t === 'function' ? t('welcomeInstructions') || "Click 'Add Note' to create your first note." : "Click 'Add Note' to create your first note.",
@@ -2979,6 +3048,20 @@ function showWordCount() {
 // QUICK EDIT (from backup)
 // ============================================================================
 function toggleQuickEditMode() {
+    // Turning it on only makes sense if there's at least one note on
+    // screen to apply it to — otherwise the button lit up "ON" and
+    // nothing whatsoever happened, with no indication why. Turning off
+    // is always allowed (nothing to guard there).
+    if (!quickEditActive) {
+        const hasNotes = document.querySelectorAll('#notesContainer .note').length > 0;
+        if (!hasNotes) {
+            showQuickEditNotification(
+                typeof t === 'function' ? t('quickEditNoNotes') || 'Add a note first — nothing to quick-edit yet' : 'Add a note first — nothing to quick-edit yet',
+                'info'
+            );
+            return;
+        }
+    }
     quickEditActive = !quickEditActive;
     localStorage.setItem('quickEditMode', quickEditActive ? '1' : '0');
     applyQuickEditMode();
@@ -3193,6 +3276,13 @@ function showQuickEditNotification(message, type = 'success') {
 
 function restoreQuickEditMode() {
     quickEditActive = localStorage.getItem('quickEditMode') === '1';
+    // Don't restore into an "ON" state that has nothing to act on — e.g.
+    // the user cleared all notes since the last session. No toast here
+    // since this isn't a direct click; just quietly fall back to off.
+    if (quickEditActive && document.querySelectorAll('#notesContainer .note').length === 0) {
+        quickEditActive = false;
+        localStorage.setItem('quickEditMode', '0');
+    }
     applyQuickEditMode();
 }
 
@@ -3379,6 +3469,76 @@ async function buildShareableNoteLink(note) {
     return { url, tooLarge: url.length > LN_SHARE_LINK_MAX_LEN };
 }
 
+// Local Notes' own share modal — same visual language as showExportOptions
+// (reuses .export-modal / .export-option / .export-close, so it picks up
+// all existing styling automatically) instead of jumping straight to
+// whatever share UI the OS happens to present. Builds the link first so
+// the modal can show/hide the "Copy link" option based on whether one was
+// actually produced (e.g. very large notes can't fit in a URL).
+async function showShareOptions(note) {
+    const title = note.title || (typeof t === 'function' ? t('cpUntitled') : 'Untitled note');
+    const introText = (typeof t === 'function' ? t('shareNoteIntro') : null) || 'Check out my note';
+
+    let link = null;
+    try {
+        const built = await buildShareableNoteLink(note);
+        if (!built.tooLarge) link = built;
+    } catch (e) { /* link stays null — Copy Text still works without one */ }
+
+    const canSystemShare = !!navigator.share;
+    const modal = document.createElement('div');
+    modal.className = 'export-modal';
+    modal.innerHTML = `<div class="export-modal-content">
+        <h3>${typeof t === 'function' ? t('shareNote') || 'Share' : 'Share'}</h3>
+        <div class="export-options">
+            ${link ? `<button class="export-option" data-action="copy-link">
+                <span class="export-icon"><i class="bi bi-link-45deg"></i></span>
+                <span class="export-text">${typeof t === 'function' ? t('shareCopyLink') || 'Copy link' : 'Copy link'}</span>
+                <span class="export-desc">${typeof t === 'function' ? t('shareCopyLinkDesc') || 'Shareable link' : 'Shareable link'}</span>
+            </button>` : ''}
+            <button class="export-option" data-action="copy-text">
+                <span class="export-icon"><i class="bi bi-copy"></i></span>
+                <span class="export-text">${typeof t === 'function' ? t('shareCopyText') || 'Copy text' : 'Copy text'}</span>
+                <span class="export-desc">${typeof t === 'function' ? t('shareCopyTextDesc') || 'Title + note text' : 'Title + note text'}</span>
+            </button>
+            ${canSystemShare ? `<button class="export-option" data-action="system-share">
+                <span class="export-icon"><i class="bi bi-three-dots"></i></span>
+                <span class="export-text">${typeof t === 'function' ? t('shareMore') || 'More' : 'More'}</span>
+                <span class="export-desc">${typeof t === 'function' ? t('shareMoreDesc') || 'System share sheet' : 'System share sheet'}</span>
+            </button>` : ''}
+        </div>
+        <button class="export-close">${typeof t === 'function' ? t('cancel') : 'Cancel'}</button></div>`;
+    document.body.appendChild(modal);
+
+    const close = () => { if (modal.parentNode) document.body.removeChild(modal); };
+
+    modal.querySelectorAll('.export-option').forEach(opt => {
+        opt.addEventListener('click', async () => {
+            const action = opt.dataset.action;
+            close();
+            if (action === 'copy-link' && link) {
+                await copyPlainTextToClipboard(link.url,
+                    (typeof t === 'function' ? t('shareLinkCopied') : null) || 'Link copied to clipboard.');
+            } else if (action === 'copy-text') {
+                await copyShareTextToClipboard(title, introText, link ? link.url : '',
+                    (typeof t === 'function' ? t('shareTextCopied') : null) || 'Copied to clipboard.');
+            } else if (action === 'system-share') {
+                const shareData = link ? { title, text: introText, url: link.url } : { title, text: introText };
+                try {
+                    if (navigator.canShare && !navigator.canShare(shareData)) throw new Error('canShare rejected this data');
+                    await navigator.share(shareData);
+                } catch (e) {
+                    if (e && e.name === 'AbortError') return; // user cancelled — not an error
+                    await copyShareTextToClipboard(title, introText, link ? link.url : '');
+                }
+            }
+        });
+    });
+    modal.querySelector('.export-close').addEventListener('click', close);
+    modal.addEventListener('pointerdown', e => { if (e.target === modal) close(); });
+    modal.addEventListener('click', e => { if (e.target === modal) close(); });
+}
+
 async function shareNoteContent(note) {
     const title = note.title || (typeof t === 'function' ? t('cpUntitled') : 'Untitled note');
     const introText = (typeof t === 'function' ? t('shareNoteIntro') : null) || 'Check out my note';
@@ -3419,17 +3579,13 @@ async function shareNoteContent(note) {
     await copyShareTextToClipboard(title, introText, link.url);
 }
 
-async function copyShareTextToClipboard(title, text, url) {
-    const parts = [title];
-    if (text) parts.push(text);
-    if (url) parts.push(url);
-    const combined = parts.join('\n\n');
+async function copyPlainTextToClipboard(text, successMessage) {
     try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
-            await navigator.clipboard.writeText(combined);
+            await navigator.clipboard.writeText(text);
         } else {
             const ta = document.createElement('textarea');
-            ta.value = combined;
+            ta.value = text;
             ta.style.position = 'fixed';
             ta.style.opacity = '0';
             document.body.appendChild(ta);
@@ -3439,7 +3595,7 @@ async function copyShareTextToClipboard(title, text, url) {
         }
         showCustomAlert(
             (typeof t === 'function' ? t('shareNote') : null) || 'Share',
-            (typeof t === 'function' ? t('shareCopiedToClipboard') : null) || 'Sharing is not available here — note copied to the clipboard instead.',
+            successMessage || ((typeof t === 'function' ? t('shareCopiedToClipboard') : null) || 'Copied to clipboard.'),
             'success'
         );
     } catch (e) {
@@ -3451,16 +3607,23 @@ async function copyShareTextToClipboard(title, text, url) {
     }
 }
 
+async function copyShareTextToClipboard(title, text, url, successMessage) {
+    const parts = [title];
+    if (text) parts.push(text);
+    if (url) parts.push(url);
+    await copyPlainTextToClipboard(parts.join('\n\n'), successMessage);
+}
+
 function showExportOptions(noteContent) {
     const modal = document.createElement('div');
     modal.className = 'export-modal';
     modal.innerHTML = `<div class="export-modal-content">
         <h3>${typeof t === 'function' ? t('chooseImportFormat') || 'Choose export format' : 'Choose export format'}</h3>
         <div class="export-options">
-            <button class="export-option" data-format="html"><span class="export-icon">🌐</span><span class="export-text">HTML</span><span class="export-desc">Web page</span></button>
-            <button class="export-option" data-format="encrypted"><span class="export-icon">🔒</span><span class="export-text">Encrypted</span><span class="export-desc">Password protected</span></button>
-            <button class="export-option" data-format="markdown"><span class="export-icon">📝</span><span class="export-text">Markdown</span><span class="export-desc">Text format</span></button>
-            <button class="export-option" data-format="pdf"><span class="export-icon">📄</span><span class="export-text">PDF</span><span class="export-desc">Print document</span></button>
+            <button class="export-option" data-format="html"><span class="export-icon"><i class="bi bi-filetype-html"></i></span><span class="export-text">HTML</span><span class="export-desc">Web page</span></button>
+            <button class="export-option" data-format="encrypted"><span class="export-icon"><i class="bi bi-file-earmark-lock"></i></span><span class="export-text">Encrypted</span><span class="export-desc">Password protected</span></button>
+            <button class="export-option" data-format="markdown"><span class="export-icon"><i class="bi bi-filetype-md"></i></span><span class="export-text">Markdown</span><span class="export-desc">Text format</span></button>
+            <button class="export-option" data-format="pdf"><span class="export-icon"><i class="bi bi-filetype-pdf"></i></span><span class="export-text">PDF</span><span class="export-desc">Print document</span></button>
         </div>
         <button class="export-close">${typeof t === 'function' ? t('cancel') : 'Cancel'}</button></div>`;
     document.body.appendChild(modal);
@@ -3492,9 +3655,9 @@ function importNotesWithFormat(event) {
     modal.innerHTML = `<div class="export-modal-content">
         <h3>${typeof t === 'function' ? t('chooseImportFormat') || 'Choose import format' : 'Choose import format'}</h3>
         <div class="export-options">
-            <button class="export-option" data-format="encrypted"><span class="export-icon">🔒</span><span class="export-text">Encrypted</span><span class="export-desc">.note files</span></button>
-            <button class="export-option" data-format="html"><span class="export-icon">🌐</span><span class="export-text">HTML</span><span class="export-desc">HTML files</span></button>
-            <button class="export-option" data-format="markdown"><span class="export-icon">📝</span><span class="export-text">Markdown</span><span class="export-desc">.md files</span></button>
+            <button class="export-option" data-format="encrypted"><span class="export-icon"><i class="bi bi-file-earmark-lock"></i></span><span class="export-text">Encrypted</span><span class="export-desc">.note files</span></button>
+            <button class="export-option" data-format="html"><span class="export-icon"><i class="bi bi-filetype-html"></i></span><span class="export-text">HTML</span><span class="export-desc">HTML files</span></button>
+            <button class="export-option" data-format="markdown"><span class="export-icon"><i class="bi bi-filetype-md"></i></span><span class="export-text">Markdown</span><span class="export-desc">.md files</span></button>
         </div>
         <div class="export-options-divider"><span>${typeof t === 'function' ? t('importFromOtherApps') || 'From other apps' : 'From other apps'}</span></div>
         <div class="export-options">
@@ -3838,8 +4001,13 @@ function initializeEventListeners() {
             const enabled = window.AppLock && window.AppLock.isEnabled();
             lockBtn.classList.toggle('ln-lock-active', !!enabled);
             const label = (typeof t === 'function' ? t('appLockBtn') : null) || 'Lock';
+            // When lock is on, a tap locks the app immediately — reaching
+            // settings needs a hold or right-click, and until now nothing
+            // on the button itself hinted that (only a title tooltip,
+            // invisible on touch). The small gear badge is a permanent,
+            // always-visible cue that there's more behind this button.
             lockBtn.innerHTML = enabled
-                ? `<i class="bi bi-shield-lock-fill"></i> ${label}`
+                ? `<i class="bi bi-shield-lock-fill"></i> ${label}<i class="bi bi-gear-fill ln-lock-gear-badge" aria-hidden="true"></i>`
                 : `<i class="bi bi-shield-lock"></i> ${label}`;
             const titleHint = (typeof t === 'function' ? t('lockNowTitle') : null)
                 || 'Tap to lock. Hold or right-click for settings.';

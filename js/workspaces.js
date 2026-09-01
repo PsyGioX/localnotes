@@ -444,6 +444,13 @@ class WorkspacesManager {
 
     // ── Выбор пространства при сохранении ────────────────────────────────────
     showWorkspaceSelector() {
+        // With a single workspace there's nothing to actually choose — the
+        // modal was pure extra friction on every save (open modal, click the
+        // only option). Resolve immediately with it instead.
+        if (this.workspaces.length <= 1) {
+            const only = this.workspaces[0];
+            return Promise.resolve(only ? only.id : null);
+        }
         return new Promise(resolve => {
             const overlay = document.createElement('div');
             overlay.className = 'ws-selector-overlay';
