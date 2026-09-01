@@ -157,12 +157,8 @@ body {
         display: none !important;
     }
 
-i {
+.sticky > i {
     color: var(--primary-color);
-}
-
-i:hover {
-    color: var(--text-color);
 }
 
 .info-app {
