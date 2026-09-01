@@ -3796,20 +3796,20 @@ class LocalNotesEditor {
             // Row 1 — search
             '<div class="lne-find-bar-row">' +
               '<i class="bi bi-search lne-find-bar-icon"></i>' +
-              '<input class="lne-find-bar-inp" type="text" placeholder="Найти…">' +
+              '<input class="lne-find-bar-inp" type="text" placeholder="' + this._('findText', 'Find') + '…">' +
               '<span class="lne-find-bar-count"></span>' +
-              '<button class="lne-find-bar-btn" data-dir="-1" title="Назад (Shift+Enter)"><i class="bi bi-arrow-up"></i></button>' +
-              '<button class="lne-find-bar-btn" data-dir="1"  title="Вперёд (Enter)"><i class="bi bi-arrow-down"></i></button>' +
-              '<button class="lne-find-bar-chk lne-find-bar-case" title="С учётом регистра">Aa</button>' +
-              '<button class="lne-find-bar-chk lne-find-bar-word" title="Целое слово">W</button>' +
-              '<button class="lne-find-bar-close" title="Закрыть (Esc)"><i class="bi bi-x-lg"></i></button>' +
+              '<button class="lne-find-bar-btn" data-dir="-1" title="' + this._('findPrev', 'Previous') + ' (Shift+Enter)"><i class="bi bi-arrow-up"></i></button>' +
+              '<button class="lne-find-bar-btn" data-dir="1"  title="' + this._('findNext', 'Next') + ' (Enter)"><i class="bi bi-arrow-down"></i></button>' +
+              '<button class="lne-find-bar-chk lne-find-bar-case" title="' + this._('caseSensitive', 'Case sensitive') + '">Aa</button>' +
+              '<button class="lne-find-bar-chk lne-find-bar-word" title="' + this._('wholeWord', 'Whole word') + '">W</button>' +
+              '<button class="lne-find-bar-close" title="' + this._('close', 'Close') + ' (Esc)"><i class="bi bi-x-lg"></i></button>' +
             '</div>' +
             // Row 2 — replace
             '<div class="lne-find-bar-row lne-find-bar-row2">' +
               '<i class="bi bi-arrow-left-right lne-find-bar-icon"></i>' +
-              '<input class="lne-find-bar-repl" type="text" placeholder="Заменить на…">' +
-              '<button class="lne-find-bar-replone" title="Заменить (Tab)">Заменить</button>' +
-              '<button class="lne-find-bar-replall" title="Заменить все">Все</button>' +
+              '<input class="lne-find-bar-repl" type="text" placeholder="' + this._('replaceWith', 'Replace with') + '…">' +
+              '<button class="lne-find-bar-replone" title="' + this._('replace', 'Replace') + ' (Tab)">' + this._('replace', 'Replace') + '</button>' +
+              '<button class="lne-find-bar-replall" title="' + this._('replaceAll', 'Replace all') + '">' + this._('replaceAll', 'All') + '</button>' +
             '</div>';
 
         // Insert at top of editor body, adjust editor padding
