@@ -1850,7 +1850,15 @@ function openModal(noteId, noteContent, noteCreationTime) {
                     localNotesEditorInstance.setContent(content);
                     currentNoteId = noteId;
                 } else {
-                    localNotesEditorInstance.setContent('');
+                    // New note: pre-fill the empty paragraph BEFORE the modal
+                    // is revealed — same principle as the existing-note fix above.
+                    // Without this, setContent('') leaves innerHTML='', the modal
+                    // is shown, and then focus() fires the core.js listener that
+                    // injects <p><br></p> — a post-reveal DOM mutation that mobile
+                    // WebKit/Blink may not composite until the next user gesture,
+                    // causing the same flicker/invisible-text race that was already
+                    // fixed for existing notes.
+                    localNotesEditorInstance.setContent('<p><br></p>');
                     currentNoteId = null;
                 }
 
