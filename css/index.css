@@ -1578,7 +1578,7 @@ footer a:hover { color: var(--primary-color); }
         height: 56px;
         border-radius: 50%;
         border: none;
-        background: var(--primary-color);
+        background: var(--bg-color);
         color: #000;
         font-size: 22px;
         align-items: center;
