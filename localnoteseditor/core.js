@@ -4225,11 +4225,11 @@ class LocalNotesEditor {
         var readingTime = Math.max(1, Math.ceil(words / 200)); // 200 WPM average
         
         this.statusbar.innerHTML = `
-            <span>Слова: <b>${words}</b></span>
-            <span>Символы: <b>${chars}</b></span>
-            <span>Без пробелов: <b>${charsNoSpaces}</b></span>
-            <span>Абзацы: <b>${paragraphs}</b></span>
-            <span>Время чтения: <b>${readingTime} мин</b></span>
+            <span>${this._('words','Words')}: <b>${words}</b></span>
+            <span>${this._('characters','Characters')}: <b>${chars}</b></span>
+            <span>${this._('charsNoSpaces','Chars (no spaces)')}: <b>${charsNoSpaces}</b></span>
+            <span>${this._('statusParagraphs','Paragraphs')}: <b>${paragraphs}</b></span>
+            <span>${this._('statusReadingTime','Reading time')}: <b>${readingTime} ${this._('statusMin','min')}</b></span>
         `;
     }
 

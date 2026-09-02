@@ -83,7 +83,8 @@ class ThemeManager {
         toggle.className = 'theme-toggle';
         toggle.id = 'themeToggle';
         toggle.innerHTML = '<span class="theme-icon">🌙</span>';
-        toggle.title = 'Переключить тему';
+        const _t = (key, fb) => (window.t ? window.t(key) : fb);
+        toggle.title = _t('cpToggleTheme', 'Toggle theme');
         
         document.body.appendChild(toggle);
     }

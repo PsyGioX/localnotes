@@ -34,58 +34,55 @@ function initializeLanguage() {
     }
 }
 
-// Функция для загрузки текста из lang.json и обновления интерфейса
+// Функция для загрузки текста из /locales и обновления интерфейса
 function changeLanguage(language) {
-    // Определяем правильный путь к lang.json в зависимости от текущего URL
+    // Две небольшие языковые выборки вместо одного большого json/lang.json:
+    //  - /locales/site/<lang>.json  — тексты статических элементов страницы
+    //    (name-app, addNoteButton, footer и т.д.), которые ниже читает
+    //    updateInterface()
+    //  - /locales/<lang>.json       — полный набор строк приложения,
+    //    используемый функцией t() из js/i18n.js
+    // Обе — plain flat json, поэтому объединяем их в единый объект и
+    // используем его и как langData (для updateInterface), и как
+    // window.translations[language] (чтобы t() сразу видел все строки
+    // выбранного языка, а не только те 223, что раньше лежали в lang.json).
     const isLanguagePage = window.location.pathname.match(/^\/([a-z]{2})\//);
-    const langJsonPath = isLanguagePage ? '../json/lang.json' : '/json/lang.json';
-    
-    
-    fetch(langJsonPath)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            const langData = data[language];
-            
-            // Кешируем все языковые данные в localStorage для офлайн-режима
+    const prefix = isLanguagePage ? '..' : '';
+    const siteUrl = `${prefix}/locales/site/${language}.json`;
+    const appUrl = `${prefix}/locales/${language}.json`;
+
+    Promise.all([
+        fetch(siteUrl).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status} for ${siteUrl}`); return r.json(); }),
+        fetch(appUrl).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status} for ${appUrl}`); return r.json(); })
+    ])
+        .then(([siteData, appData]) => {
+            // appData как база, siteData поверх — это те же ключи,
+            // которые исторически жили только в lang.json.
+            const langData = Object.assign({}, appData, siteData);
+
+            // Кешируем загруженные языки в localStorage для офлайн-режима
             try {
-                localStorage.setItem('langDataCache', JSON.stringify(data));
+                const cacheRaw = localStorage.getItem('langDataCache');
+                const cache = cacheRaw ? JSON.parse(cacheRaw) : {};
+                cache[language] = langData;
+                localStorage.setItem('langDataCache', JSON.stringify(cache));
             } catch (e) { /* ignore quota errors */ }
 
-            // Проверяем, что данные для языка существуют
-            if (!langData) {
-                console.warn(`Language data for '${language}' not found, falling back to 'en'`);
-                const fallbackLangData = data['en'];
-                if (!fallbackLangData) {
-                    console.error('Fallback language data not found');
-                    return;
-                }
-                return updateInterface(fallbackLangData, language);
-            }
-
-            // Устанавливаем атрибут data-lang на body для переключения языков
             document.body.setAttribute('data-lang', language);
-            
             updateInterface(langData, language);
         })
         .catch(err => {
-            console.error("Error loading language file:", err);
-            console.error("Attempted to load from:", langJsonPath);
+            console.error("Error loading language files:", err);
+            console.error("Attempted to load from:", siteUrl, appUrl);
             // Офлайн-режим: восстанавливаем данные из кеша
             try {
-                const cached = localStorage.getItem('langDataCache');
-                if (cached) {
-                    const data = JSON.parse(cached);
-                    const langData = data[language] || data['en'];
-                    if (langData) {
-                        console.warn('Offline mode: using cached language data for', language);
-                        document.body.setAttribute('data-lang', language);
-                        updateInterface(langData, language);
-                    }
+                const cacheRaw = localStorage.getItem('langDataCache');
+                const cache = cacheRaw ? JSON.parse(cacheRaw) : {};
+                const langData = cache[language] || cache['en'];
+                if (langData) {
+                    console.warn('Offline mode: using cached language data for', language);
+                    document.body.setAttribute('data-lang', language);
+                    updateInterface(langData, language);
                 }
             } catch (cacheErr) {
                 console.error('Failed to restore language from cache:', cacheErr);
@@ -98,6 +95,11 @@ function updateInterface(langData, language) {
     // Сохраняем данные языка в глобальной переменной
     window.langData = window.langData || {};
     window.langData[language] = langData;
+    // Синхронизируем с translations, чтобы t() из js/i18n.js сразу видел
+    // строки только что выбранного языка, а не только тот, что был
+    // загружен при старте страницы.
+    window.translations = window.translations || {};
+    window.translations[language] = langData;
     window.currentLang = language;
 
     // Сохраняем язык в localStorage для офлайн-режима

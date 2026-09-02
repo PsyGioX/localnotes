@@ -2914,15 +2914,15 @@ function initSearchTagAutocomplete() {
 
         const _t = (key, fb) => window.t ? (window.t(key) || fb) : fb;
 
-        let html = `<div class="search-hint-header"><i class="bi bi-search"></i> ${_t('searchHintTitle', 'Как искать')}</div>`;
+        let html = `<div class="search-hint-header"><i class="bi bi-search"></i> ${_t('searchHintTitle', 'How to search')}</div>`;
         html += `<div class="search-hint-tips">`;
-        html += `<div class="search-hint-tip"><span class="search-hint-key">текст</span><span class="search-hint-desc">${_t('searchHintText', 'поиск по содержимому')}</span></div>`;
-        html += `<div class="search-hint-tip"><span class="search-hint-key">#тег</span><span class="search-hint-desc">${_t('searchHintTag', 'поиск по тегу')}</span></div>`;
-        html += `<div class="search-hint-tip"><span class="search-hint-key">текст #тег</span><span class="search-hint-desc">${_t('searchHintCombined', 'комбинированный поиск')}</span></div>`;
+        html += `<div class="search-hint-tip"><span class="search-hint-key">${_t('searchHintExampleText', 'text')}</span><span class="search-hint-desc">${_t('searchHintText', 'search by content')}</span></div>`;
+        html += `<div class="search-hint-tip"><span class="search-hint-key">${_t('searchHintExampleTag', '#tag')}</span><span class="search-hint-desc">${_t('searchHintTag', 'search by tag')}</span></div>`;
+        html += `<div class="search-hint-tip"><span class="search-hint-key">${_t('searchHintExampleText', 'text')} ${_t('searchHintExampleTag', '#tag')}</span><span class="search-hint-desc">${_t('searchHintCombined', 'combined search')}</span></div>`;
         html += `</div>`;
 
         if (allTags.length > 0) {
-            html += `<div class="search-hint-tags-title"><i class="bi bi-tags"></i> ${_t('searchHintTags', 'Теги')}</div>`;
+            html += `<div class="search-hint-tags-title"><i class="bi bi-tags"></i> ${_t('searchHintTags', 'Tags')}</div>`;
             html += `<div class="search-hint-tags">`;
             allTags.forEach(tag => {
                 const colorObj = (typeof TAG_COLORS !== 'undefined' ? TAG_COLORS : []).find(c => c.id === tag.colorId);

@@ -18,7 +18,7 @@ function loadScriptsInOrder(scripts) {
 // Load scripts after DOM is ready
 var scripts = [
     '/js/highlight.min.js?v=1.9.13',
-    '/js/translations.js?v=1.9.13',
+    '/js/i18n.js?v=1.9.13',
     '/js/img.js?v=1.9.13',
     '/js/date-utils.js?v=1.9.13',
     '/js/editor-integration.js?v=1.9.13',

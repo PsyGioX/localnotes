@@ -70,14 +70,11 @@ class AppUtils {
     
     // Fallback метод для установки текста кнопки
     useFallbackText(btn, isFullWidth, currentLang) {
+        const _t = (key, fb) => (window.t ? window.t(key) : fb);
         if (isFullWidth) {
-            btn.innerHTML = currentLang.startsWith("ru") 
-                ? '<i class="bi bi-grid"></i> Сетка'
-                : '<i class="bi bi-grid"></i> Grid';
+            btn.innerHTML = `<i class="bi bi-grid"></i> ${_t('viewModeGrid', 'Grid')}`;
         } else {
-            btn.innerHTML = currentLang.startsWith("ru")
-                ? '<i class="bi bi-list-ul"></i> Список'
-                : '<i class="bi bi-list-ul"></i> List';
+            btn.innerHTML = `<i class="bi bi-list-ul"></i> ${_t('viewModeList', 'List')}`;
         }
     }
     
