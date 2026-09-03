@@ -366,12 +366,15 @@ self.addEventListener('message', event => {
     const data = event.data;
     if (!data) return;
 
-    // Validate message origin — only accept from our own clients
+    // Validate message origin — only accept from our own clients.
+    // (Browsers only ever let a page postMessage to a service worker it
+    // controls, which is always same-origin — but comparing against
+    // self.location.origin, instead of a hardcoded deployment URL, keeps
+    // this correct if the app is ever served from a different domain.)
     if (event.source && event.source.url) {
         try {
             const sourceOrigin = new URL(event.source.url).origin;
-            const allowedOrigins = ['https://localnotes-three.vercel.app', 'http://localhost'];
-            if (!allowedOrigins.some(o => sourceOrigin === o || sourceOrigin.startsWith('http://localhost'))) return;
+            if (sourceOrigin !== self.location.origin && !sourceOrigin.startsWith('http://localhost')) return;
         } catch (e) { return; }
     }
 

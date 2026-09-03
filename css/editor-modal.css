@@ -209,7 +209,7 @@
     }
 
     #editModal .modal-content .lne-editor {
-        min-height: 300px;
+        min-height: 120px;
         /* Side padding respects notch on landscape */
         padding: 12px
                  max(14px, env(safe-area-inset-right,  0px))

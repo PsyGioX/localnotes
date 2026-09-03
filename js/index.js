@@ -491,11 +491,18 @@ class AdvancedEncryption {
         return bytes.buffer;
     }
 
-    // ── Привязка к домену ─────────────────────────────────────────────────────
-    // Единственный разрешённый origin. Файлы .note зашифрованы с этим значением
-    // в HKDF info — расшифровать можно ТОЛЬКО здесь.
     static get ALLOWED_ORIGIN() {
         return 'https://localnotes-three.vercel.app';
+    }
+
+    // localhost/127.0.0.1 carry no phishing risk (it's always the
+    // developer's own machine, never a remote clone domain someone could be
+    // lured to), so we treat them as an extension of the production trust
+    // boundary rather than a separate domain — this lets local dev/testing
+    // actually decrypt anything at all, without weakening the protection
+    // against a real attacker-controlled clone domain.
+    static _isLocalDev(origin) {
+        return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
     }
 
     // Проверяем origin и возвращаем его байты для вшивания в KDF.
@@ -503,7 +510,7 @@ class AdvancedEncryption {
     _getOriginBinding() {
         const current = window.location.origin;
         const allowed = AdvancedEncryption.ALLOWED_ORIGIN;
-        if (current !== allowed) {
+        if (current !== allowed && !AdvancedEncryption._isLocalDev(current)) {
             // Используем переводимый ключ если t() доступен
             const msg = (typeof window.t === 'function')
                 ? (window.t('decryptOriginError', { allowed, current }) ||
@@ -833,6 +840,7 @@ function validateAndFixImages(content) {
             ADD_ATTR: ['allowfullscreen', 'frameborder', 'scrolling', 'allow', 'src', 'width', 'height', 'controls', 'autoplay', 'muted', 'loop']
         });
         const d = document.createElement('div'); d.innerHTML = safe;
+        if (window.restrictIframeEmbeds) window.restrictIframeEmbeds(d);
         d.querySelectorAll('img').forEach(img => {
             if (!img.src) { img.remove(); return; }
             if (img.src.startsWith('blob:')) img.remove();
@@ -852,6 +860,7 @@ function fixChecklistStructure(content) {
         ADD_ATTR: ['allowfullscreen', 'frameborder', 'scrolling', 'allow', 'src', 'width', 'height', 'controls', 'autoplay', 'muted', 'loop']
     });
     const d = document.createElement('div'); d.innerHTML = safe;
+    if (window.restrictIframeEmbeds) window.restrictIframeEmbeds(d);
     d.querySelectorAll('.checklist-item-wrapper').forEach(wrapper => {
         let cb = wrapper.querySelector('.checklist-checkbox-ios');
         let span = wrapper.querySelector('.checklist-text-content');
@@ -904,6 +913,7 @@ async function processMediaContent(content) {
         ADD_ATTR: ['allowfullscreen', 'frameborder', 'scrolling', 'allow', 'src', 'width', 'height', 'controls', 'autoplay', 'muted', 'loop']
     });
     const d = document.createElement('div'); d.innerHTML = safe;
+    if (window.restrictIframeEmbeds) window.restrictIframeEmbeds(d);
     const imgs = d.querySelectorAll('img[src^="blob:"]');
     for (const img of imgs) {
         try { const resp = await fetch(img.src); const blob = await resp.blob(); img.src = await blobToBase64(blob); }
@@ -2032,20 +2042,7 @@ function renderLoadMoreButton() {
         btn.type = 'button';
         btn.className = 'ln-load-more-btn';
         btn.addEventListener('click', function () {
-            const container = document.getElementById('notesContainer');
-            if (!container) return;
-            const nextEnd = Math.min(_notesRenderState.rendered + 30, _notesRenderState.all.length);
-            _notesRenderState.all.slice(_notesRenderState.rendered, nextEnd).forEach(function (note) {
-                const noteEl = buildNoteCardElement(note, _notesRenderState.allTags);
-                container.insertBefore(noteEl, btn);
-            });
-            _notesRenderState.rendered = nextEnd;
-            renderLoadMoreButton();
-            setTimeout(function () {
-                if (typeof hljs !== 'undefined') hljs.highlightAll();
-                initCodeBlockCopyButtons(container);
-                fixCodeBlockStyles(container);
-            }, 100);
+            renderNextNotesBatch(30);
         });
         notesContainer.appendChild(btn);
     } else {
@@ -2053,6 +2050,38 @@ function renderLoadMoreButton() {
     }
     const label = (typeof t === 'function' ? t('loadMoreNotes') : null) || 'Load more notes';
     btn.innerHTML = '<i class="bi bi-chevron-down"></i> ' + label + ' (' + remaining + ')';
+}
+
+// Appends up to `count` more notes from _notesRenderState.all and updates
+// the Load more button. Shared by the button's own click handler and by
+// search (see renderAllRemainingNotes below).
+function renderNextNotesBatch(count) {
+    const container = document.getElementById('notesContainer');
+    if (!container) return;
+    const btn = document.getElementById('loadMoreNotesBtn');
+    const nextEnd = Math.min(_notesRenderState.rendered + count, _notesRenderState.all.length);
+    _notesRenderState.all.slice(_notesRenderState.rendered, nextEnd).forEach(function (note) {
+        const noteEl = buildNoteCardElement(note, _notesRenderState.allTags);
+        if (btn) container.insertBefore(noteEl, btn); else container.appendChild(noteEl);
+    });
+    _notesRenderState.rendered = nextEnd;
+    renderLoadMoreButton();
+    setTimeout(function () {
+        if (typeof hljs !== 'undefined') hljs.highlightAll();
+        initCodeBlockCopyButtons(container);
+        fixCodeBlockStyles(container);
+    }, 100);
+}
+
+// Search (filterNotes) only hides/shows note cards already in the DOM — it
+// has no idea about notes still sitting unrendered in _notesRenderState.all
+// behind the "Load more" button. Without this, searching silently misses
+// every note past the first page, and the "N / total" search counter
+// undercounts too. Call this before filtering whenever there's an active
+// query and unrendered notes remain.
+function renderAllRemainingNotes() {
+    const remaining = _notesRenderState.all.length - _notesRenderState.rendered;
+    if (remaining > 0) renderNextNotesBatch(remaining);
 }
 
 function buildNoteCardElement(note, allTags) {
@@ -2136,6 +2165,7 @@ function buildNoteCardElement(note, allTags) {
                            'allowfullscreen', 'frameborder', 'scrolling', 'allow', 'src', 'width', 'height', 'controls', 'autoplay', 'muted', 'loop',
                            'target', 'rel']
             });
+            if (window.restrictIframeEmbeds) window.restrictIframeEmbeds(notePreview);
 
             // Ensure links open in new tab (target may be stripped by browser in contenteditable)
             notePreview.querySelectorAll('a[href]').forEach(a => {
@@ -2754,6 +2784,10 @@ function filterNotes() {
 
     const { tagMatches, isFilters, hasFilters, beforeDate, afterDate, textQuery, textWords } = parseSearchQuery(raw);
 
+    // Pagination only puts the first page of notes in the DOM — without
+    // this, search silently misses every note past that page.
+    renderAllRemainingNotes();
+
     document.querySelectorAll('.note').forEach(note => {
         const content = note.querySelector('.noteContent');
         if (!content) { note.classList.add('hidden'); return; }
@@ -3188,6 +3222,12 @@ function enableQuickEditOnNote(noteEl) {
                 ADD_TAGS: ['iframe', 'video', 'source'],
                 ADD_ATTR: ['allowfullscreen', 'frameborder', 'scrolling', 'allow', 'src', 'width', 'height', 'controls', 'autoplay', 'muted', 'loop']
             });
+            if (window.restrictIframeEmbeds) {
+                const _pd = document.createElement('div');
+                _pd.innerHTML = clean;
+                window.restrictIframeEmbeds(_pd);
+                clean = _pd.innerHTML;
+            }
         } else if (text) {
             clean = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
         }
@@ -3498,9 +3538,27 @@ async function buildShareableNoteLink(note) {
 // whatever share UI the OS happens to present. Builds the link first so
 // the modal can show/hide the "Copy link" option based on whether one was
 // actually produced (e.g. very large notes can't fit in a URL).
+// Converts note.content HTML to readable plain text for sharing/copying —
+// preserves block-level line breaks (unlike sidebar.js's snippetFor, which
+// collapses everything to one line for a search snippet).
+function noteContentToPlainText(html) {
+    const withBreaks = (html || '')
+        .replace(/<\/(p|div|h[1-6]|li|blockquote|pre|tr)>/gi, '</$1>\n')
+        .replace(/<br\s*\/?>/gi, '\n');
+    const d = document.createElement('div');
+    d.innerHTML = (typeof DOMPurify !== 'undefined')
+        ? DOMPurify.sanitize(withBreaks, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] })
+        : withBreaks.replace(/<[^>]*>/g, '');
+    return (d.textContent || '')
+        .replace(/[ \t]+\n/g, '\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+}
+
 async function showShareOptions(note) {
     const title = note.title || (typeof t === 'function' ? t('cpUntitled') : 'Untitled note');
     const introText = (typeof t === 'function' ? t('shareNoteIntro') : null) || 'Check out my note';
+    const bodyText = noteContentToPlainText(note.content) || introText;
 
     let link = null;
     try {
@@ -3543,16 +3601,16 @@ async function showShareOptions(note) {
                 await copyPlainTextToClipboard(link.url,
                     (typeof t === 'function' ? t('shareLinkCopied') : null) || 'Link copied to clipboard.');
             } else if (action === 'copy-text') {
-                await copyShareTextToClipboard(title, introText, link ? link.url : '',
+                await copyShareTextToClipboard(title, bodyText, link ? link.url : '',
                     (typeof t === 'function' ? t('shareTextCopied') : null) || 'Copied to clipboard.');
             } else if (action === 'system-share') {
-                const shareData = link ? { title, text: introText, url: link.url } : { title, text: introText };
+                const shareData = link ? { title, text: bodyText, url: link.url } : { title, text: bodyText };
                 try {
                     if (navigator.canShare && !navigator.canShare(shareData)) throw new Error('canShare rejected this data');
                     await navigator.share(shareData);
                 } catch (e) {
                     if (e && e.name === 'AbortError') return; // user cancelled — not an error
-                    await copyShareTextToClipboard(title, introText, link ? link.url : '');
+                    await copyShareTextToClipboard(title, bodyText, link ? link.url : '');
                 }
             }
         });
@@ -3565,6 +3623,7 @@ async function showShareOptions(note) {
 async function shareNoteContent(note) {
     const title = note.title || (typeof t === 'function' ? t('cpUntitled') : 'Untitled note');
     const introText = (typeof t === 'function' ? t('shareNoteIntro') : null) || 'Check out my note';
+    const bodyText = noteContentToPlainText(note.content) || introText;
 
     let link;
     try {
@@ -3587,7 +3646,7 @@ async function shareNoteContent(note) {
         return;
     }
 
-    const shareData = { title, text: introText, url: link.url };
+    const shareData = { title, text: bodyText, url: link.url };
 
     if (navigator.share) {
         try {
@@ -3595,11 +3654,11 @@ async function shareNoteContent(note) {
             await navigator.share(shareData);
         } catch (e) {
             if (e && e.name === 'AbortError') return; // user cancelled the share sheet — not an error
-            await copyShareTextToClipboard(title, introText, link.url);
+            await copyShareTextToClipboard(title, bodyText, link.url);
         }
         return;
     }
-    await copyShareTextToClipboard(title, introText, link.url);
+    await copyShareTextToClipboard(title, bodyText, link.url);
 }
 
 async function copyPlainTextToClipboard(text, successMessage) {

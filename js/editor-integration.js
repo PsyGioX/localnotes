@@ -144,6 +144,22 @@ window.localNotesEditorAPI = {
         } catch (e) { return 0; }
     }
 
+    var lastAppliedH = null;
+
+    // Same class of fix as the "invisible until first touch" nudge in
+    // openModal(): some mobile WebKit/Blink builds don't reliably recomposite
+    // a contenteditable across a layout-affecting reflow (like this modal's
+    // height/maxHeight changing) unless something forces it. openModal()
+    // only covers the very first reveal — every keyboard show/hide after
+    // that (including the one triggered by a nested toolbar modal blurring
+    // the editor) goes through here instead, so it needs its own nudge.
+    function forceEditorRepaint() {
+        var edEl = document.querySelector('#editModal .lne-editor');
+        if (!edEl) return;
+        void edEl.offsetHeight; // sync layout read forces a repaint
+        requestAnimationFrame(function () { void edEl.offsetHeight; });
+    }
+
     function apply() {
         var m = getModal();
         if (!isOpen(m)) return;
@@ -154,6 +170,12 @@ window.localNotesEditorAPI = {
         if (!content) return;
 
         var h = vv.height;
+
+        // Skip no-op / sub-pixel changes (scroll bounce, rounding) — avoids
+        // reflowing the whole modal, and re-triggering the repaint nudge,
+        // for resize events that didn't actually change anything visible.
+        if (lastAppliedH !== null && Math.abs(h - lastAppliedH) < 2) return;
+        lastAppliedH = h;
 
         // Set the visible height — keyboard shrinks vv.height on Android,
         // on iOS dvh doesn't shrink so JS must do it.
@@ -168,11 +190,14 @@ window.localNotesEditorAPI = {
         var safeTop   = getSafeTop();
         // Only apply marginTop for the notch offset, not for keyboard scroll
         content.style.marginTop = (offsetTop > safeTop ? offsetTop : safeTop) + 'px';
+
+        forceEditorRepaint();
     }
 
     function reset() {
         var m = getModal();
         if (!m) return;
+        lastAppliedH = null;
         var content = m.querySelector('.modal-content');
         if (!content) return;
         content.style.height    = '';

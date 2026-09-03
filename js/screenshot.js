@@ -320,7 +320,7 @@
         // Parse
         const parser = document.createElement('div');
         parser.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:1px;visibility:hidden;pointer-events:none;';
-        parser.innerHTML = note.content || '';
+        parser.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize(note.content || '') : '';
         document.body.appendChild(parser);
 
         const mc = document.createElement('canvas');

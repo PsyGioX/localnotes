@@ -127,19 +127,29 @@
     }
 
     function markdownToHtml(text) {
-        if (typeof LNMarkdown !== 'undefined' && LNMarkdown.parse) return LNMarkdown.parse(text);
-        // Same basic fallback regex chain used elsewhere in this app when
-        // the advanced parser isn't loaded
-        return text
-            .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-            .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-            .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*(.+?)\*/g, '<em>$1</em>')
-            .replace(/`(.+?)`/g, '<code>$1</code>')
-            .replace(/\n\n+/g, '</p><p>')
-            .replace(/^/, '<p>')
-            .replace(/$/, '</p>');
+        var html;
+        if (typeof LNMarkdown !== 'undefined' && LNMarkdown.parse) {
+            html = LNMarkdown.parse(text);
+        } else {
+            // Same basic fallback regex chain used elsewhere in this app when
+            // the advanced parser isn't loaded
+            html = text
+                .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+                .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+                .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                .replace(/`(.+?)`/g, '<code>$1</code>')
+                .replace(/\n\n+/g, '</p><p>')
+                .replace(/^/, '<p>')
+                .replace(/$/, '</p>');
+        }
+        // Neither path above escapes raw HTML embedded in the source
+        // markdown (LNMarkdown intentionally supports HTML passthrough,
+        // like most markdown flavors) — and unlike the .html import path,
+        // this one was never sanitized. The source file is untrusted
+        // (someone else's export/share), so sanitize before it's saved.
+        return typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(html) : html.replace(/<[^>]*>/g, '');
     }
 
     function escapeHtmlLocal(s) {

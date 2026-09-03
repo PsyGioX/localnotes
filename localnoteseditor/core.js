@@ -96,7 +96,15 @@ class LocalNotesEditor {
         this.body      = this.container.querySelector('.lne-body');
         this.ed        = this.container.querySelector('.lne-editor');
         this.statusbar = this.container.querySelector('.lne-statusbar');
-        this.ed.style.minHeight = this.options.height;
+        // NOTE: intentionally NOT this.ed.style.minHeight = ... — an inline
+        // style beats every stylesheet rule regardless of selector
+        // specificity, which silently defeated the mobile modal's own
+        // "min-height: 300px" override (css/editor-modal.css) and forced the
+        // editor to stay >=500px tall even in a keyboard-shrunk viewport,
+        // pushing the toolbar/bottom of the text area off-screen. A CSS
+        // custom property keeps the default configurable while still letting
+        // more specific stylesheet rules (mobile/fullscreen) win normally.
+        this.ed.style.setProperty('--lne-editor-min-h', this.options.height);
         this.ed.dataset.placeholder = this.options.placeholder;
     }
 
@@ -2227,6 +2235,18 @@ class LocalNotesEditor {
         if (self.ed) self.ed.blur();
         if (document.activeElement && document.activeElement !== document.body) {
             document.activeElement.blur();
+        }
+        // The blur() above closes the mobile keyboard, which resizes
+        // visualViewport and reflows the outer #editModal underneath this
+        // one (see js/editor-integration.js). Some mobile WebKit/Blink
+        // builds don't reliably recomposite the note's contenteditable
+        // across that reflow, causing the note text to flicker/disappear
+        // until something forces a repaint — same race already fixed for
+        // the modal's initial open, just re-triggered here.
+        if (self.ed && (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) {
+            var _edForRepaint = self.ed;
+            requestAnimationFrame(function () { void _edForRepaint.offsetHeight; });
+            setTimeout(function () { void _edForRepaint.offsetHeight; }, 350);
         }
         var modal = ov.querySelector('.lne-modal');
         var close = function() {

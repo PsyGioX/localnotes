@@ -26,7 +26,7 @@
     border-radius: 0 !important;
     border: none !important;
 }
-.lne-fullscreen .lne-editor { min-height: calc(100vh - 120px) !important; }
+.lne-fullscreen .lne-editor { min-height: calc(100dvh - 120px) !important; }
 
 /* ═══════════════════════════ TOOLBAR ══════════════════════════════════ */
 .lne-toolbar { background: var(--bg-secondary, #111); border-bottom: 1px solid var(--border-color, #272727); padding: 0 6px; }
@@ -277,7 +277,7 @@ button.lne-tpl-btn.lne-btn {
 .lne-body { flex: 1; overflow: auto; background: var(--modal-bg, #1a1a1a); }
 
 .lne-editor {
-    padding: 18px 22px; min-height: 400px;
+    padding: 18px 22px; min-height: var(--lne-editor-min-h, 400px);
     outline: none; font-size: 15px; line-height: 1.75;
     color: var(--text-color, #e0e0e0); word-wrap: break-word; overflow-wrap: break-word;
     font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -1840,16 +1840,70 @@ textarea.lne-inp { resize: vertical; }
         width: 28px;
         height: 100%;
         pointer-events: none;
-        background: linear-gradient(to right, transparent, var(--bg-secondary, #111) 85%);
+        background: linear-gradient(to right, transparent, var(--modal-bg, #1a1a1a) 85%);
     }
     [data-theme="light"] .lne-toolbar::after {
-        background: linear-gradient(to right, transparent, #f8f9fa 85%);
+        background: linear-gradient(to right, transparent, #ffffff 85%);
     }
-    .lne-toolbar-row { flex-wrap: nowrap !important; padding: 4px 8px; min-width: max-content; }
+    .lne-toolbar-row { flex-wrap: nowrap !important; padding: 6px 10px; min-width: max-content; gap: 3px; }
     .lne-toolbar-row + .lne-toolbar-row { border-top: none; border-left: 1px solid var(--border-color, #272727); }
-    .lne-sep { margin: 0 2px; }
+
+    /* Toolbar surface — subtle depth instead of a flat strip, so it reads
+       as a distinct control bar rather than blending into the editor body. */
+    .lne-toolbar {
+        background: linear-gradient(to bottom, var(--bg-secondary, #111), var(--modal-bg, #1a1a1a) 130%);
+        box-shadow: 0 1px 0 rgba(0,0,0,.25);
+    }
+    [data-theme="light"] .lne-toolbar {
+        background: linear-gradient(to bottom, #f8f9fa, #ffffff 130%);
+        box-shadow: 0 1px 0 rgba(0,0,0,.05);
+    }
+
+    /* Buttons — larger touch target (was 34px, same as desktop mouse
+       target), rounder, and with a real pressed state so taps feel
+       acknowledged instead of just toggling a border color. */
+    .lne-toolbar .lne-btn {
+        width: 40px; height: 40px;
+        border-radius: 9px;
+        transition: background .12s ease, color .12s ease, transform .08s ease;
+    }
+    .lne-toolbar .lne-btn i { font-size: 18px; }
+    .lne-toolbar .lne-btn:active {
+        transform: scale(.90);
+        background: var(--primary-color, #28a745);
+        color: #fff;
+    }
+    .lne-toolbar .lne-btn.active {
+        background: rgba(40,167,69,.18);
+        color: var(--primary-color, #28a745);
+        box-shadow: inset 0 0 0 1px rgba(40,167,69,.35);
+    }
+
+    /* Group clusters — a faint shared background ties related buttons
+       (bold/italic/underline, alignment, lists, etc.) together visually so
+       the toolbar reads as sections rather than one long undifferentiated
+       row of icons. */
+    .lne-grp {
+        gap: 1px;
+        padding: 2px;
+        border-radius: 11px;
+        background: rgba(255,255,255,.03);
+    }
+    [data-theme="light"] .lne-grp { background: rgba(0,0,0,.025); }
+
+    /* Separators — thin hairline was easy to miss at a glance; a touch more
+       height/opacity makes group boundaries scannable without adding a
+       heavier divider. */
+    .lne-sep { width: 1px; height: 24px; margin: 0 4px; background: var(--border-color, #333); opacity: .8; }
+
     /* Bigger selects */
-    .lne-sel { height: 32px; font-size: 12px; }
+    .lne-sel {
+        height: 36px; font-size: 12.5px;
+        border-radius: 9px;
+        background: rgba(255,255,255,.04);
+        border-color: var(--border-color, #333);
+    }
+    [data-theme="light"] .lne-sel { background: rgba(0,0,0,.03); }
     .lne-sel-heading { min-width: 110px; max-width: 200px; }
     .lne-sel-font    { min-width: 110px; max-width: 160px; }
     .lne-sel-size    { min-width: 52px;  max-width: 72px; }

@@ -81,7 +81,7 @@
         const parts = [];
         if (title && title.trim() && !(text && text.trim())) parts.push('<h2>' + escapeHtmlLocal(title.trim()) + '</h2>');
         if (text && text.trim()) parts.push('<p>' + escapeHtmlLocal(text.trim()).replace(/\n/g, '<br>') + '</p>');
-        if (url && url.trim()) parts.push('<p><a href="' + escapeHtmlLocal(url.trim()) + '" target="_blank" rel="noopener">' + escapeHtmlLocal(url.trim()) + '</a></p>');
+        if (url && url.trim() && /^https?:\/\//i.test(url.trim())) parts.push('<p><a href="' + escapeHtmlLocal(url.trim()) + '" target="_blank" rel="noopener">' + escapeHtmlLocal(url.trim()) + '</a></p>');
         const content = parts.join('') || '<p><br></p>';
 
         window.openModal(); // opens the editor with a fresh, unsaved note
@@ -129,7 +129,26 @@
         if (typeof window.openModal !== 'function') return;
         window.openModal();
         const ed = await waitForEditorReady(4000);
-        if (ed) ed.setContent(note.content);
+        if (ed) {
+            // note.content is fully attacker-controlled (anyone can craft a
+            // #shared= link) and setContent() does no sanitization of its
+            // own — this is the one thing standing between an arbitrary
+            // link and script execution the moment it's opened.
+            let safeContent = note.content;
+            if (window.DOMPurify) {
+                safeContent = window.DOMPurify.sanitize(note.content, {
+                    ADD_TAGS: ['iframe', 'video', 'source'],
+                    ADD_ATTR: ['allowfullscreen', 'frameborder', 'scrolling', 'allow', 'src', 'width', 'height', 'controls', 'autoplay', 'muted', 'loop']
+                });
+                const _sd = document.createElement('div');
+                _sd.innerHTML = safeContent;
+                if (window.restrictIframeEmbeds) window.restrictIframeEmbeds(_sd);
+                safeContent = _sd.innerHTML;
+            } else {
+                safeContent = ''; // DOMPurify is a hard app dependency — fail safe if somehow missing
+            }
+            ed.setContent(safeContent);
+        }
         if (typeof window.showCustomAlert === 'function') {
             window.showCustomAlert(
                 t('sharedNoteOpenedTitle', 'Shared note'),

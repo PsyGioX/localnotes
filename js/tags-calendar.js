@@ -803,7 +803,13 @@ function openCalendarNotePreview(note, calModal) {
     // Populate body via DOM (not innerHTML) so iframes load correctly
     const cnpBody = overlay.querySelector('.cnp-body');
     const bodyFrag = document.createElement('div');
-    bodyFrag.innerHTML = note.content || '';
+    bodyFrag.innerHTML = window.DOMPurify
+        ? window.DOMPurify.sanitize(note.content || '', {
+            ADD_TAGS: ['iframe', 'video', 'source'],
+            ADD_ATTR: ['allowfullscreen', 'frameborder', 'scrolling', 'allow', 'src', 'width', 'height', 'controls', 'autoplay', 'muted', 'loop']
+        })
+        : '';
+    if (window.restrictIframeEmbeds) window.restrictIframeEmbeds(bodyFrag);
     // Convert aspect-ratio style to padding-top trick so iframe is visible before layout
     bodyFrag.querySelectorAll('.lne-video-wrapper, .video-embed-wrapper').forEach(wrapper => {
         let ratio = 9 / 16; // default 16:9
@@ -983,7 +989,9 @@ function formatDateFull(d) {
 function extractNoteTitle(note) {
     if (note.title) return note.title;
     const div = document.createElement('div');
-    div.innerHTML = note.content || '';
+    div.innerHTML = window.DOMPurify
+        ? window.DOMPurify.sanitize(note.content || '', { ALLOWED_TAGS: [], ALLOWED_ATTR: [] })
+        : '';
     return div.textContent.trim().slice(0, 60) || 'Untitled';
 }
 

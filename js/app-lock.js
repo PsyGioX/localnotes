@@ -9,6 +9,7 @@
 
     const KEY_ENABLED      = 'ln_lock_enabled';
     const KEY_PIN_HASH     = 'ln_lock_pin_hash';
+    const KEY_PIN_SALT     = 'ln_lock_pin_salt';
     const KEY_FILE_HASH    = 'ln_lock_file_hash';
     const KEY_UNLOCKED     = 'ln_lock_session';
     const KEY_LAST_ACTIVITY = 'ln_lock_last_activity';
@@ -18,6 +19,48 @@
         const buf = typeof data === 'string' ? new TextEncoder().encode(data) : data;
         const hash = await crypto.subtle.digest('SHA-256', buf);
         return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function bytesToHex(bytes) { return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join(''); }
+    function hexToBytes(hex) {
+        const out = new Uint8Array(hex.length / 2);
+        for (let i = 0; i < out.length; i++) out[i] = parseInt(hex.substr(i * 2, 2), 16);
+        return out;
+    }
+
+    // A plain SHA-256(pin) is near-instant to brute-force offline for the
+    // ~10^4-10^6 possible short PINs — PBKDF2 with a per-install random salt
+    // makes each guess expensive and prevents a precomputed table from
+    // covering every install at once.
+    async function pinHash(pin, saltBytes) {
+        const pwKey = await crypto.subtle.importKey('raw', new TextEncoder().encode(pin), 'PBKDF2', false, ['deriveBits']);
+        const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: saltBytes, iterations: 100000, hash: 'SHA-256' }, pwKey, 256);
+        return bytesToHex(new Uint8Array(bits));
+    }
+
+    async function setPin(pin) {
+        const salt = crypto.getRandomValues(new Uint8Array(16));
+        localStorage.setItem(KEY_PIN_SALT, bytesToHex(salt));
+        localStorage.setItem(KEY_PIN_HASH, await pinHash(pin, salt));
+    }
+
+    // Verifies a PIN against whatever format is stored — new salted PBKDF2
+    // hash, or (for installs that set their PIN before this fix) the old
+    // unsalted single-round SHA-256 hash. A successful legacy match
+    // transparently upgrades storage to the new format.
+    async function verifyPin(pin) {
+        const saltHex = localStorage.getItem(KEY_PIN_SALT);
+        const stored = localStorage.getItem(KEY_PIN_HASH);
+        if (!stored) return false;
+        if (saltHex) {
+            return (await pinHash(pin, hexToBytes(saltHex))) === stored;
+        }
+        // Legacy unsalted format
+        if ((await sha256hex(pin)) === stored) {
+            await setPin(pin); // upgrade in place
+            return true;
+        }
+        return false;
     }
 
     function hasPinConfigured()  { return !!localStorage.getItem(KEY_PIN_HASH); }
@@ -153,27 +196,46 @@
     }
 
     const MAX_ATTEMPTS = 5;
-    let failedAttempts = 0;
-    let lockedUntil = 0;
+    const KEY_FAILED_ATTEMPTS = 'ln_lock_failed_attempts';
+    const KEY_LOCKED_UNTIL    = 'ln_lock_locked_until';
+
+    // In-memory counters alone are pointless here — the realistic attack on
+    // a short PIN is "guess, reload, guess again", which would silently
+    // reset failedAttempts/lockedUntil to 0 every time. Persisting to
+    // localStorage means the lockout actually survives a reload or the app
+    // being closed and reopened.
+    function getFailedAttempts() { return parseInt(localStorage.getItem(KEY_FAILED_ATTEMPTS) || '0', 10) || 0; }
+    function setFailedAttempts(n) { localStorage.setItem(KEY_FAILED_ATTEMPTS, String(n)); }
+    function getLockedUntil() { return parseInt(localStorage.getItem(KEY_LOCKED_UNTIL) || '0', 10) || 0; }
+    function setLockedUntil(ts) {
+        if (ts) localStorage.setItem(KEY_LOCKED_UNTIL, String(ts));
+        else localStorage.removeItem(KEY_LOCKED_UNTIL);
+    }
 
     function isRateLimited() {
+        const lockedUntil = getLockedUntil();
         if (lockedUntil && Date.now() < lockedUntil) return true;
-        if (lockedUntil && Date.now() >= lockedUntil) { lockedUntil = 0; failedAttempts = 0; }
+        if (lockedUntil && Date.now() >= lockedUntil) { setLockedUntil(0); setFailedAttempts(0); }
         return false;
     }
 
     function recordFailure() {
-        failedAttempts++;
+        const failedAttempts = getFailedAttempts() + 1;
         if (failedAttempts >= MAX_ATTEMPTS) {
-            lockedUntil = Date.now() + 60 * 1000;
-            failedAttempts = 0;
+            setLockedUntil(Date.now() + 60 * 1000);
+            setFailedAttempts(0);
+        } else {
+            setFailedAttempts(failedAttempts);
         }
     }
 
     function clearLockStorage() {
         localStorage.removeItem(KEY_ENABLED);
         localStorage.removeItem(KEY_PIN_HASH);
+        localStorage.removeItem(KEY_PIN_SALT);
         localStorage.removeItem(KEY_FILE_HASH);
+        localStorage.removeItem(KEY_FAILED_ATTEMPTS);
+        localStorage.removeItem(KEY_LOCKED_UNTIL);
     }
 
     /** Settings UI: configTab is which panel to edit — '', 'pin', or 'file' (not 'both'). */
@@ -336,12 +398,12 @@
         overlay.querySelector('#ln-lock-pin-btn')?.addEventListener('click', async () => {
             if (isRateLimited()) { showLockError(tr('lockTooMany')); return; }
             const pin = pinInput?.value || '';
-            const hash = await sha256hex(pin);
-            if (hash === localStorage.getItem(KEY_PIN_HASH)) {
+            const pinOk = await verifyPin(pin);
+            if (pinOk) {
                 unlockApp(overlay);
             } else {
                 recordFailure();
-                const left = MAX_ATTEMPTS - failedAttempts;
+                const left = MAX_ATTEMPTS - getFailedAttempts();
                 showLockError(tr('lockWrongPin') + (left > 0 ? ` (${tr('lockAttemptsLeft')}${left})` : ''));
                 if (pinInput) {
                     pinInput.value = '';
@@ -575,7 +637,7 @@
                 if (newPin) {
                     if (!/^\d{4,8}$/.test(newPin)) { showError(tr('lockPinTooShort')); return; }
                     try {
-                        localStorage.setItem(KEY_PIN_HASH, await sha256hex(newPin));
+                        await setPin(newPin);
                     } catch {
                         showError(tr('lockWrongPin'));
                         return;

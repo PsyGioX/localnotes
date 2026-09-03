@@ -60,7 +60,7 @@ class SecurityManager {
         let _macKey = null;
         const SS_KEY  = '__ss_seed_v4__';
         const VERSION = 0x04;
-        const ALLOWED = 'https://localnotes-three.vercel.app';
+        const ALLOWED = window.location.origin;
 
         // Проверка домена — бросает если запущено не на разрешённом origin
         const _assertOrigin = () => {

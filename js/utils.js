@@ -1,4 +1,49 @@
 ﻿// Общие утилиты для приложения
+
+// DOMPurify's config for note content adds <iframe> to the allow-list (for
+// the built-in YouTube/Vimeo/etc. embed feature and the "custom iframe"
+// paste box) with a free-form src/allow — sanitization alone doesn't limit
+// *which* site an iframe can point to. Without this, a note imported from a
+// file or received via share-to-app could carry an iframe pointed at any
+// https URL, rendered live the moment the note opens (phishing/clickjacking,
+// or delegated permissions via `allow`). Call this on the container right
+// after DOMPurify.sanitize() wherever note HTML with iframes is rendered.
+window.restrictIframeEmbeds = function restrictIframeEmbeds(container) {
+    if (!container || typeof container.querySelectorAll !== 'function') return;
+    var ALLOWED_HOSTS = [
+        'www.youtube.com', 'youtube.com', 'youtu.be', 'www.youtube-nocookie.com', 'youtube-nocookie.com',
+        'rutube.ru', 'www.rutube.ru',
+        'vk.com', 'www.vk.com', 'vk.ru', 'www.vk.ru', 'vkvideo.ru', 'www.vkvideo.ru', 'live.vkvideo.ru',
+        'ok.ru', 'www.ok.ru',
+        'www.tiktok.com', 'tiktok.com',
+        'player.vimeo.com',
+        'www.dailymotion.com', 'dailymotion.com',
+        'player.twitch.tv', 'clips.twitch.tv'
+    ];
+    // Only permission tokens the app's own embed generator ever emits —
+    // deliberately excludes camera/microphone/geolocation/clipboard-read/
+    // midi/usb/serial/bluetooth/payment/display-capture etc.
+    var ALLOWED_PERMISSIONS = ['autoplay', 'encrypted-media', 'fullscreen', 'picture-in-picture', 'accelerometer', 'clipboard-write', 'gyroscope'];
+
+    container.querySelectorAll('iframe').forEach(function (f) {
+        var raw = f.getAttribute('src') || f.getAttribute('data-src') || '';
+        var ok = false;
+        if (raw) {
+            try {
+                var u = new URL(raw, window.location.href);
+                ok = u.protocol === 'https:' && ALLOWED_HOSTS.indexOf(u.hostname.toLowerCase()) !== -1;
+            } catch (e) { ok = false; }
+        }
+        if (!ok) { f.remove(); return; }
+        var allow = f.getAttribute('allow');
+        if (allow) {
+            var kept = allow.split(';').map(function (s) { return s.trim().split(' ')[0]; })
+                .filter(function (tok) { return ALLOWED_PERMISSIONS.indexOf(tok) !== -1; });
+            if (kept.length) f.setAttribute('allow', kept.join('; ')); else f.removeAttribute('allow');
+        }
+    });
+};
+
 class AppUtils {
     constructor() {
         this.currentLang = this.getCurrentLanguage();
