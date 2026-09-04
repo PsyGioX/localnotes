@@ -1871,15 +1871,22 @@ textarea.lne-inp { resize: vertical; }
        position:sticky, i.e. its own GPU-composited layer, and a gradient
        background on a sticky/composited layer is a known source of visible
        seam/banding artifacts at the layer boundary on some Android GPUs —
-       that's what the stray line at the top of the toolbar was). Depth is
-       still conveyed via the box-shadow alone. */
+       that's what the stray line at the top of the toolbar was).
+       NOTE: depth here comes from border-bottom, not box-shadow — this
+       element also has overflow-x:auto (horizontal scroll) alongside its
+       position:sticky (vertical pin), and that combination is what was
+       actually rasterizing box-shadow into a stray vertical line at the
+       right screen edge (confirmed via devtools computed styles). A plain
+       border doesn't hit the same compositing path. */
     .lne-toolbar {
         background: var(--modal-bg, #1a1a1a);
-        box-shadow: 0 1px 0 rgba(0,0,0,.25);
+        border-bottom: 1px solid rgba(0,0,0,.25);
+        box-shadow: none;
     }
     [data-theme="light"] .lne-toolbar {
         background: #ffffff;
-        box-shadow: 0 1px 0 rgba(0,0,0,.05);
+        border-bottom: 1px solid rgba(0,0,0,.08);
+        box-shadow: none;
     }
 
     /* Buttons — larger touch target (was 34px, same as desktop mouse
