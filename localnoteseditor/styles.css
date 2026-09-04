@@ -1865,7 +1865,26 @@ textarea.lne-inp { resize: vertical; }
         background: linear-gradient(to right, transparent, #ffffff 85%);
     }
     .lne-toolbar-row { flex-wrap: nowrap !important; padding: 6px 10px; min-width: max-content; gap: 3px; }
-    .lne-toolbar-row + .lne-toolbar-row { border-top: none; border-left: 1px solid var(--border-color, #272727); }
+    /* Divider between stacked rows once they become one shared horizontal-
+       scroll surface. NOT a border: .lne-toolbar is simultaneously
+       position:sticky, overflow-x:auto and layer-promoted (transform:
+       translateZ(0)) for scroll performance — the same combination that
+       previously rasterized box-shadow into a stray line (see note below).
+       A 1px border-left on the scrolled row hits that same compositing path
+       on some Android WebViews: during horizontal touch-scroll the hairline
+       gets cached into a tile and doesn't repaint with the content, so it
+       appears to detach and hang in place while the buttons scroll underneath
+       it. A background fill is painted in the same pass as the row's own
+       background/content, so it scrolls in lockstep — no separate decoration
+       layer to go stale. */
+    .lne-toolbar-row + .lne-toolbar-row {
+        border-top: none;
+        border-left: none;
+        background-image: linear-gradient(to right, var(--border-color, #272727) 0 1px, transparent 1px);
+        background-repeat: no-repeat;
+        background-position: left top;
+        background-size: 1px 100%;
+    }
 
     /* Toolbar surface — solid background (NOT a gradient: this element is
        position:sticky, i.e. its own GPU-composited layer, and a gradient
