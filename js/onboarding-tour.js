@@ -60,6 +60,7 @@
 
     function teardown() {
         if (!state) return;
+        setMoreMenuOpen(false);
         if (state.overlay && state.overlay.parentNode) state.overlay.parentNode.removeChild(state.overlay);
         document.removeEventListener('keydown', onKeydown, true);
         window.removeEventListener('resize', onReposition);
@@ -79,7 +80,10 @@
     function currentVisibleStep(index, direction) {
         // Skip steps whose target element isn't actually present/visible
         // (e.g. a future toolbar variant) instead of showing a spotlight
-        // pointing at nothing.
+        // pointing at nothing. Steps tucked inside the collapsed "More
+        // actions" mobile menu are still counted as reachable here — they
+        // get revealed on demand by positionForStep()/setMoreMenuOpen(),
+        // not skipped.
         const steps = state.steps;
         while (index >= 0 && index < steps.length) {
             const s = steps[index];
@@ -91,10 +95,39 @@
         return direction > 0 ? steps.length : -1;
     }
 
+    // "More actions" mobile menu — Import/Calendar/Quick Edit live inside
+    // #moreActionsMenu, collapsed (opacity:0/visibility:hidden, but still
+    // `display:flex` and absolutely positioned) behind a "⋯" toggle on
+    // narrow screens. Its buttons keep real, measurable coordinates even
+    // while collapsed, so the tour's spotlight was landing in the right
+    // spot but nothing was actually drawn there — hence "an empty area".
+    // Opening the same 'open' class the real toggle uses fixes that.
+    function moreMenuEls() {
+        return {
+            toggle: document.getElementById('moreActionsToggle'),
+            menu: document.getElementById('moreActionsMenu')
+        };
+    }
+
+    function isMobileMoreMenu() {
+        const { toggle } = moreMenuEls();
+        return !!toggle && getComputedStyle(toggle).display !== 'none';
+    }
+
+    function setMoreMenuOpen(open) {
+        const { toggle, menu } = moreMenuEls();
+        if (!toggle || !menu) return;
+        menu.classList.toggle('open', open);
+        toggle.setAttribute('aria-expanded', String(open));
+    }
+
     function positionForStep(step) {
         const cutout = state.cutout;
         const tooltip = state.tooltip;
         const target = step.selector ? document.querySelector(step.selector) : null;
+
+        const { menu } = moreMenuEls();
+        setMoreMenuOpen(!!(target && menu && menu.contains(target) && isMobileMoreMenu()));
 
         if (target) {
             const r = target.getBoundingClientRect();

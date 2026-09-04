@@ -290,7 +290,10 @@ window.importNotesMarkdownAdvanced = async function(files) {
     if (!tb || tb.querySelector('.lne-md-toggle')) return;
     const btn = document.createElement('button');
     btn.className = 'lne-btn lne-md-toggle';
-    btn.title = window.t ? window.t('markdownMode') : 'Markdown mode  Ctrl+M';
+    const mdLabel = window.t ? window.t('markdownMode') : 'Markdown mode';
+    btn.setAttribute('data-lne-tip', mdLabel);
+    btn.setAttribute('aria-label', mdLabel);
+    btn.setAttribute('data-shortcut', 'Ctrl+M');
     btn.setAttribute('type','button');
     btn.innerHTML = '<i class="bi bi-markdown"></i>';
     let _toggling = false;
@@ -383,7 +386,12 @@ window.importNotesMarkdownAdvanced = async function(files) {
     });
 
     const btn = document.querySelector('.lne-md-toggle');
-    if (btn) { btn.classList.add('lne-btn-active'); btn.title = window.t ? window.t('exitMarkdownMode') : 'Exit Markdown mode  Ctrl+M'; }
+    if (btn) {
+        btn.classList.add('lne-btn-active');
+        const label = window.t ? window.t('exitMarkdownMode') : 'Exit Markdown mode';
+        btn.setAttribute('data-lne-tip', label);
+        btn.setAttribute('aria-label', label);
+    }
     // On mobile don't auto-focus — avoids ghost clicks and unwanted keyboard popup
     if (window.innerWidth > 768) mdTA.focus();
     resizeMdContainer();
@@ -416,7 +424,12 @@ window.importNotesMarkdownAdvanced = async function(files) {
     ed.focus();
     ed.dispatchEvent(new Event('input', { bubbles: true }));
     const btn = document.querySelector('.lne-md-toggle');
-    if (btn) { btn.classList.remove('lne-btn-active'); btn.title = window.t ? window.t('markdownMode') : 'Markdown mode  Ctrl+M'; }
+    if (btn) {
+        btn.classList.remove('lne-btn-active');
+        const label = window.t ? window.t('markdownMode') : 'Markdown mode';
+        btn.setAttribute('data-lne-tip', label);
+        btn.setAttribute('aria-label', label);
+    }
   }
 
   function render() {

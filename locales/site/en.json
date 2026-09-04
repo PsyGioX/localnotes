@@ -263,5 +263,5 @@
   "welcomeSubtitle": "Secure, private note-taking in your browser",
   "welcomeTitle": "Welcome to Local Notes",
   "wholeWord": "Whole word",
-  "wordCount": "Words: {words} | Chars: {chars} | No spaces: {charsNoSpaces}"
+  "wordCountLegacyStats": "Words: {words} | Chars: {chars} | No spaces: {charsNoSpaces}"
 }

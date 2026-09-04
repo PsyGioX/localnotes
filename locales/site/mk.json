@@ -263,5 +263,5 @@
   "welcomeSubtitle": "Сигурни приватни белешки во прелистувачот",
   "welcomeTitle": "Добредојдовте во Local Notes",
   "wholeWord": "Цел збор",
-  "wordCount": "Зборови: {words} | Знаци: {chars} | Без празнини: {charsNoSpaces}"
+  "wordCountLegacyStats": "Зборови: {words} | Знаци: {chars} | Без празнини: {charsNoSpaces}"
 }

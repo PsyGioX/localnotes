@@ -263,5 +263,5 @@
   "welcomeSubtitle": "Sigurne privatne bilješke u pregledniku",
   "welcomeTitle": "Dobrodošli u Local Notes",
   "wholeWord": "Cijela riječ",
-  "wordCount": "Riječi: {words} | Znakovi: {chars} | Bez razmaka: {charsNoSpaces}"
+  "wordCountLegacyStats": "Riječi: {words} | Znakovi: {chars} | Bez razmaka: {charsNoSpaces}"
 }

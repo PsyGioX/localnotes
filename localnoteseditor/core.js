@@ -130,8 +130,17 @@ class LocalNotesEditor {
     _buildToolbar() {
         if (!this.toolbar) return;
         var _ = this._.bind(this);
-        var B = function(cmd, icon, title, extra) {
-            return '<button class="lne-btn" data-cmd="' + cmd + '" title="' + title + '"' + (extra||'') + '><i class="' + icon + '"></i></button>';
+        // `shortcut` (5th arg) is rendered separately from `title` — kept out
+        // of the title string itself so the custom tooltip (see
+        // _initTooltips) can show it as its own styled key badge instead of
+        // plain trailing text, and so _modalShortcuts can collect the same
+        // data-shortcut attributes as the single source of truth for the
+        // "Keyboard shortcuts" reference panel — one list can't drift out of
+        // sync with the other because they read the same markup.
+        var B = function(cmd, icon, title, shortcut, extra) {
+            return '<button class="lne-btn" data-cmd="' + cmd + '" title="' + title + '" aria-label="' + title + '"' +
+                (shortcut ? ' data-shortcut="' + shortcut + '"' : '') + (extra||'') +
+                '><i class="' + icon + '"></i></button>';
         };
         var SEP = '<div class="lne-sep"></div>';
         var GS = '<div class="lne-grp">'; var GE = '</div>';
@@ -139,7 +148,7 @@ class LocalNotesEditor {
         this.toolbarScroll.innerHTML =
         /* Row 1 */
         '<div class="lne-toolbar-row">' +
-        GS + B('undo','bi bi-arrow-counterclockwise',_('undo','Undo')+'  Ctrl+Z') + B('redo','bi bi-arrow-clockwise',_('redo','Redo')+'  Ctrl+Y') + GE + SEP +
+        GS + B('undo','bi bi-arrow-counterclockwise',_('undo','Undo'),'Ctrl+Z') + B('redo','bi bi-arrow-clockwise',_('redo','Redo'),'Ctrl+Y') + GE + SEP +
         GS +
         '<select class="lne-sel lne-sel-heading" title="' + _('paragraphStyle','Style') + '">' +
         '<option value="">' + _('paragraphStyle','Style') + '</option>' +
@@ -176,9 +185,9 @@ class LocalNotesEditor {
         '</select>' +
         GE + SEP +
         GS +
-        B('bold','bi bi-type-bold',_('bold','Bold')+'  Ctrl+B') +
-        B('italic','bi bi-type-italic',_('italic','Italic')+'  Ctrl+I') +
-        B('underline','bi bi-type-underline',_('underline','Underline')+'  Ctrl+U') +
+        B('bold','bi bi-type-bold',_('bold','Bold'),'Ctrl+B') +
+        B('italic','bi bi-type-italic',_('italic','Italic'),'Ctrl+I') +
+        B('underline','bi bi-type-underline',_('underline','Underline'),'Ctrl+U') +
         B('strikeThrough','bi bi-type-strikethrough',_('strikethrough','Strikethrough')) +
         B('superscript','bi bi-superscript',_('superscript','Superscript')) +
         B('subscript','bi bi-subscript',_('subscript','Subscript')) +
@@ -193,21 +202,21 @@ class LocalNotesEditor {
         /* Row 2 */
         '<div class="lne-toolbar-row">' +
         GS +
-        B('justifyLeft','bi bi-text-left',_('alignLeft','Align left')+'  Ctrl+L') +
-        B('justifyCenter','bi bi-text-center',_('alignCenter','Center')+'  Ctrl+E') +
-        B('justifyRight','bi bi-text-right',_('alignRight','Align right')+'  Ctrl+R') +
-        B('justifyFull','bi bi-justify',_('alignJustify','Justify')+'  Ctrl+J') +
+        B('justifyLeft','bi bi-text-left',_('alignLeft','Align left')) +
+        B('justifyCenter','bi bi-text-center',_('alignCenter','Center')) +
+        B('justifyRight','bi bi-text-right',_('alignRight','Align right')) +
+        B('justifyFull','bi bi-justify',_('alignJustify','Justify')) +
         GE + SEP +
         GS +
         B('insertUnorderedList','bi bi-list-ul',_('bulletList','Bullet list')) +
         B('insertOrderedList','bi bi-list-ol',_('numberedList','Numbered list')) +
         B('insertChecklist','bi bi-check2-square',_('checklist','Checklist')) +
-        B('indent','bi bi-text-indent-left',_('indent','Indent')) +
-        B('outdent','bi bi-text-indent-right',_('outdent','Outdent')) +
+        B('indent','bi bi-text-indent-left',_('indent','Indent'),'Tab') +
+        B('outdent','bi bi-text-indent-right',_('outdent','Outdent'),'Shift+Tab') +
         GE + SEP +
         GS +
-        B('insertLink','bi bi-link-45deg',_('insertLink','Insert link')+'  Ctrl+K') +
-        (this.options.onWikiLinkSearch ? B('insertWikiLink','bi bi-journal-richtext',_('insertWikiLink','Link to another note')+'  [[') : '') +
+        B('insertLink','bi bi-link-45deg',_('insertLink','Insert link'),'Ctrl+K') +
+        (this.options.onWikiLinkSearch ? B('insertWikiLink','bi bi-journal-richtext',_('insertWikiLink','Link to another note'),'[[') : '') +
         B('insertImage','bi bi-image',_('insertImage','Insert image')) +
         B('insertVideo','bi bi-play-circle',_('insertVideo','Insert video')) +
         B('insertTable','bi bi-table',_('createTable','Insert table')) +
@@ -220,10 +229,13 @@ class LocalNotesEditor {
         B('insertSpecialChar','bi bi-alphabet',_('specialChars','Special characters')) +
         GE + SEP +
         GS +
-        B('findReplace','bi bi-search',_('findReplace','Find & Replace')+'  Ctrl+H') +
+        B('findReplace','bi bi-search',_('findReplace','Find & Replace'),'Ctrl+H') +
         B('wordCount','bi bi-bar-chart-line',_('wordCount','Word count')) +
-        B('focusMode','bi bi-eye',_('focusMode','Focus mode')+'  F12') +
-        B('fullscreen','bi bi-fullscreen',_('fullscreen','Fullscreen')+'  F11') +
+        B('focusMode','bi bi-eye',_('focusMode','Focus mode'),'F12') +
+        B('fullscreen','bi bi-fullscreen',_('fullscreen','Fullscreen'),'F11') +
+        GE + SEP +
+        GS +
+        B('shortcutsHelp','bi bi-keyboard',_('shortcutsHelp','Keyboard shortcuts'),'Ctrl+/') +
         GE +
         '</div>' +
 
@@ -269,6 +281,7 @@ class LocalNotesEditor {
 
         this._colorBars();
         this._wireToolbar();
+        this._initTooltips();
     }
 
     _colorBars() {
@@ -368,6 +381,116 @@ class LocalNotesEditor {
         }
     }
 
+    // ── Custom tooltips ──────────────────────────────────────────────────
+    // Native `title` tooltips are slow to appear, unstyled, and get
+    // clipped by the wrapper's rounded-corner overflow:hidden. Replaced
+    // here with a small floating card that also surfaces the button's
+    // keyboard shortcut (data-shortcut) as its own key badge, so hovering
+    // any toolbar control is itself a way to discover its shortcut instead
+    // of needing to open the separate reference panel (_modalShortcuts).
+    _initTooltips() {
+        // Move the label into data-lne-tip + aria-label and drop `title`,
+        // so the browser's own native tooltip never fires alongside ours.
+        this.toolbar.querySelectorAll('[title]').forEach(function(el) {
+            var label = el.getAttribute('title');
+            if (!label) return;
+            el.setAttribute('data-lne-tip', label);
+            if (!el.hasAttribute('aria-label')) el.setAttribute('aria-label', label);
+            el.removeAttribute('title');
+        });
+        LocalNotesEditor._initGlobalTooltip();
+    }
+
+    // One shared tooltip + one shared set of document-level listeners for
+    // every editor instance on the page — cheaper than per-instance
+    // listeners, and correct for elements (like the templates menu) that
+    // get reparented to document.body after the toolbar builds them.
+    static _initGlobalTooltip() {
+        if (window.__lneTooltipInit) return;
+        window.__lneTooltipInit = true;
+
+        // Hover-capable, fine-pointer devices only. On touch, tapping a
+        // toolbar button should just run the command — a tooltip with
+        // nothing to dismiss it would just linger in the way.
+        var canHover = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+        if (!canHover) return;
+
+        var tip = null, showTimer = null, target = null;
+        var MARGIN = 8;
+
+        var ensureTip = function() {
+            if (tip) return tip;
+            tip = document.createElement('div');
+            tip.className = 'lne-tooltip';
+            tip.setAttribute('role', 'tooltip');
+            document.body.appendChild(tip);
+            return tip;
+        };
+
+        var place = function(el) {
+            var t = ensureTip();
+            var r = el.getBoundingClientRect();
+            var tr = t.getBoundingClientRect();
+            var left = r.left + r.width / 2 - tr.width / 2;
+            left = Math.max(MARGIN, Math.min(left, window.innerWidth - tr.width - MARGIN));
+            var top = r.top - tr.height - 9;
+            var below = false;
+            if (top < MARGIN) { top = r.bottom + 9; below = true; }
+            t.style.left = left + 'px';
+            t.style.top = top + 'px';
+            t.classList.toggle('lne-tooltip-below', below);
+        };
+
+        var hide = function() {
+            clearTimeout(showTimer);
+            showTimer = null;
+            target = null;
+            if (tip) tip.classList.remove('lne-tooltip-visible');
+        };
+
+        var show = function(el, delay) {
+            clearTimeout(showTimer);
+            target = el;
+            showTimer = setTimeout(function() {
+                if (target !== el || !document.body.contains(el)) return;
+                var label = el.getAttribute('data-lne-tip');
+                if (!label) return;
+                var shortcut = el.getAttribute('data-shortcut');
+                var t = ensureTip();
+                t.innerHTML = '<span class="lne-tooltip-label">' + label + '</span>' +
+                    (shortcut ? '<span class="lne-tooltip-keys">' + shortcut.split('+').map(function(k) {
+                        return '<kbd>' + k + '</kbd>';
+                    }).join('<i class="lne-tooltip-plus">+</i>') + '</span>' : '');
+                t.classList.add('lne-tooltip-visible');
+                place(el);
+            }, delay);
+        };
+
+        document.addEventListener('mouseover', function(e) {
+            var el = e.target.closest('[data-lne-tip]');
+            if (!el || el === target) return;
+            show(el, 450);
+        });
+        document.addEventListener('mouseout', function(e) {
+            var el = e.target.closest('[data-lne-tip]');
+            if (!el) return;
+            var to = e.relatedTarget;
+            if (to && el.contains(to)) return;
+            hide();
+        });
+        document.addEventListener('focusin', function(e) {
+            var el = e.target.closest('[data-lne-tip]');
+            if (el) show(el, 100);
+        });
+        document.addEventListener('focusout', function(e) {
+            if (e.target.closest('[data-lne-tip]')) hide();
+        });
+        document.addEventListener('mousedown', hide, true);
+        window.addEventListener('scroll', hide, true);
+        window.addEventListener('resize', hide);
+        document.addEventListener('keydown', function(e) { if (e.key === 'Escape') hide(); });
+    }
+
     _exec(cmd, btn) {
         this._restoreRange();
         // Commands that open a modal — don't refocus editor after
@@ -380,6 +503,7 @@ class LocalNotesEditor {
             insertSpecialChar: function() { this._modalSpecialChars(); },
             findReplace:       function() { this._toggleFindBar(); },
             wordCount:         function() { this._modalWordCount(); },
+            shortcutsHelp:     function() { this._modalShortcuts(); },
             tplCustomManage:   function() { this._modalCustomTemplates(); },
             foreColor:         function() {
                 if (this._selectionInChecklist()) return;
@@ -908,6 +1032,7 @@ class LocalNotesEditor {
                 if (c === 'k') { e.preventDefault(); this._modalLink(); return; }
             if (c === 'h') { e.preventDefault(); this._toggleFindBar(); return; }
             if (c === 'f') { e.preventDefault(); this._toggleFindBar(); return; }
+            if (e.code === 'Slash') { e.preventDefault(); this._modalShortcuts(); return; }
         }
         if (e.key === 'F12') { e.preventDefault(); this._toggleFocusMode(); return; }
         if (e.key === 'F11') { e.preventDefault(); this._toggleFullscreen(); return; }
@@ -2864,6 +2989,52 @@ class LocalNotesEditor {
                 r.close();
             });
         });
+    }
+
+    // ── Keyboard shortcuts reference ────────────────────────────────────
+    // Reads title + data-shortcut straight off the live toolbar buttons
+    // (the same attributes the custom tooltip reads — see _initTooltips)
+    // rather than keeping a second hand-written copy of the shortcut list,
+    // so this panel can't quietly drift out of sync with the tooltips.
+
+    _shortcutRow(cmd) {
+        var btn = this.toolbar ? this.toolbar.querySelector('[data-cmd="' + cmd + '"][data-shortcut]') : null;
+        if (!btn) return '';
+        var label = btn.getAttribute('title') || '';
+        var iconEl = btn.querySelector('i');
+        var icon = iconEl ? iconEl.className : 'bi bi-dot';
+        return this._shortcutRowRaw(icon, label, btn.getAttribute('data-shortcut'));
+    }
+
+    _shortcutRowRaw(icon, label, shortcut) {
+        var keys = String(shortcut).split('+').map(function(k) {
+            return '<kbd class="lne-kbd">' + k + '</kbd>';
+        }).join('<span class="lne-kbd-plus">+</span>');
+        return '<div class="lne-shortcut-row"><i class="' + icon + '"></i>' +
+            '<span class="lne-shortcut-label">' + label + '</span>' +
+            '<span class="lne-shortcut-keys">' + keys + '</span></div>';
+    }
+
+    _modalShortcuts() {
+        var _ = this._.bind(this);
+        var group = function(title, rowsHtml) {
+            if (!rowsHtml.replace(/\s/g,'')) return '';
+            return '<div class="lne-shortcut-group"><h4>' + title + '</h4>' + rowsHtml + '</div>';
+        };
+        var editing = this._shortcutRow('undo') + this._shortcutRow('redo') + this._shortcutRow('findReplace');
+        var formatting = this._shortcutRow('bold') + this._shortcutRow('italic') + this._shortcutRow('underline') +
+            this._shortcutRow('indent') + this._shortcutRow('outdent');
+        var inserting = this._shortcutRow('insertLink') + this._shortcutRow('insertWikiLink') +
+            this._shortcutRowRaw('bi bi-lightning-charge', _('slashMenuTitle','Quick Insert'), '/');
+        var viewing = this._shortcutRow('focusMode') + this._shortcutRow('fullscreen') + this._shortcutRow('shortcutsHelp');
+        var body =
+            group(_('shortcutsGroupEditing','Editing'), editing) +
+            group(_('shortcutsGroupFormatting','Formatting'), formatting) +
+            group(_('shortcutsGroupInsert','Insert'), inserting) +
+            group(_('shortcutsGroupView','View'), viewing);
+        var r = this._modal(_('shortcutsHelp','Keyboard shortcuts'), 'bi bi-keyboard',
+            '<div class="lne-shortcuts-list">' + body + '</div>', function() {}, true);
+        r.ov.querySelector('.lne-mok').style.display = 'none';
     }
 
     // ── Word count modal ─────────────────────────────────────────────────

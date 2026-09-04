@@ -263,5 +263,5 @@
   "welcomeSubtitle": "Bezpečné soukromé poznámky v prohlížeči",
   "welcomeTitle": "Vítejte v Local Notes",
   "wholeWord": "Celé slovo",
-  "wordCount": "Slova: {words} | Znaky: {chars} | Bez mezer: {charsNoSpaces}"
+  "wordCountLegacyStats": "Slova: {words} | Znaky: {chars} | Bez mezer: {charsNoSpaces}"
 }

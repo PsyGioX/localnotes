@@ -263,5 +263,5 @@
   "welcomeSubtitle": "Varne zasebne opombe v brskalniku",
   "welcomeTitle": "Dobrodošli v Local Notes",
   "wholeWord": "Cela beseda",
-  "wordCount": "Besede: {words} | Znaki: {chars} | Brez presledkov: {charsNoSpaces}"
+  "wordCountLegacyStats": "Besede: {words} | Znaki: {chars} | Brez presledkov: {charsNoSpaces}"
 }

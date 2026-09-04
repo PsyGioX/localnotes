@@ -263,5 +263,5 @@
   "welcomeSubtitle": "Bezpieczne prywatne notatki w przeglądarce",
   "welcomeTitle": "Witamy w Local Notes",
   "wholeWord": "Całe słowo",
-  "wordCount": "Słowa: {words} | Znaki: {chars} | Bez spacji: {charsNoSpaces}"
+  "wordCountLegacyStats": "Słowa: {words} | Znaki: {chars} | Bez spacji: {charsNoSpaces}"
 }

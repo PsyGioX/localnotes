@@ -263,5 +263,5 @@
   "welcomeSubtitle": "Сигурне приватне белешке у прегледачу",
   "welcomeTitle": "Добродошли у Local Notes",
   "wholeWord": "Цела реч",
-  "wordCount": "Речи: {words} | Знакови: {chars} | Без размака: {charsNoSpaces}"
+  "wordCountLegacyStats": "Речи: {words} | Знакови: {chars} | Без размака: {charsNoSpaces}"
 }

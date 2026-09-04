@@ -3098,7 +3098,7 @@ function showWordCount() {
     if (!text) return;
     const words = text.trim() ? text.trim().split(/\s+/).length : 0;
     const chars = text.length, charsNoSpaces = text.replace(/\s/g, '').length;
-    showCustomAlert(typeof t === 'function' ? t('info') : 'Info', typeof t === 'function' ? t('wordCount', { words, chars, charsNoSpaces }) : `Words: ${words} | Chars: ${chars} | No spaces: ${charsNoSpaces}`, 'info');
+    showCustomAlert(typeof t === 'function' ? t('info') : 'Info', typeof t === 'function' ? t('wordCountLegacyStats', { words, chars, charsNoSpaces }) : `Words: ${words} | Chars: ${chars} | No spaces: ${charsNoSpaces}`, 'info');
 }
 
 // ============================================================================
@@ -4027,6 +4027,12 @@ function initializeEventListeners() {
         document.addEventListener(eventType, e => {
             if (!moreMenu.classList.contains('open')) return;
             if (moreMenu.contains(e.target) || moreToggle.contains(e.target)) return;
+            // The interactive onboarding tour opens this menu itself to
+            // spotlight the buttons inside it and keeps it open across
+            // its own Next/Back clicks — those land on .ln-tour-overlay,
+            // outside moreMenu/moreToggle, so without this check they'd
+            // immediately re-close the menu the tour just opened.
+            if (e.target.closest('.ln-tour-overlay')) return;
             closeMoreMenu();
         });
         document.addEventListener('keydown', e => {
@@ -4165,34 +4171,12 @@ function initializeEventListeners() {
     });
 
     const cancelBtn = document.getElementById('cancelNoteButton');
-    if (cancelBtn) cancelBtn.addEventListener('click', () => {
-        const modal = document.getElementById('editModal');
-        if (modal) modal.style.display = 'none';
-        document.body.classList.remove('modal-open');
-        const savedY = parseInt(document.body.dataset.scrollY || '0', 10);
-        window.scrollTo(0, savedY);
-        delete document.body.dataset.scrollY;
-        currentNoteId = null;
-        if (typeof localNotesEditorInstance !== 'undefined' && localNotesEditorInstance) {
-            if (typeof localNotesEditorInstance._removeCtx === 'function') localNotesEditorInstance._removeCtx();
-            localNotesEditorInstance.setContent('');
-        }
-    });
+    if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
 
     // Close modal on backdrop click
     const editModal = document.getElementById('editModal');
     if (editModal) editModal.addEventListener('click', e => {
-        if (e.target === editModal) {
-            editModal.style.display = 'none';
-            document.body.classList.remove('modal-open');
-            const savedY = parseInt(document.body.dataset.scrollY || '0', 10);
-            window.scrollTo(0, savedY);
-            delete document.body.dataset.scrollY;
-            currentNoteId = null;
-            if (typeof localNotesEditorInstance !== 'undefined' && localNotesEditorInstance) {
-                if (typeof localNotesEditorInstance._removeCtx === 'function') localNotesEditorInstance._removeCtx();
-            }
-        }
+        if (e.target === editModal) closeModal();
     });
 
     // Keyboard shortcuts

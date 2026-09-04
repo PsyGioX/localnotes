@@ -263,5 +263,5 @@
   "welcomeSubtitle": "Безпечні приватні нотатки в браузері",
   "welcomeTitle": "Ласкаво просимо до Local Notes",
   "wholeWord": "Ціле слово",
-  "wordCount": "Слів: {words} | Символів: {chars} | Без пробілів: {charsNoSpaces}"
+  "wordCountLegacyStats": "Слів: {words} | Символів: {chars} | Без пробілів: {charsNoSpaces}"
 }

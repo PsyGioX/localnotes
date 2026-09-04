@@ -108,16 +108,21 @@
   }
 
   var toastShownForOffline = false;
-  function handleConnectivityChange() {
+  var connectivityDebounceTimer = null;
+
+  function evaluateConnectivity() {
     updateStatusDot();
     var online = navigator.onLine;
-    // Only bother the user with a toast when it's actually relevant: in
-    // 'auto' mode the app's own behaviour just changed (network attempts
-    // now skipped/resumed), so it's worth a heads-up. In forced 'online'
-    // mode, losing the connection still matters (uploads/saves may be
-    // failing) but we only announce once per "gone offline" streak to
-    // avoid spamming on a flaky connection blinking on and off.
     var mode = getMode();
+    // A backgrounded/throttled tab can queue up a whole burst of
+    // online/offline events and fire them all at once the instant it
+    // wakes — none of those were actually witnessed by the user, so once
+    // things settle here we only react if the tab is currently visible;
+    // otherwise we just resync the status dot above and stay quiet
+    // (the visibilitychange listener below resyncs the tracking flag
+    // itself, so nothing gets replayed as a stack of alerts on return).
+    if (document.hidden) return;
+
     if (!online && !toastShownForOffline) {
       toastShownForOffline = true;
       if (mode !== 'offline' && typeof window.showCustomAlert === 'function') {
@@ -128,8 +133,13 @@
         );
       }
     } else if (online) {
+      // Only announce "back online" if we'd actually shown (or tracked)
+      // an offline state first — browsers can fire redundant consecutive
+      // 'online' events with no 'offline' in between, which used to pop
+      // a fresh toast every time.
+      var wasOffline = toastShownForOffline;
       toastShownForOffline = false;
-      if (mode === 'auto' && typeof window.showCustomAlert === 'function') {
+      if (wasOffline && mode === 'auto' && typeof window.showCustomAlert === 'function') {
         window.showCustomAlert(
           tr('networkModeLabel', 'Network mode'),
           tr('connectivityRestored', "You're back online."),
@@ -138,6 +148,27 @@
       }
     }
   }
+
+  function handleConnectivityChange() {
+    // Coalesce bursts of online/offline events — several can arrive back
+    // to back (flaky connection, or a batch of queued events releasing
+    // together when a backgrounded tab wakes up) — into a single check of
+    // whatever the real state is once things settle, instead of reacting
+    // (and potentially alerting) once per individual event.
+    clearTimeout(connectivityDebounceTimer);
+    connectivityDebounceTimer = setTimeout(evaluateConnectivity, 400);
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) return;
+    // Drop any evaluation that was queued while backgrounded, then
+    // silently resync the dot and the tracking flag to whatever the real
+    // state actually is — no toast, since the user wasn't here to watch
+    // any transition happen live.
+    clearTimeout(connectivityDebounceTimer);
+    updateStatusDot();
+    toastShownForOffline = !navigator.onLine;
+  });
 
   /* ── i18n refresh ─────────────────────────────────────── */
   window.lnNetworkModeRefreshLabels = function () {

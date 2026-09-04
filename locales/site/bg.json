@@ -263,5 +263,5 @@
   "welcomeSubtitle": "Сигурни лични бележки в браузъра",
   "welcomeTitle": "Добре дошли в Local Notes",
   "wholeWord": "Цяла дума",
-  "wordCount": "Думи: {words} | Знаци: {chars} | Без интервали: {charsNoSpaces}"
+  "wordCountLegacyStats": "Думи: {words} | Знаци: {chars} | Без интервали: {charsNoSpaces}"
 }
