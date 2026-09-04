@@ -3000,7 +3000,12 @@ class LocalNotesEditor {
     _shortcutRow(cmd) {
         var btn = this.toolbar ? this.toolbar.querySelector('[data-cmd="' + cmd + '"][data-shortcut]') : null;
         if (!btn) return '';
-        var label = btn.getAttribute('title') || '';
+        // _initTooltips() moves the label from `title` into data-lne-tip
+        // (and drops `title` entirely) as soon as the toolbar builds, so by
+        // the time this modal can be opened, title is already gone — read
+        // the same attribute the custom tooltip reads instead, and fall
+        // back to title for safety in case tooltip init hasn't run yet.
+        var label = btn.getAttribute('data-lne-tip') || btn.getAttribute('title') || '';
         var iconEl = btn.querySelector('i');
         var icon = iconEl ? iconEl.className : 'bi bi-dot';
         return this._shortcutRowRaw(icon, label, btn.getAttribute('data-shortcut'));
