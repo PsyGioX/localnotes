@@ -1841,15 +1841,30 @@ textarea.lne-inp { resize: vertical; }
     .lne-ctx-btn::after { display: none; }
     /* На мобильных тулбар fixed — убираем тень чтобы не перекрывал */
     .lne-ctx-toolbar-float { box-shadow: 0 4px 20px rgba(0,0,0,.7); }
-    /* Toolbar — single scrollable row, no wrapping; sticky so it stays visible while scrolling */
-    .lne-toolbar { padding: 0; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: none; position: sticky; top: 0; z-index: 10; transform: translateZ(0); }
-    .lne-toolbar::-webkit-scrollbar { display: none; }
+    /* Toolbar — single scrollable row, no wrapping; sticky so it stays visible while scrolling.
+       `.lne-toolbar` itself (this element) is the sticky, non-scrolling
+       shell — it never gets overflow-x, precisely so an absolutely
+       positioned decoration anchored to it (the ::after fade below) has a
+       containing block that ISN'T also a scrollport. The actual horizontal
+       scroll lives on the inner `.lne-toolbar-scroll` — see the markup
+       comment in core.js `_buildDOM` for why that split matters. */
+    .lne-toolbar { padding: 0; position: sticky; top: 0; z-index: 10; }
+    .lne-toolbar-scroll {
+        overflow-x: auto; overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        transform: translateZ(0);
+    }
+    .lne-toolbar-scroll::-webkit-scrollbar { display: none; }
     /* Visual cue that the row scrolls horizontally — otherwise controls past
        the edge (font size, insert image/video/table, etc.) just look cut
        off with no indication there's more to reach. Purely decorative:
-       a soft fade over the last ~28px. Anchored to the scroll container's
-       own box (not its scrolling content), so it stays put at the visible
-       right edge regardless of scroll position; pointer-events:none keeps
+       a soft fade over the last ~28px. This lives on `.lne-toolbar` (the
+       non-scrolling shell), NOT `.lne-toolbar-scroll` — an absolutely
+       positioned pseudo-element is still part of its own containing
+       block's scrollable overflow, so anchoring it to the element that
+       actually scrolls would drag it along with the content instead of
+       keeping it pinned to the visible edge; pointer-events:none keeps
        it from ever intercepting taps on the toolbar underneath. */
     .lne-toolbar { position: relative; }
     .lne-toolbar::after {
@@ -1866,17 +1881,11 @@ textarea.lne-inp { resize: vertical; }
     }
     .lne-toolbar-row { flex-wrap: nowrap !important; padding: 6px 10px; min-width: max-content; gap: 3px; }
     /* Divider between stacked rows once they become one shared horizontal-
-       scroll surface. NOT a border: .lne-toolbar is simultaneously
-       position:sticky, overflow-x:auto and layer-promoted (transform:
-       translateZ(0)) for scroll performance — the same combination that
-       previously rasterized box-shadow into a stray line (see note below).
-       A 1px border-left on the scrolled row hits that same compositing path
-       on some Android WebViews: during horizontal touch-scroll the hairline
-       gets cached into a tile and doesn't repaint with the content, so it
-       appears to detach and hang in place while the buttons scroll underneath
-       it. A background fill is painted in the same pass as the row's own
-       background/content, so it scrolls in lockstep — no separate decoration
-       layer to go stale. */
+       scroll surface (background fill rather than border-left — no
+       functional need for that anymore now that ::after lives outside the
+       scrollport, but a plain background fill is simpler than a border
+       here regardless, since it paints in the same pass as the row's own
+       content). */
     .lne-toolbar-row + .lne-toolbar-row {
         border-top: none;
         border-left: none;
@@ -2066,7 +2075,7 @@ textarea.lne-inp { resize: vertical; }
         min-height: 44px;
         -webkit-tap-highlight-color: transparent;
     }
-    .lne-toolbar-row {
+    .lne-toolbar-scroll {
         -webkit-overflow-scrolling: touch;
     }
     /* Чеклист — убираем глюки с выделением на iOS */
@@ -2105,8 +2114,8 @@ textarea.lne-inp { resize: vertical; }
     .lne-inp {
         font-size: 16px !important;
     }
-    /* Скролл тулбара без резинки */
-    .lne-toolbar {
+    /* Скролл тулбара без резинки — на элементе, который реально скроллится */
+    .lne-toolbar-scroll {
         overscroll-behavior-x: contain;
     }
 }

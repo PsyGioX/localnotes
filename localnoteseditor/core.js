@@ -85,7 +85,23 @@ class LocalNotesEditor {
     _buildDOM() {
         this.container.innerHTML =
             '<div class="lne-wrapper" id="' + this.editorId + '">' +
-            (this.options.toolbar ? '<div class="lne-toolbar" role="toolbar"></div>' : '') +
+            // `.lne-toolbar` is the sticky, decorated shell (background,
+            // border, right-edge fade) and never scrolls itself.
+            // `.lne-toolbar-scroll` is the actual horizontal-scroll surface
+            // on mobile. They're deliberately split: an absolutely
+            // positioned pseudo-element's containing block also happens to
+            // be its own nearest ancestor with overflow, and per spec that
+            // does NOT exempt it from that ancestor's scrollable overflow —
+            // position:absolute only takes it out of normal-flow layout, not
+            // out of the scrollport it belongs to. So a `.lne-toolbar::after`
+            // fade painted at the right edge previously scrolled away with
+            // the content instead of staying anchored to the visible edge,
+            // leaving a dim "ghost" of itself part-way through the toolbar
+            // once you scrolled (confirmed by disabling it and watching the
+            // artifact disappear). Keeping the fade on the non-scrolling
+            // outer element and moving only the scrolling behavior to the
+            // inner one fixes that structurally, not just visually.
+            (this.options.toolbar ? '<div class="lne-toolbar" role="toolbar"><div class="lne-toolbar-scroll"></div></div>' : '') +
             '<div class="lne-body">' +
             '<div class="lne-editor" contenteditable="true" role="textbox" aria-multiline="true" spellcheck="true" autocorrect="on"></div>' +
             '</div>' +
@@ -93,6 +109,7 @@ class LocalNotesEditor {
             '</div>';
         this.wrapper   = this.container.querySelector('.lne-wrapper');
         this.toolbar   = this.container.querySelector('.lne-toolbar');
+        this.toolbarScroll = this.container.querySelector('.lne-toolbar-scroll');
         this.body      = this.container.querySelector('.lne-body');
         this.ed        = this.container.querySelector('.lne-editor');
         this.statusbar = this.container.querySelector('.lne-statusbar');
@@ -119,7 +136,7 @@ class LocalNotesEditor {
         var SEP = '<div class="lne-sep"></div>';
         var GS = '<div class="lne-grp">'; var GE = '</div>';
 
-        this.toolbar.innerHTML =
+        this.toolbarScroll.innerHTML =
         /* Row 1 */
         '<div class="lne-toolbar-row">' +
         GS + B('undo','bi bi-arrow-counterclockwise',_('undo','Undo')+'  Ctrl+Z') + B('redo','bi bi-arrow-clockwise',_('redo','Redo')+'  Ctrl+Y') + GE + SEP +
