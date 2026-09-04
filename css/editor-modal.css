@@ -194,6 +194,7 @@
         width: 100% !important;
         border-radius: 0 !important;
         border: none !important;
+        box-shadow: none !important;
     }
     #editModal .modal-content .lne-wrapper:focus-within {
         border: none !important;

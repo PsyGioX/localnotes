@@ -9,14 +9,20 @@
     overflow: hidden;
     background: var(--modal-bg, #1a1a1a);
     font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    transition: border-color 0.2s;
+    box-shadow: 0 1px 2px rgba(0,0,0,.15), 0 8px 24px rgba(0,0,0,.12);
+    transition: border-color 0.2s, box-shadow 0.2s;
     /* Lets the templates row react to the editor's own width, not just
        the browser viewport — important when it's embedded in a small
        square panel/widget on an otherwise large screen. */
     container-type: inline-size;
     container-name: lne;
 }
-.lne-wrapper:focus-within { border-color: var(--primary-color, #28a745); }
+.lne-wrapper:focus-within {
+    border-color: var(--primary-color, #28a745);
+    box-shadow: 0 0 0 3px rgba(40,167,69,.15), 0 8px 24px rgba(0,0,0,.12);
+}
+[data-theme="light"] .lne-wrapper { box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.06); }
+[data-theme="light"] .lne-wrapper:focus-within { box-shadow: 0 0 0 3px rgba(40,167,69,.12), 0 8px 24px rgba(0,0,0,.06); }
 
 /* Fullscreen */
 .lne-fullscreen {
@@ -29,7 +35,11 @@
 .lne-fullscreen .lne-editor { min-height: calc(100dvh - 120px) !important; }
 
 /* ═══════════════════════════ TOOLBAR ══════════════════════════════════ */
-.lne-toolbar { background: var(--bg-secondary, #111); border-bottom: 1px solid var(--border-color, #272727); padding: 0 6px; }
+.lne-toolbar {
+    background: var(--bg-secondary, #111);
+    background: linear-gradient(to bottom, var(--bg-secondary, #111), color-mix(in srgb, var(--bg-secondary, #111) 92%, var(--modal-bg, #1a1a1a)));
+    border-bottom: 1px solid var(--border-color, #272727); padding: 0 6px;
+}
 .lne-toolbar-row { display: flex; flex-wrap: wrap; gap: 1px; padding: 4px 0; align-items: center; }
 .lne-toolbar-row + .lne-toolbar-row { border-top: 1px solid var(--border-color, #1e1e1e); }
 
@@ -243,14 +253,14 @@ button.lne-tpl-btn.lne-btn {
 .lne-btn {
     display: inline-flex; align-items: center; justify-content: center; flex-direction: column;
     width: 34px; height: 34px; padding: 0;
-    border: 1px solid transparent; border-radius: 5px;
+    border: 1px solid transparent; border-radius: 8px;
     background: transparent; color: var(--text-color, #e0e0e0);
-    cursor: pointer; transition: all 0.12s ease;
+    cursor: pointer; transition: background .14s ease, border-color .14s ease, color .14s ease, transform .1s ease;
     position: relative;
 }
 .lne-btn i { font-size: 17px; line-height: 1; pointer-events: none; color: inherit; }
-.lne-btn:hover  { background: var(--button-hover, #2a2a2a); border-color: var(--border-color, #444); }
-.lne-btn:active { background: var(--primary-color, #28a745); color: #fff; border-color: var(--primary-color, #28a745); }
+.lne-btn:hover  { background: var(--button-hover, #2a2a2a); border-color: var(--border-color, #444); transform: translateY(-1px); }
+.lne-btn:active { background: var(--primary-color, #28a745); color: #fff; border-color: var(--primary-color, #28a745); transform: translateY(0) scale(.94); }
 .lne-btn.active { background: rgba(40,167,69,.2); color: var(--primary-color, #28a745); border-color: rgba(40,167,69,.4); }
 .lne-btn:disabled { opacity: 0.35; pointer-events: none; }
 
@@ -262,12 +272,13 @@ button.lne-tpl-btn.lne-btn {
 /* Selects */
 .lne-sel {
     height: 32px; padding: 4px 8px;
-    border: 1px solid var(--border-color, #272727); border-radius: 5px;
+    border: 1px solid var(--border-color, #272727); border-radius: 8px;
     background: var(--bg-secondary, #111); color: var(--text-color, #e0e0e0);
-    font-size: 13px; cursor: pointer; transition: border-color 0.12s;
+    font-size: 13px; cursor: pointer; transition: border-color .14s ease, box-shadow .14s ease;
     width: auto; min-width: 0;
 }
 .lne-sel:hover, .lne-sel:focus { border-color: var(--primary-color, #28a745); outline: none; }
+.lne-sel:focus { box-shadow: 0 0 0 3px rgba(40,167,69,.15); }
 .lne-sel option { background: var(--modal-bg, #1a1a1a); color: var(--text-color, #e0e0e0); }
 .lne-sel-heading  { min-width: 108px; max-width: 200px; }
 .lne-sel-font     { min-width: 108px; max-width: 160px; }
@@ -275,6 +286,14 @@ button.lne-tpl-btn.lne-btn {
 
 /* ═══════════════════════════ EDITOR BODY ═══════════════════════════════ */
 .lne-body { flex: 1; overflow: auto; background: var(--modal-bg, #1a1a1a); }
+.lne-body { scrollbar-width: thin; scrollbar-color: var(--border-color, #333) transparent; }
+.lne-body::-webkit-scrollbar { width: 10px; height: 10px; }
+.lne-body::-webkit-scrollbar-track { background: transparent; }
+.lne-body::-webkit-scrollbar-thumb { background: var(--border-color, #333); border-radius: 8px; border: 2px solid var(--modal-bg, #1a1a1a); }
+.lne-body::-webkit-scrollbar-thumb:hover { background: var(--text-muted, #555); }
+[data-theme="light"] .lne-body { scrollbar-color: #ced4da transparent; }
+[data-theme="light"] .lne-body::-webkit-scrollbar-thumb { background: #ced4da; border-color: #fff; }
+[data-theme="light"] .lne-body::-webkit-scrollbar-thumb:hover { background: #adb5bd; }
 
 .lne-editor {
     padding: 18px 22px; min-height: var(--lne-editor-min-h, 400px);
@@ -1823,7 +1842,7 @@ textarea.lne-inp { resize: vertical; }
     /* На мобильных тулбар fixed — убираем тень чтобы не перекрывал */
     .lne-ctx-toolbar-float { box-shadow: 0 4px 20px rgba(0,0,0,.7); }
     /* Toolbar — single scrollable row, no wrapping; sticky so it stays visible while scrolling */
-    .lne-toolbar { padding: 0; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: none; position: sticky; top: 0; z-index: 10; }
+    .lne-toolbar { padding: 0; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: none; position: sticky; top: 0; z-index: 10; transform: translateZ(0); }
     .lne-toolbar::-webkit-scrollbar { display: none; }
     /* Visual cue that the row scrolls horizontally — otherwise controls past
        the edge (font size, insert image/video/table, etc.) just look cut
@@ -1848,14 +1867,18 @@ textarea.lne-inp { resize: vertical; }
     .lne-toolbar-row { flex-wrap: nowrap !important; padding: 6px 10px; min-width: max-content; gap: 3px; }
     .lne-toolbar-row + .lne-toolbar-row { border-top: none; border-left: 1px solid var(--border-color, #272727); }
 
-    /* Toolbar surface — subtle depth instead of a flat strip, so it reads
-       as a distinct control bar rather than blending into the editor body. */
+    /* Toolbar surface — solid background (NOT a gradient: this element is
+       position:sticky, i.e. its own GPU-composited layer, and a gradient
+       background on a sticky/composited layer is a known source of visible
+       seam/banding artifacts at the layer boundary on some Android GPUs —
+       that's what the stray line at the top of the toolbar was). Depth is
+       still conveyed via the box-shadow alone. */
     .lne-toolbar {
-        background: linear-gradient(to bottom, var(--bg-secondary, #111), var(--modal-bg, #1a1a1a) 130%);
+        background: var(--modal-bg, #1a1a1a);
         box-shadow: 0 1px 0 rgba(0,0,0,.25);
     }
     [data-theme="light"] .lne-toolbar {
-        background: linear-gradient(to bottom, #f8f9fa, #ffffff 130%);
+        background: #ffffff;
         box-shadow: 0 1px 0 rgba(0,0,0,.05);
     }
 
