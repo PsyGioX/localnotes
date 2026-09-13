@@ -27,10 +27,17 @@
 }
 
 /* Segments: no individual border/shadow/lift — just a shared surface with
-   a background tint on hover/active and a thin divider between them. */
+   a background tint on hover/active and a thin divider between them.
+   Graph View / Sync Nearby / Static Site Export join this same segmented
+   control (rather than keeping their own pill-button look) so the bar
+   reads as one control regardless of how many segments it holds, and so
+   they hide along with everything else when the bar is collapsed below. */
 .btn_view_div #toggleViewButton,
 .btn_view_div #toggleTaskBoardButton,
-.btn_view_div #appLockBtn {
+.btn_view_div #appLockBtn,
+.btn_view_div #graphViewBtn,
+.btn_view_div #lanSyncBtn,
+.btn_view_div #siteExportBtn {
     flex: 1 1 0 !important;
     min-width: 0 !important;
     max-width: none !important;
@@ -44,11 +51,37 @@
     letter-spacing: normal !important;
     font-size: 14px !important;
 }
-.btn_view_div #toggleTaskBoardButton {
-    border-left: 1px solid var(--border-color) !important;
-    border-radius: 0 !important;
+/* #toggleViewButton/#toggleTaskBoardButton/#appLockBtn each still carry a
+   `color` (and display:flex/gap/cursor/font-weight) declaration from their
+   own dedicated stylesheets (css/index.css, css/task-board.css,
+   css/app-lock.css respectively) — this block only needed to override the
+   pill-button chrome above. #graphViewBtn/#lanSyncBtn/#siteExportBtn have
+   no such stylesheet of their own (they used to get this from their
+   JS-injected .ln-toolbar-btn class), so without it they fell through to
+   the browser's default <button> text color — invisible against the dark
+   theme. Setting it here, once, for all six keeps every one of them
+   consistent instead of a fourth place claiming to own it. */
+.btn_view_div #toggleViewButton,
+.btn_view_div #toggleTaskBoardButton,
+.btn_view_div #appLockBtn,
+.btn_view_div #graphViewBtn,
+.btn_view_div #lanSyncBtn,
+.btn_view_div #siteExportBtn {
+    color: var(--button-text, #e0e0e0) !important;
+    font-weight: 600 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    cursor: pointer !important;
+    background: linear-gradient(135deg, #1a1a1a 0%, rgba(174, 252, 110, 0.08) 100%) !important;
+    border-color: rgba(174, 252, 110, 0.4) !important;
 }
-.btn_view_div #appLockBtn {
+.btn_view_div #toggleTaskBoardButton,
+.btn_view_div #appLockBtn,
+.btn_view_div #graphViewBtn,
+.btn_view_div #lanSyncBtn,
+.btn_view_div #siteExportBtn {
     border-left: 1px solid var(--border-color) !important;
     border-radius: 0 !important;
 }
@@ -60,7 +93,10 @@
 }
 .btn_view_div #toggleViewButton:hover,
 .btn_view_div #toggleTaskBoardButton:hover,
-.btn_view_div #appLockBtn:hover {
+.btn_view_div #appLockBtn:hover,
+.btn_view_div #graphViewBtn:hover,
+.btn_view_div #lanSyncBtn:hover,
+.btn_view_div #siteExportBtn:hover {
     background: rgba(174, 252, 110, 0.1) !important;
     transform: none !important;
 }
@@ -104,7 +140,15 @@
 }
 .btn_view_div.ln-collapsed #toggleViewButton,
 .btn_view_div.ln-collapsed #toggleTaskBoardButton,
-.btn_view_div.ln-collapsed #appLockBtn {
+.btn_view_div.ln-collapsed #appLockBtn,
+/* The lock button now lives inside #appLockBtnGroup alongside its gear
+   button (#appLockSettingsBtn) — hiding #appLockBtn alone left the group
+   wrapper and the always-visible gear button on screen, so the bar never
+   actually shrank when collapsed. Hide the whole group instead. */
+.btn_view_div.ln-collapsed #appLockBtnGroup,
+.btn_view_div.ln-collapsed #graphViewBtn,
+.btn_view_div.ln-collapsed #lanSyncBtn,
+.btn_view_div.ln-collapsed #siteExportBtn {
     display: none !important;
 }
 .btn_view_div.ln-collapsed .ln-actionbar-collapse {
@@ -117,7 +161,30 @@
     .btn_view_div {
         border-radius: 16px 16px 0 0 !important;
         padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px)) 6px !important;
+        /* With 6 segments now instead of 3, equal-share flex (flex:1 1 0,
+           set above for the segmented-control look) squeezes every button
+           down to an unreadable sliver on narrow screens. Below this width,
+           give each button back its own natural size and let the row
+           scroll horizontally instead — .btn_view_div already sets
+           overflow-x:auto/scroll-snap in css/index.css, this just stops
+           fighting it. */
+        justify-content: flex-start !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
     }
+    .btn_view_div #toggleViewButton,
+    .btn_view_div #toggleTaskBoardButton,
+    .btn_view_div #appLockBtn,
+    .btn_view_div #graphViewBtn,
+    .btn_view_div #lanSyncBtn,
+    .btn_view_div #siteExportBtn {
+        flex: 0 0 auto !important;
+        min-width: 84px !important;
+        padding: 0 14px !important;
+        white-space: nowrap !important;
+        scroll-snap-align: start;
+    }
+    .ln-lock-btn-group { flex: 0 0 auto !important; scroll-snap-align: start; }
     .btn_view_div.ln-collapsed {
         min-height: 0 !important;
         padding: 4px calc(4px + env(safe-area-inset-bottom, 0px)) !important;

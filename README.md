@@ -2,7 +2,7 @@
 
 ![Local Notes Screenshot](https://github.com/PsyGioX/localnotes/blob/main/sccc.png?raw=true)
 
-[![Version](https://img.shields.io/badge/Version-1.9.8-brightgreen.svg)](https://github.com/PsyGioX/localnotes/releases)
+[![Version](https://img.shields.io/badge/Version-1.10.1-brightgreen.svg)](https://github.com/PsyGioX/localnotes/releases)
 [![Security](https://img.shields.io/badge/Security-AES--256--GCM%20%2B%20HMAC--SHA--512-blue.svg)](https://github.com/PsyGioX/localnotes)
 [![DOMPurify](https://img.shields.io/badge/XSS-DOMPurify-red.svg)](https://github.com/cure53/DOMPurify)
 [![PWA](https://img.shields.io/badge/PWA-Enabled-purple.svg)](https://github.com/PsyGioX/localnotes)
@@ -76,6 +76,9 @@ Give everyone a **private, fast, multilingual notebook** that works like a nativ
 - **📸 Note screenshots** — export a note card as PNG for sharing
 - **✅ Smart checklists** — flat checkbox + input design, per-item customization (color, priority, label)
 - **📋 11 editor templates** — meeting, project, report, brainstorm, lecture, flashcard, research, daily planner, weekly review, OKR goals, habit tracker
+- **🕸️ Graph View** — interactive force-directed map of your wiki-links; drag, zoom, filter by workspace, highlight by search
+- **📡 Sync Nearby** — direct device-to-device sync over WebRTC, paired with a one-time code — no account, no cloud, stays on your LAN
+- **🌐 Static site export** — package your notes into a self-contained, host-anywhere website (HTML/CSS/JS + search), zipped entirely client-side
 
 ---
 
@@ -166,6 +169,26 @@ AppLock.init();           // called automatically on load
 | `ln_lock_enabled` | Mode: `pin`, `file`, or `both` |
 | `ln_lock_session` | Session unlock flag (`sessionStorage`) |
 | `ln_lock_last_activity` | Idle timer anchor |
+
+### Graph View (`window.GraphView`)
+
+```javascript
+GraphView.open();     // open the graph
+GraphView.close();    // close it
+GraphView.toggle();   // open/close
+```
+
+### Sync Nearby (`window.LanSync`)
+
+```javascript
+LanSync.open();       // open the pairing dialog (host or join)
+```
+
+### Static Site Export (`window.SiteExport`)
+
+```javascript
+await SiteExport.open();   // open the export dialog
+```
 
 ### Tags & Calendar (`window.TagsCalendar`)
 
@@ -372,9 +395,31 @@ ENCRYPT PIPELINE:
 - **Custom templates** — save any note as a reusable template with icon/category, `{{date}}`/`{{time}}`/`{{weekday}}` variables, JSON export/import
 
 ### ⌨️ Command Palette
-- `Ctrl+K` / `⌘K` — new note, calendar, task board, view toggle, theme, lock now
+- `Ctrl+K` / `⌘K` — new note, calendar, task board, view toggle, theme, lock now, graph view, sync nearby, export as static site
 - Instant search across note titles and content
 - Respects App Lock — disabled while the app is locked
+
+### 🕸️ Graph View
+- **Toolbar button** next to Toggle View / Tasks / Lock, plus a Command Palette entry — reachable without knowing any shortcut, on the root page and every localized `/xx/` page (mounted by JS at load time, so the 12 duplicated locale HTML files didn't each need editing)
+- Force-directed layout of every wiki-link (`[[...]]`) connection between notes — built from the same chip markup that already powers Backlinks, no separate index to maintain
+- Drag nodes to pin them, scroll to zoom, click a node to open that note
+- Filter to the current workspace or all notes; toggle unlinked ("orphan") notes on/off; type to highlight a note by title
+- Zero new dependencies — the simulation is a compact vanilla-JS force layout, rendered on `<canvas>`
+
+### 📡 Sync Nearby
+- **Toolbar button** (same placement/visibility as Graph View above) plus a Command Palette entry
+- Direct device-to-device sync over a WebRTC data channel — pair two devices with a one-time copy-paste code (no sync server, no accounts)
+- When both devices are actually on the same Wi-Fi, ICE negotiation prefers the local network path, so note data itself stays on the LAN
+- Every message is additionally encrypted with the app's own AES-256-GCM pipeline, keyed on a random secret embedded in the pairing code
+- Diff sync by `lastModified` (last-write-wins) — only notes the other side is missing or has an older copy of are transferred
+
+### 🌐 Static Site Export
+- **Toolbar button** (same placement/visibility as above) plus a Command Palette entry
+- Turns your notes into a portable, self-contained website — `index.html` + `style.css` + `app.js` + `notes.json`, with built-in transliteration search
+- Packaged as a real `.zip`, written entirely client-side: no library added, the same zero-dependency approach as the Notion/Keep import, mirrored for writing (`CompressionStream('deflate-raw')` + a hand-rolled Local File Header / Central Directory / EOCD writer)
+- Filter by workspace, exclude specific tags, or export pinned-only, before generating
+- Host it anywhere static (GitHub Pages, Vercel, Netlify) or just open `index.html` locally
+- The dialog is explicit that this produces **plaintext** HTML — App Lock only gates the app's UI, it doesn't encrypt note content in storage
 
 ### 🔗 Wiki-links & Backlinks
 - Type `[[` in the editor to link to another note, autocomplete included
@@ -458,6 +503,9 @@ localnotes/
 │   ├── translate.js              # Language detection & switching
 │   ├── tags-calendar.js          # Tags system + calendar
 │   ├── screenshot.js             # Note card → PNG screenshot
+│   ├── graph-view.js             # Graph View (wiki-link force-directed map)
+│   ├── lan-sync.js               # Sync Nearby (WebRTC device-to-device sync)
+│   ├── site-export.js            # Static site export (client-side zip writer)
 │   ├── workspaces.js             # Workspaces manager
 │   ├── workspaces-integration.js # Workspaces hooks into index.js
 │   ├── workspaces-translations.js
@@ -534,7 +582,20 @@ Click the install icon in Chrome/Edge address bar and confirm.
 
 ## 🆕 Changelog
 
-### v1.9.9 (current)
+### v1.10.1 (current)
+- **🐛 Graph View** — a single click now opens a note (matching the on-screen hint), instead of an undocumented double-click that could open the wrong note (or a blank new one) if the simulation moved nodes between the two clicks. Click-vs-drag is now disambiguated by movement/time thresholds on the exact node the pointer went down on
+- **🎨 Toolbar buttons** — Graph View / Sync Nearby / Publish as static site now join the existing Toggle View / Tasks / Lock segmented control (`css/action-bar.css`) instead of keeping a separate pill-button look, and collapse along with it when the bar is minimized
+- **✏️ Renamed** "Export as static site" → **"Publish as static site"**, since the app already has a per-note "Export" button — the two were easy to confuse
+- **🔗 Static site export** — the generated site's footer now links "Local Notes" back to the live app
+- **🎨 Checkboxes** — App Lock's acknowledgement checkboxes now use the same custom checkbox as the rest of the app (`.tbl-cb`-style), instead of the bare native control
+- **⚠️ Sync Nearby** — shows a clear in-app notice (instead of only a console error) when the browser doesn't support WebRTC, or when the app's encryption module isn't available to secure pairing
+
+### v1.10.0
+- **✨ Graph View** — new command-palette action opens an interactive force-directed graph of every wiki-link connection between notes. Reuses the existing `data-note-id` chip markup (same one `findBacklinks()` already scans), so there's nothing new to migrate. Drag to pin nodes, scroll to zoom, filter by workspace, toggle orphan notes, highlight by title — rendered on `<canvas>` with a small hand-written force layout, no charting library added
+- **✨ Sync Nearby** — direct device-to-device note sync over WebRTC, paired via a one-time copy-paste code instead of a sync server or account. Diffs by `lastModified` and transfers only what the other side needs; every message is additionally encrypted with the app's existing AES-256-GCM pipeline, keyed on a random secret carried inside the pairing code itself
+- **✨ Static site export** — package the current workspace (or all notes) into a portable static website with built-in search, download it as a real `.zip` built entirely client-side (own CRC32 + `CompressionStream('deflate-raw')` + Local File Header/Central Directory/EOCD writer — same zero-dependency approach already used for zip *reading* on Notion/Keep import, now mirrored for writing). Options to scope by workspace, exclude tags, or export pinned-only; the dialog is upfront that the output is plaintext HTML, since App Lock doesn't encrypt note content at rest
+
+### v1.9.9
 - **✨ Network mode expanded** — new **Auto** option alongside the existing Online/Offline toggle, following real connectivity (`navigator.onLine` + online/offline events) and switching the service worker to cache-only the instant the device actually loses connection, no manual flipping needed
 - **🎨 Toggle redesigned** — 3-way segmented control with a sliding highlight, plus a live connectivity status dot independent of the selected mode (so "Online" mode with no actual signal is visibly distinguishable from "Online" mode that's actually connected)
 - **✨ Import from Notion, Evernote, Google Keep** — new source options in the import dialog:

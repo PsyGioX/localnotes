@@ -134,6 +134,24 @@
                 run: function () { window.AppLock.lockNow(); }
             });
         }
+        if (window.GraphView && typeof window.GraphView.open === 'function') {
+            cmds.push({
+                type: 'cmd', icon: 'bi-diagram-3', label: t('cpOpenGraph', 'Open graph view'),
+                run: function () { window.GraphView.open(); }
+            });
+        }
+        if (window.LanSync && typeof window.LanSync.open === 'function') {
+            cmds.push({
+                type: 'cmd', icon: 'bi-arrow-left-right', label: t('cpSyncNearby', 'Sync nearby'),
+                run: function () { window.LanSync.open(); }
+            });
+        }
+        if (window.SiteExport && typeof window.SiteExport.open === 'function') {
+            cmds.push({
+                type: 'cmd', icon: 'bi-globe2', label: t('cpExportSite', 'Publish as static site'),
+                run: function () { window.SiteExport.open(); }
+            });
+        }
         return cmds;
     }
 

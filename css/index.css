@@ -792,7 +792,6 @@ body {
     scroll-snap-align: end;
     display: flex;
     align-items: stretch;
-    border-radius: 16px;
     overflow: hidden;
     box-shadow: 0 4px 20px rgba(174, 252, 110, 0.06);
 }
