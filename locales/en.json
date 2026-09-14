@@ -817,7 +817,7 @@
   "lsStep3": "Send this reply code back to the host device",
   "lsCopied": "Code copied.",
   "lsWaiting": "Once the host enters this code, syncing starts automatically.",
-  "lsQrUnavailable": "This code is too large for a QR code — please send the text above instead.",
+  "lsQrUnavailable": "Couldn’t prepare a QR code for this connection — please use the text above instead.",
   "lsCodeWarning": "This code lets anyone who has it connect and read your notes. Only share it through a channel you trust.",
   "lsScanTab": "Scan with camera",
   "lsPasteTab": "Paste text",

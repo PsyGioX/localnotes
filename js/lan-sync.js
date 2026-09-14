@@ -52,7 +52,6 @@
     var ICE_GATHER_TIMEOUT_MS = 4000;
     var CHUNK_SIZE = 15;                       // max notes per 'notes' message
     var NOTES_BATCH_MAX_BYTES = 200 * 1024;    // also cap batches by estimated byte size
-    var QR_MAX_CANDIDATES = 3;
 
     var overlay = null, logEl = null;
     var state = null; // active sync-engine state, see createSyncEngine()
@@ -372,40 +371,44 @@
     // never instead of, the full-SDP text code.
     // =========================================================================
 
-    function ipv4ToBytes(ip) {
-        var parts = ip.split('.');
-        if (parts.length !== 4) return null;
-        var bytes = new Uint8Array(4);
-        for (var i = 0; i < 4; i++) {
-            var n = parseInt(parts[i], 10);
-            if (isNaN(n) || n < 0 || n > 255) return null;
-            bytes[i] = n;
-        }
-        return bytes;
-    }
-    function bytesToIpv4(bytes, offset) {
-        return bytes[offset] + '.' + bytes[offset + 1] + '.' + bytes[offset + 2] + '.' + bytes[offset + 3];
-    }
-
     // Pull the fields we need out of a real, browser-generated SDP.
+    //
+    // Chromium-based browsers obfuscate "host" candidates behind a random
+    // mDNS `.local` hostname by default (a privacy feature — it hides your
+    // real LAN IP from the other peer until ICE actually connects), so a
+    // candidate's address is NOT reliably a dotted-quad IPv4 literal. The
+    // address is captured as a generic token here and carried as text, not
+    // packed as 4 raw bytes, so both real IPs and mDNS hostnames survive
+    // the trip — the receiving browser resolves an mDNS hostname via
+    // multicast DNS the same way it would if it had negotiated it itself.
     function parseSdpEssentials(sdp) {
         var ufragMatch = /a=ice-ufrag:(\S+)/.exec(sdp);
         var pwdMatch = /a=ice-pwd:(\S+)/.exec(sdp);
         var fpMatch = /a=fingerprint:sha-256\s+([0-9A-Fa-f:]+)/.exec(sdp);
         if (!ufragMatch || !pwdMatch || !fpMatch) return null;
         var candidates = [];
-        var re = /a=candidate:\S+ \d+ udp \d+ (\d+\.\d+\.\d+\.\d+) (\d+) typ (host|srflx)/g;
+        var re = /a=candidate:\S+ \d+ udp \d+ (\S+) (\d+) typ (host|srflx)/g;
         var m;
-        while ((m = re.exec(sdp)) && candidates.length < QR_MAX_CANDIDATES) {
-            candidates.push({ type: m[3] === 'host' ? 0 : 1, ip: m[1], port: parseInt(m[2], 10) });
-        }
-        if (!candidates.length) return null; // IPv6-only or no usable candidates — QR path skipped, text still works
+        while ((m = re.exec(sdp))) candidates.push({ type: m[3] === 'host' ? 0 : 1, addr: m[1], port: parseInt(m[2], 10) });
+        if (!candidates.length) return null; // no usable candidates at all — QR path skipped, text still works
+        // Prefer server-reflexive candidates first: they're always a short
+        // real IP (never an mDNS hostname), which keeps the compact payload
+        // smaller and leaves more headroom for whichever host candidate(s)
+        // we can still fit.
+        candidates.sort(function (a, b) { return b.type - a.type; }); // srflx(1) before host(0)
         return {
             ufrag: ufragMatch[1], pwd: pwdMatch[1],
             fingerprintHex: fpMatch[1].replace(/:/g, '').toUpperCase(),
             candidates: candidates
         };
     }
+
+    // Pack as many of the (already size-preferred) candidates as fit under
+    // a byte budget, rather than a fixed count — an mDNS hostname candidate
+    // is ~40+ bytes where a plain IP is ~15, so a fixed "3 candidates" cap
+    // could still blow the QR capacity while a fixed "1 candidate" cap
+    // would needlessly throw away a second one that would've fit fine.
+    var QR_CANDIDATE_BUDGET_BYTES = 90;
 
     function packCompact(tag, essentials, secretHex) {
         var ufragBytes = new TextEncoder().encode(essentials.ufrag);
@@ -414,11 +417,22 @@
         for (var i = 0; i < 32; i++) fpBytes[i] = parseInt(essentials.fingerprintHex.substr(i * 2, 2), 16);
         var secretBytes = secretHex ? new Uint8Array(secretHex.match(/../g).map(function (h) { return parseInt(h, 16); })) : new Uint8Array(0);
 
-        var candBytesList = essentials.candidates.map(function (c) { return ipv4ToBytes(c.ip); });
-        if (candBytesList.some(function (b) { return !b; })) return null; // non-IPv4 candidate — skip QR
+        var chosen = [];
+        var candBudget = QR_CANDIDATE_BUDGET_BYTES;
+        var candByteList = [];
+        for (var i2 = 0; i2 < essentials.candidates.length; i2++) {
+            var addrBytes = new TextEncoder().encode(essentials.candidates[i2].addr);
+            var entryLen = 1 + 1 + addrBytes.length + 2; // type + addrLen + addr + port
+            if (entryLen > candBudget) continue;
+            chosen.push(essentials.candidates[i2]);
+            candByteList.push(addrBytes);
+            candBudget -= entryLen;
+        }
+        if (!chosen.length) return null; // every candidate's address was too long to fit at all
 
-        var totalLen = 1 + 1 + secretBytes.length + 1 + ufragBytes.length + 1 + pwdBytes.length + 32 + 1 +
-            essentials.candidates.length * 7;
+        var totalLen = 1 + 1 + secretBytes.length + 1 + ufragBytes.length + 1 + pwdBytes.length + 32 + 1;
+        for (var j = 0; j < candByteList.length; j++) totalLen += 1 + 1 + candByteList[j].length + 2;
+
         var out = new Uint8Array(totalLen);
         var o = 0;
         out[o++] = tag;
@@ -429,12 +443,13 @@
         out[o++] = pwdBytes.length;
         out.set(pwdBytes, o); o += pwdBytes.length;
         out.set(fpBytes, o); o += 32;
-        out[o++] = essentials.candidates.length;
-        for (var c = 0; c < essentials.candidates.length; c++) {
-            out[o++] = essentials.candidates[c].type;
-            out.set(candBytesList[c], o); o += 4;
-            out[o++] = (essentials.candidates[c].port >> 8) & 0xFF;
-            out[o++] = essentials.candidates[c].port & 0xFF;
+        out[o++] = chosen.length;
+        for (var c = 0; c < chosen.length; c++) {
+            out[o++] = chosen[c].type;
+            out[o++] = candByteList[c].length;
+            out.set(candByteList[c], o); o += candByteList[c].length;
+            out[o++] = (chosen[c].port >> 8) & 0xFF;
+            out[o++] = chosen[c].port & 0xFF;
         }
         return out;
     }
@@ -455,9 +470,10 @@
         var candidates = [];
         for (var c = 0; c < candCount; c++) {
             var type = bytes[o++];
-            var ip = bytesToIpv4(bytes, o); o += 4;
+            var addrLen = bytes[o++];
+            var addr = new TextDecoder().decode(bytes.slice(o, o + addrLen)); o += addrLen;
             var port = (bytes[o] << 8) | bytes[o + 1]; o += 2;
-            candidates.push({ type: type === 0 ? 'host' : 'srflx', ip: ip, port: port });
+            candidates.push({ type: type === 0 ? 'host' : 'srflx', ip: addr, port: port });
         }
         return { tag: tag, secretHex: secretHex || null, ufrag: ufrag, pwd: pwd, fingerprintHex: fingerprintHex, candidates: candidates };
     }
@@ -773,7 +789,7 @@
         if (!qrOk) {
             var warn = document.createElement('div');
             warn.className = 'lnls-warn';
-            warn.textContent = t('lsQrUnavailable', 'This code is too large for a QR code — please send the text above instead.');
+            warn.textContent = t('lsQrUnavailable', 'Couldn\u2019t prepare a QR code for this connection — please use the text above instead.');
             b2.insertBefore(warn, textArea);
         }
     }
@@ -800,7 +816,7 @@
         if (!qrOk) {
             var warn = document.createElement('div');
             warn.className = 'lnls-warn';
-            warn.textContent = t('lsQrUnavailable', 'This code is too large for a QR code — please send the text above instead.');
+            warn.textContent = t('lsQrUnavailable', 'Couldn\u2019t prepare a QR code for this connection — please use the text above instead.');
             container.insertBefore(warn, textArea);
         }
 

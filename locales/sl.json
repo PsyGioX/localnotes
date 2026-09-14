@@ -817,7 +817,7 @@
   "lsStep3": "Pošljite to odgovorno kodo nazaj v gostiteljsko napravo",
   "lsCopied": "Koda kopirana.",
   "lsWaiting": "Ko gostitelj vnese to kodo, se sinhronizacija samodejno začne.",
-  "lsQrUnavailable": "Ta koda je prevelika za QR kodo — namesto tega pošljite zgornje besedilo.",
+  "lsQrUnavailable": "QR kode za to povezavo ni bilo mogoče pripraviti — namesto tega uporabite zgornje besedilo.",
   "lsCodeWarning": "Ta koda vsakomur, ki jo ima, omogoča povezavo in branje vaših zapiskov. Delite jo samo prek kanala, ki mu zaupate.",
   "lsScanTab": "Skeniraj s kamero",
   "lsPasteTab": "Prilepi besedilo",

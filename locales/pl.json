@@ -817,7 +817,7 @@
   "lsStep3": "Wyślij ten kod odpowiedzi z powrotem do urządzenia hosta",
   "lsCopied": "Kod skopiowany.",
   "lsWaiting": "Gdy tylko host wprowadzi ten kod, synchronizacja rozpocznie się automatycznie.",
-  "lsQrUnavailable": "Ten kod jest zbyt duży na kod QR — zamiast tego wyślij tekst powyżej.",
+  "lsQrUnavailable": "Nie udało się przygotować kodu QR dla tego połączenia — skorzystaj z tekstu powyżej.",
   "lsCodeWarning": "Ten kod umożliwia każdemu, kto go posiada, połączenie się i odczytanie Twoich notatek. Udostępniaj go tylko przez zaufany kanał.",
   "lsScanTab": "Skanuj aparatem",
   "lsPasteTab": "Wklej tekst",

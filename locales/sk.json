@@ -817,7 +817,7 @@
   "lsStep3": "Odošlite tento odpovedný kód späť hostiteľskému zariadeniu",
   "lsCopied": "Kód skopírovaný.",
   "lsWaiting": "Hneď ako hostiteľ zadá tento kód, synchronizácia sa spustí automaticky.",
-  "lsQrUnavailable": "Tento kód je na QR kód príliš veľký — namiesto toho odošlite text vyššie.",
+  "lsQrUnavailable": "Nepodarilo sa pripraviť QR kód pre toto spojenie — použite, prosím, text vyššie.",
   "lsCodeWarning": "Tento kód umožňuje komukoľvek, kto ho má, pripojiť sa a čítať vaše poznámky. Zdieľajte ho iba prostredníctvom kanála, ktorému dôverujete.",
   "lsScanTab": "Skenovať fotoaparátom",
   "lsPasteTab": "Vložiť text",
