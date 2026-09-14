@@ -140,12 +140,6 @@
                 run: function () { window.GraphView.open(); }
             });
         }
-        if (window.LanSync && typeof window.LanSync.open === 'function') {
-            cmds.push({
-                type: 'cmd', icon: 'bi-arrow-left-right', label: t('cpSyncNearby', 'Sync nearby'),
-                run: function () { window.LanSync.open(); }
-            });
-        }
         if (window.SiteExport && typeof window.SiteExport.open === 'function') {
             cmds.push({
                 type: 'cmd', icon: 'bi-globe2', label: t('cpExportSite', 'Publish as static site'),

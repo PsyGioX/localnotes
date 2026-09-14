@@ -499,7 +499,7 @@
     // No custom class on the button: css/action-bar.css already restyles
     // it (by #graphViewBtn) into the same segmented control as
     // #toggleTaskBoardButton/#appLockBtn — its own comment says the intent
-    // is for Graph View/Sync Nearby/Site Export to "join this same
+    // is for Graph View/Site Export to "join this same
     // segmented control (rather than keeping their own pill-button look)".
     // The old .ln-toolbar-btn class fought that (different text color,
     // font-weight, padding weren't covered by action-bar.css's overrides),

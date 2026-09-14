@@ -16,7 +16,7 @@
  * produces a PLAINTEXT static site; the dialog says so explicitly.
  *
  * SECURITY: note content is raw HTML (it's never guaranteed clean — it can
- * carry markup from copy/paste or from a Sync Nearby peer) and the
+ * carry markup from copy/paste) and the
  * generated app.js renders it via innerHTML with no sanitizer of its own.
  * Every note's content is therefore run through the same DOMPurify.sanitize()
  * the main app uses before it's written into notes.json below, and the
@@ -510,7 +510,7 @@
     // Deliberately no class/custom styling here: css/action-bar.css already
     // restyles this button (by #siteExportBtn) into the same segmented
     // control as #toggleTaskBoardButton/#appLockBtn — that stylesheet's own
-    // comment says as much ("Graph View / Sync Nearby / Static Site Export
+    // comment says as much ("Graph View / Static Site Export
     // join this same segmented control ... rather than keeping their own
     // pill-button look"). Adding the old pill-button class back on top of
     // that left this button visibly mismatched (different text color,
