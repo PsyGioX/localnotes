@@ -676,7 +676,7 @@
     // ── host ──────────────────────────────────────────────────────────────
 
     async function startHost() {
-        renderShell(t('lsHostTitle', 'Start session'), renderChoice, false);
+        renderShell(t('lsHostTitle', 'Start session'), renderChoice, true);
         var b = body();
         b.innerHTML = '<div class="lnls-row"><label>' + escapeHtml(t('lsPreparing', 'Preparing code\u2026')) + '</label></div>';
 
@@ -690,6 +690,8 @@
             log(t('lsGathering', 'Gathering connection info\u2026'));
             await waitIceComplete(pc);
         } catch (e) { renderConnectionBlocked(b, e); return; }
+
+        if (!/a=candidate:/.test(pc.localDescription.sdp)) { renderConnectionBlocked(b); return; }
 
         var codes = buildCodes('offer', pc.localDescription, sessionSecret);
         renderCodeStep(b, {
@@ -720,7 +722,7 @@
     // ── join ──────────────────────────────────────────────────────────────
 
     function renderJoinChoice() {
-        renderShell(t('lsJoinTitle', 'Join session'), renderChoice, false);
+        renderShell(t('lsJoinTitle', 'Join session'), renderChoice, true);
         var b = body();
         renderScanOrPaste(b, {
             label: t('lsPasteOffer', 'Scan or paste the code from the host device'),
@@ -760,6 +762,8 @@
             log(t('lsGathering', 'Gathering connection info\u2026'));
             await waitIceComplete(pc);
         } catch (e) { renderConnectionBlocked(b, e); return; }
+
+        if (!/a=candidate:/.test(pc.localDescription.sdp)) { renderConnectionBlocked(b); return; }
 
         var codes = buildCodes('answer', pc.localDescription, null);
         renderShell(t('lsJoinTitle', 'Join session'), renderChoice, true);
