@@ -408,7 +408,20 @@
     // is ~40+ bytes where a plain IP is ~15, so a fixed "3 candidates" cap
     // could still blow the QR capacity while a fixed "1 candidate" cap
     // would needlessly throw away a second one that would've fit fine.
-    var QR_CANDIDATE_BUDGET_BYTES = 90;
+    //
+    // The budget itself has to be derived, not guessed: renderQrCanvas()
+    // base64-encodes this whole payload before handing it to QrEncoder
+    // (see its own comment for why), which inflates size by 4/3, and
+    // QrEncoder (js/qrcode.js) only implements versions 1-9, so it can
+    // only hold QR_ENCODER_MAX_BYTES bytes of *that* base64 text. A fixed
+    // byte count here that doesn't account for either the base64 blow-up
+    // or the (browser-dependent, non-constant) size of ufrag/pwd/secret
+    // will overshoot the real limit by just a few bytes on an ordinary
+    // connection — which is exactly what was happening: the old flat
+    // 90-byte constant left the QR path failing on most "offer" codes,
+    // not just unusually large ones.
+    var QR_ENCODER_MAX_BYTES = 230; // js/qrcode.js: version 9, byte mode, data(232) - header(2)
+    var QR_MAX_RAW_PAYLOAD_BYTES = Math.floor(QR_ENCODER_MAX_BYTES / 4) * 3; // largest N with 4*ceil(N/3) <= max
 
     function packCompact(tag, essentials, secretHex) {
         var ufragBytes = new TextEncoder().encode(essentials.ufrag);
@@ -417,8 +430,12 @@
         for (var i = 0; i < 32; i++) fpBytes[i] = parseInt(essentials.fingerprintHex.substr(i * 2, 2), 16);
         var secretBytes = secretHex ? new Uint8Array(secretHex.match(/../g).map(function (h) { return parseInt(h, 16); })) : new Uint8Array(0);
 
+        // Fixed part of the payload (everything except the candidate list) —
+        // tag + secretLen + secret + ufragLen + ufrag + pwdLen + pwd + fp + candCount.
+        var fixedLen = 1 + 1 + secretBytes.length + 1 + ufragBytes.length + 1 + pwdBytes.length + 32 + 1;
+
         var chosen = [];
-        var candBudget = QR_CANDIDATE_BUDGET_BYTES;
+        var candBudget = QR_MAX_RAW_PAYLOAD_BYTES - fixedLen; // whatever's actually left, not a guess
         var candByteList = [];
         for (var i2 = 0; i2 < essentials.candidates.length; i2++) {
             var addrBytes = new TextEncoder().encode(essentials.candidates[i2].addr);
