@@ -29,6 +29,7 @@ var scripts = [
     '/js/index.js?v=1.9.14',
     '/js/graph-view.js?v=1.9.14',
     '/js/site-export.js?v=1.9.14',
+    '/js/qrcode.js?v=1.9.14',
     '/js/lan-sync.js?v=1.9.14',
     '/js/command-palette.js?v=1.9.14',
     '/js/share-target.js?v=1.9.14',
