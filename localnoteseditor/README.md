@@ -13,7 +13,11 @@ A lightweight, feature-rich rich text editor built for the Local Notes applicati
 - **Media** — images (file picker + drag & drop), videos (YouTube, Vimeo, direct URL)
 - **Tables** — insert, resize, delete rows/columns via context toolbar
 - **Links** — create and manage hyperlinks
-- **Blocks** — blockquotes, code blocks with syntax highlighting
+- **Blocks** — blockquotes, code blocks with syntax highlighting, callout boxes (Note/Tip/Warning/Important)
+- **Formulas** — math notation via native MathML (own tiny text-syntax parser, no MathJax/KaTeX): example gallery + custom builder, editable in place
+- **Show blocks** — toggle to visualize paragraph/heading/list boundaries
+- **HTML source view** — inspect or hand-edit a note's raw HTML
+- **Insert date/time**, **non-breaking space** (Ctrl+Shift+Space)
 - **Alignment** — left, center, right, justify
 - **Find & Replace** — with case-sensitive option
 - **Undo/Redo** — full history, Ctrl+Z / Ctrl+Y, reset on new content
@@ -85,6 +89,7 @@ editor.destroy()
 | Ctrl+U | Underline |
 | Ctrl+K | Insert link |
 | Ctrl+H | Find & Replace |
+| Ctrl+Shift+Space | Non-breaking space |
 
 ## CSS Variables
 

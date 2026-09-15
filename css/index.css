@@ -559,6 +559,10 @@ body {
 }
 .noteContent .lne-video-wrapper + p:empty,
 .noteContent .video-embed-wrapper + p:empty,
+.noteContent .lne-code-wrapper + p:empty,
+.noteContent .lne-callout + p:empty,
+.noteContent .table-responsive + p:empty,
+.noteContent blockquote + p:empty,
 .noteContent p:empty:first-child {
     margin: 0;
     padding: 0;
@@ -3083,6 +3087,52 @@ footer a:hover { color: var(--primary-color); }
 }
 [data-theme="light"] .noteContent blockquote::before { color: #28a745; }
 [data-theme="light"] .noteContent hr { border-top-color: #dee2e6; }
+/* Nested blockquote + selection color + softer strikethrough — kept in
+   sync with localnoteseditor/styles.css so a note looks the same open
+   or closed. */
+.noteContent blockquote blockquote {
+    margin: 10px 0; border-left-color: var(--text-secondary); background: rgba(255,255,255,.03);
+}
+.noteContent blockquote blockquote::before { display: none; }
+.noteContent ::selection { background: rgba(174,252,110,.35); }
+[data-theme="light"] .noteContent ::selection { background: rgba(40,167,69,.25); }
+.noteContent del, .noteContent s, .noteContent strike { text-decoration: line-through; opacity: .7; }
+.noteContent > *:first-child { margin-top: 0 !important; }
+.noteContent > *:last-child  { margin-bottom: 0 !important; }
+
+/* Callout blocks (Note/Tip/Warning/Important) — read-only rendering.
+   Header buttons still exist in the markup (editor writes plain buttons)
+   but aren't wired up outside the editor, so hide the interactive-looking
+   parts here and keep just the icon + type label. */
+.noteContent .lne-callout {
+    position: relative; margin: 16px 0;
+    border: 1px solid var(--lne-cal-border, rgba(40,167,69,.35));
+    border-left-width: 4px; border-radius: 0 8px 8px 0;
+    background: var(--lne-cal-bg, rgba(40,167,69,.07));
+    overflow: hidden;
+}
+.noteContent .lne-callout-header {
+    display: flex; align-items: center; gap: 8px; padding: 8px 10px 8px 12px;
+    font-size: 12.5px; font-weight: 700; letter-spacing: .01em;
+    color: var(--lne-cal-fg, var(--primary-color));
+}
+.noteContent .lne-callout-icon { display: inline-flex; font-size: 15px; line-height: 1; }
+.noteContent .lne-callout-type { background: none; border: none; padding: 0; font: inherit; color: inherit; cursor: default; pointer-events: none; }
+.noteContent .lne-callout-del { display: none; }
+.noteContent .lne-callout-body { padding: 2px 16px 14px; line-height: 1.65; }
+.noteContent .lne-callout-body > p:first-child { margin-top: 0; }
+.noteContent .lne-callout-body > p:last-child { margin-bottom: 0; }
+.noteContent .lne-callout-note    { --lne-cal-border: rgba(74,134,232,.4);  --lne-cal-bg: rgba(74,134,232,.08);  --lne-cal-fg: #6ea3ff; }
+.noteContent .lne-callout-tip     { --lne-cal-border: rgba(40,167,69,.4);   --lne-cal-bg: rgba(40,167,69,.07);   --lne-cal-fg: var(--primary-color); }
+.noteContent .lne-callout-warning { --lne-cal-border: rgba(255,193,7,.5);   --lne-cal-bg: rgba(255,193,7,.09);   --lne-cal-fg: #ffc107; }
+.noteContent .lne-callout-danger  { --lne-cal-border: rgba(220,53,69,.5);   --lne-cal-bg: rgba(220,53,69,.09);   --lne-cal-fg: #f16472; }
+[data-theme="light"] .noteContent .lne-callout-note    { --lne-cal-fg: #3266c9; }
+[data-theme="light"] .noteContent .lne-callout-warning { --lne-cal-fg: #a6790a; }
+[data-theme="light"] .noteContent .lne-callout-danger  { --lne-cal-fg: #c82333; }
+
+/* Formulas — read-only: no hover/edit affordance, just render the MathML */
+.noteContent math { font-size: 1.4em; }
+.noteContent .lne-formula-wrap { display: inline-block; vertical-align: middle; padding: 0 2px; }
 [data-theme="light"] .noteContent pre,
 [data-theme="light"] .noteContent .lne-code {
     background: #1e1e1e;

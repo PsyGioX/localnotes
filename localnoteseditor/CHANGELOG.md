@@ -1,6 +1,37 @@
 # LocalNotesEditor — Changelog
 
-## v1.1.0 (current)
+## v1.2.2
+
+### Fixes
+- Markdown mode (`js/markdown.js`) reset callout boxes and formulas to plain unstyled text — it had no rule for these custom elements and silently unwrapped them to their bare text content. They're now passed through as raw HTML verbatim in both directions (HTML→Markdown and back), so switching a note into Markdown mode and back no longer loses them. Also fixes the same silent loss for video embeds and code-block chrome.
+- HTML source view now pretty-prints with indentation instead of one unreadable line (own small DOM-walking formatter, `<pre>`/`<code>` content left byte-for-byte untouched); the added indentation is stripped back out on Apply so it never leaks a stray space into the saved note
+
+## v1.2.1
+
+### Fixes
+- `Ctrl+Shift+Space` (non-breaking space) was being swallowed by the existing `Ctrl+Space` "Quick Insert" slash-menu shortcut, which didn't check for the Shift modifier — pressing Ctrl+Shift+Space opened the quick-insert menu instead of inserting a non-breaking space
+- Formulas rendered too small in the editor (sub/superscripts especially) — bumped the base MathML font-size
+
+## v1.2.0 (current)
+
+### Fixes
+- **Cursor trapped in blocks** — reopening a note whose last block was a video embed, code block, table, callout or blockquote (or inserting a video mid-session) left no line to click/arrow into below it, because these are `contenteditable="false"` atoms or nested contenteditable "islands" that a plain Enter/click can't escape. `_ensureBlockSpacing()` now guarantees a trailing empty paragraph after any such block, run on every content load/insert (`_initAll()`), so existing notes are healed the moment they're reopened.
+
+### New Features (inspired by a TinyMCE Free feature review — see project README)
+- **Formula insertion** — a small hand-written parser (no MathJax/KaTeX) converts a readable text syntax (`a/b`, `x^2`, `sqrt(x)`, `sum_(i=1)^n`, `pi`, `<=`, `->`, …) into native MathML, rendered by the browser with zero added weight. Ships with 10 ready-made examples (quadratic formula, Pythagorean theorem, Euler's identity, etc.) plus a custom builder with live preview; double-click any inserted formula to edit it
+- **Callout blocks** — Note / Tip / Warning / Important boxes with a one-click type switcher, going beyond what TinyMCE Free itself offers
+- **Show blocks** — CSS-only outline of paragraph/heading/list/div boundaries (port of TinyMCE's `visualblocks`)
+- **HTML source view** — read/hand-edit a note's raw HTML (port of TinyMCE's `code` plugin)
+- **Insert date/time** — locale-aware current date/time at the caret (port of TinyMCE's `insertdatetime`)
+- **Non-breaking space** — `Ctrl+Shift+Space` (port of TinyMCE's `nonbreaking`)
+
+### Style polish
+- Consistent margin-collapse fix (no stray blank strip at top/bottom of a note)
+- Brand-matched text selection color
+- Nested blockquote styling
+- Softer strikethrough so it doesn't visually compete with checklist "done" text
+
+## v1.1.0
 
 ### New Features
 - **Text color sync** — toolbar color bar updates when cursor moves into colored text

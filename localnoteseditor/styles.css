@@ -1863,6 +1863,151 @@ textarea.lne-inp { resize: vertical; }
     color: #fff;
 }
 
+/* ═══════════════════════════ CALLOUT BLOCKS ══════════════════════════ */
+/* Note / Tip / Warning / Important — a block-level upgrade over a plain
+   blockquote. Same two-part structure as the code block above: a
+   non-editable header (icon + type switcher + delete) and a separate
+   editable body. */
+.lne-callout {
+    position: relative;
+    margin: 16px 0;
+    border: 1px solid var(--lne-cal-border, rgba(40,167,69,.35));
+    border-left-width: 4px;
+    border-radius: 0 8px 8px 0;
+    background: var(--lne-cal-bg, rgba(40,167,69,.07));
+    overflow: hidden;
+}
+.lne-callout-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px 8px 12px;
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: .01em;
+    color: var(--lne-cal-fg, var(--primary-color, #28a745));
+    user-select: none;
+    -webkit-user-select: none;
+}
+.lne-callout-icon { display: inline-flex; font-size: 15px; line-height: 1; }
+.lne-callout-type {
+    background: transparent; border: none; padding: 2px 6px; margin: 0 auto 0 0;
+    font: inherit; color: inherit; cursor: pointer; border-radius: 4px;
+    transition: background .15s;
+}
+.lne-callout-type:hover { background: rgba(255,255,255,.08); }
+.lne-callout-del {
+    background: transparent; border: none; padding: 3px 5px; color: var(--text-secondary, #999);
+    cursor: pointer; border-radius: 4px; font-size: 12px; line-height: 1;
+    transition: background .15s, color .15s; flex-shrink: 0;
+}
+.lne-callout-del:hover { background: rgba(220,53,69,.15); color: #dc3545; }
+.lne-callout-body { padding: 2px 16px 14px; color: var(--text-color, #e0e0e0); line-height: 1.65; }
+.lne-callout-body > p:first-child { margin-top: 0; }
+.lne-callout-body > p:last-child { margin-bottom: 0; }
+
+/* Variants */
+.lne-callout-note    { --lne-cal-border: rgba(74,134,232,.4);  --lne-cal-bg: rgba(74,134,232,.08);  --lne-cal-fg: #6ea3ff; }
+.lne-callout-tip     { --lne-cal-border: rgba(40,167,69,.4);   --lne-cal-bg: rgba(40,167,69,.07);   --lne-cal-fg: var(--primary-color, #28a745); }
+.lne-callout-warning { --lne-cal-border: rgba(255,193,7,.5);   --lne-cal-bg: rgba(255,193,7,.09);   --lne-cal-fg: #ffc107; }
+.lne-callout-danger  { --lne-cal-border: rgba(220,53,69,.5);   --lne-cal-bg: rgba(220,53,69,.09);   --lne-cal-fg: #f16472; }
+[data-theme="light"] .lne-callout-note    { --lne-cal-fg: #3266c9; }
+[data-theme="light"] .lne-callout-warning { --lne-cal-fg: #a6790a; }
+[data-theme="light"] .lne-callout-danger  { --lne-cal-fg: #c82333; }
+
+/* ═══════════════════════════ SHOW BLOCKS (visualblocks) ══════════════ */
+/* Pure CSS outline toggle — no extra markup, no plugin bundle. */
+.lne-editor.lne-show-blocks p,
+.lne-editor.lne-show-blocks div:not(.lne-code-wrapper):not(.lne-video-wrapper):not(.video-embed-wrapper):not(.lne-callout):not(.lne-callout-header):not(.lne-callout-body):not(.table-responsive),
+.lne-editor.lne-show-blocks h1, .lne-editor.lne-show-blocks h2, .lne-editor.lne-show-blocks h3,
+.lne-editor.lne-show-blocks h4, .lne-editor.lne-show-blocks h5, .lne-editor.lne-show-blocks h6,
+.lne-editor.lne-show-blocks blockquote,
+.lne-editor.lne-show-blocks li {
+    outline: 1px dashed rgba(174,252,110,.4);
+    outline-offset: 2px;
+    position: relative;
+}
+.lne-editor.lne-show-blocks p::before,
+.lne-editor.lne-show-blocks div:not(.lne-code-wrapper):not(.lne-video-wrapper):not(.video-embed-wrapper):not(.lne-callout):not(.lne-callout-header):not(.lne-callout-body):not(.table-responsive)::before,
+.lne-editor.lne-show-blocks h1::before, .lne-editor.lne-show-blocks h2::before, .lne-editor.lne-show-blocks h3::before,
+.lne-editor.lne-show-blocks h4::before, .lne-editor.lne-show-blocks h5::before, .lne-editor.lne-show-blocks h6::before,
+.lne-editor.lne-show-blocks blockquote::before,
+.lne-editor.lne-show-blocks li::before {
+    content: attr(data-lne-tag);
+    position: absolute;
+    top: -1px; left: -1px;
+    transform: translateY(-100%);
+    font-size: 9px;
+    font-family: 'Lekton Nerd Font Mono','Courier New',monospace;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #0d0d0d;
+    background: rgba(174,252,110,.7);
+    padding: 1px 4px;
+    border-radius: 2px 2px 0 0;
+    pointer-events: none;
+    line-height: 1.4;
+    opacity: .9;
+    z-index: 1;
+}
+[data-theme="light"] .lne-editor.lne-show-blocks p,
+[data-theme="light"] .lne-editor.lne-show-blocks div,
+[data-theme="light"] .lne-editor.lne-show-blocks h1, [data-theme="light"] .lne-editor.lne-show-blocks h2,
+[data-theme="light"] .lne-editor.lne-show-blocks h3, [data-theme="light"] .lne-editor.lne-show-blocks h4,
+[data-theme="light"] .lne-editor.lne-show-blocks h5, [data-theme="light"] .lne-editor.lne-show-blocks h6,
+[data-theme="light"] .lne-editor.lne-show-blocks blockquote,
+[data-theme="light"] .lne-editor.lne-show-blocks li { outline-color: rgba(40,167,69,.35); }
+
+/* ═══════════════════════════ HTML SOURCE VIEW ════════════════════════ */
+.lne-src-ta {
+    width: 100%; min-height: 320px; resize: vertical;
+    font-family: 'Lekton Nerd Font Mono','Courier New',Consolas,monospace;
+    font-size: 12.5px; line-height: 1.55; white-space: pre; tab-size: 2;
+}
+
+/* ═══════════════════════════ TYPOGRAPHY POLISH ═══════════════════════ */
+/* Kill the extra blank strip a leading/trailing block margin creates at
+   the very top/bottom of the editor and of a rendered note. */
+.lne-editor > *:first-child { margin-top: 0 !important; }
+.lne-editor > *:last-child  { margin-bottom: 0 !important; }
+/* Nested blockquote — visibly deeper without repeating the quote mark */
+.lne-editor blockquote blockquote {
+    margin: 10px 0; border-left-color: var(--text-secondary, #888);
+    background: rgba(255,255,255,.03);
+}
+.lne-editor blockquote blockquote::before { display: none; }
+/* Brand-matched selection color instead of the browser default */
+.lne-editor ::selection { background: rgba(174,252,110,.35); }
+[data-theme="light"] .lne-editor ::selection { background: rgba(40,167,69,.25); }
+/* del/s already covered by <code>, add a slightly softer strike so it
+   doesn't visually compete with checklist "done" text */
+.lne-editor del, .lne-editor s, .lne-editor strike { text-decoration: line-through; opacity: .7; }
+
+/* ═══════════════════════════ FORMULAS (native MathML) ════════════════ */
+.lne-editor math, .noteContent math { font-size: 1.4em; }
+.lne-formula-wrap {
+    display: inline-block; vertical-align: middle;
+    padding: 1px 5px; margin: 0 1px; border-radius: 4px;
+    cursor: pointer; transition: background .12s;
+}
+.lne-editor .lne-formula-wrap:hover { background: rgba(174,252,110,.15); outline: 1px dashed rgba(174,252,110,.4); }
+[data-theme="light"] .lne-editor .lne-formula-wrap:hover { background: rgba(40,167,69,.1); }
+.lne-formula-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; max-height: 320px; overflow-y: auto; }
+.lne-formula-ex {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 12px 8px; border: 1px solid var(--input-border, #444); border-radius: 8px;
+    background: var(--input-bg, #2a2a2a); cursor: pointer; transition: border-color .12s, background .12s;
+    color: var(--text-color, #e0e0e0); min-height: 64px; justify-content: center;
+}
+.lne-formula-ex:hover { border-color: var(--primary-color, #28a745); background: rgba(40,167,69,.08); }
+.lne-formula-ex-label { font-size: 11px; color: var(--text-secondary, #999); text-align: center; }
+.lne-formula-preview {
+    min-height: 46px; margin-top: 8px; padding: 10px 12px; border-radius: 6px;
+    background: var(--input-bg, #2a2a2a); border: 1px solid var(--input-border, #444);
+    display: flex; align-items: center; font-size: 1.4em;
+}
+@media (max-width: 480px) { .lne-formula-grid { grid-template-columns: 1fr; } }
+
 /* ═══════════════════════════ CONTEXT TOOLBAR ════════════════════════ */
 .lne-ctx-toolbar-float {
     position: absolute;

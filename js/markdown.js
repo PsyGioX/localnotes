@@ -15,7 +15,16 @@ const LNMarkdown = (() => {
 
   function parseInline(text) {
     const codeSlots = [];
+    const htmlSlots = [];
     text = text.replace(/\\([\\`*_{}\[\]()#+\-.!|])/g, (_, c) => '&#' + c.charCodeAt(0) + ';');
+    // Protect embedded formula passthrough HTML *before* any emphasis/
+    // superscript/etc. rule can see it — a formula's data-formula-src
+    // attribute can itself contain "^", "_", "*", "(", ")", which would
+    // otherwise be misread as Markdown syntax and corrupt the markup.
+    text = text.replace(/<span class="lne-formula-wrap"[^>]*>[\s\S]*?<\/span>/g, (m) => {
+        htmlSlots.push(m);
+        return '\x00HTML' + (htmlSlots.length - 1) + '\x00';
+    });
     text = text.replace(/`{2}(.+?)`{2}|`([^`\n]+?)`/g, (_, a, b) => {
       codeSlots.push('<code>' + escHtml(a || b) + '</code>');
       return '\x00CODE' + (codeSlots.length - 1) + '\x00';
@@ -39,6 +48,7 @@ const LNMarkdown = (() => {
     text = text.replace(/~([^~\n]+?)~/g, '<sub>$1</sub>');
     text = text.replace(/(?<!["(])(https?:\/\/[^\s<>"]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
     text = text.replace(/\x00CODE(\d+)\x00/g, (_, i) => codeSlots[+i]);
+    text = text.replace(/\x00HTML(\d+)\x00/g, (_, i) => htmlSlots[+i]);
     return text;
   }
 
@@ -81,12 +91,46 @@ const LNMarkdown = (() => {
     return html + '</' + tag + '>';
   }
 
+  // Raw HTML passthrough — see childMd() above for why these specific
+  // custom blocks are handled this way instead of a bespoke MD syntax.
+  const PASSTHROUGH_RE = /^<(div|span)\b[^>]*\bclass="[^"]*\b(lne-callout|lne-formula-wrap|lne-video-wrapper|video-embed-wrapper|lne-code-wrapper)\b/;
+
   function parse(md) {
     if (!md) return '';
     const lines = md.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
     const out = []; let i = 0;
     while (i < lines.length) {
       const line = lines[i];
+      // Raw HTML passthrough block (callout / formula / video / code-wrapper) —
+      // consume lines until this element's own opening/closing tags balance,
+      // then keep them exactly as-is (no Markdown or inline processing at all).
+      const phm = line.match(PASSTHROUGH_RE);
+      if (phm) {
+        const tagName = phm[1];
+        const openRe = new RegExp('<' + tagName + '\\b', 'g');
+        const closeRe = new RegExp('</' + tagName + '>', 'g');
+        const block = [];
+        let depth = 0;
+        do {
+          const cur = lines[i];
+          block.push(cur);
+          depth += (cur.match(openRe) || []).length;
+          depth -= (cur.match(closeRe) || []).length;
+          i++;
+        } while (depth > 0 && i < lines.length);
+        const raw = block.join('\n');
+        // callout/video/code-wrapper are block-level <div>s and belong at
+        // the top level as-is. A formula chip is an inline <span> — this
+        // only matches at the START of a line, which happens when the
+        // *entire* paragraph was just the formula (toMarkdown emits no <p>
+        // markup, since Markdown paragraphs are plain text). Pushing it
+        // bare like the block-level ones strips it out of paragraph
+        // context entirely, leaving a lone atomic node with nowhere for
+        // the caret to go — exactly the "note is only a formula" bug.
+        // Give it its <p> home back.
+        out.push(tagName === 'span' ? '<p>' + raw + '</p>' : raw);
+        continue;
+      }
       // Fenced code
       const fm = line.match(/^(`{3,}|~{3,})\s*(\S*)/);
       if (fm) {
@@ -181,6 +225,19 @@ const LNMarkdown = (() => {
   function childMd(node) {
     if (node.nodeType === 3) return node.textContent.replace(/\n+/g,' ');
     if (node.nodeType !== 1) return '';
+    // LocalNotesEditor's custom widgets (callout boxes, formulas, video
+    // embeds, code-block chrome) have no native Markdown syntax — inventing
+    // an approximate one would be lossy and irreversible (this is exactly
+    // what used to happen: they fell through to the generic "unwrap and
+    // keep the text" case below and lost their box/type/MathML entirely).
+    // Instead we hand them through as raw HTML, verbatim, in both
+    // directions — see the matching PASSTHROUGH_RE branch in parse() below
+    // and the htmlSlots protection in parseInline().
+    if (node.classList && node.classList.contains('lne-formula-wrap')) return node.outerHTML;
+    if (node.classList && (node.classList.contains('lne-callout') || node.classList.contains('lne-video-wrapper') ||
+        node.classList.contains('video-embed-wrapper') || node.classList.contains('lne-code-wrapper'))) {
+      return '\n\n' + node.outerHTML + '\n\n';
+    }
     const tag = node.tagName.toLowerCase();
     const inner = () => nodeMd(node);
     switch(tag) {
@@ -415,13 +472,35 @@ window.importNotesMarkdownAdvanced = async function(files) {
 
   function exit(ed) {
     mdActive = false;
+    var inst = window.localNotesEditorAPI && window.localNotesEditorAPI.getInstance ? window.localNotesEditorAPI.getInstance() : null;
     if (mdTA && mdWrap) {
       ed.innerHTML = LNMarkdown.parse(mdTA.value);
       mdWrap.remove();
       mdWrap = mdTA = mdPrev = null;
+      // exit() replaces ed.innerHTML directly, bypassing the editor's own
+      // setContent() — so without re-running _initAll() here, everything it
+      // normally wires up after a content load stays broken: checklist
+      // checkbox listeners, code-block headers/copy buttons, wiki-link
+      // chips, context toolbars, and the block/formula caret-spacing
+      // fixups (_ensureBlockSpacing / _ensureFormulaCaretSpacing). Without
+      // this, a formula-only note that round-trips through Markdown mode
+      // hits the same "can't place the cursor" bug all over again.
+      if (inst && typeof inst._initAll === 'function') inst._initAll();
     }
     ed.style.display = '';
     ed.focus();
+    // ed.focus() on a freshly-swapped-in editor lets the browser pick its
+    // own initial caret position — and if the very first node is a formula
+    // chip, it can land inside its MathML the same way it can on a stray
+    // click (see the mousedown/click and ArrowLeft/Right/Up/Down handling
+    // in core.js). _placeSafeCaret() anchors the caret to the editor
+    // container's own boundary instead, which can't resolve into a child's
+    // interior. Run it now and once more next tick, since some browsers
+    // resolve the focus caret asynchronously.
+    if (inst && typeof inst._placeSafeCaret === 'function') {
+      inst._placeSafeCaret();
+      setTimeout(function() { inst._placeSafeCaret(); }, 0);
+    }
     ed.dispatchEvent(new Event('input', { bubbles: true }));
     const btn = document.querySelector('.lne-md-toggle');
     if (btn) {

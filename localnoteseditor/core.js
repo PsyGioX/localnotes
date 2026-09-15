@@ -221,16 +221,21 @@ class LocalNotesEditor {
         B('insertVideo','bi bi-play-circle',_('insertVideo','Insert video')) +
         B('insertTable','bi bi-table',_('createTable','Insert table')) +
         B('insertHorizontalRule','bi bi-dash-lg',_('horizontalLine','Horizontal rule')) +
+        B('insertDateTime','bi bi-calendar-event',_('insertDateTime','Insert date/time')) +
+        B('insertFormula','bi bi-plus-slash-minus',_('insertFormula','Insert formula')) +
         GE + SEP +
         GS +
         B('insertCode','bi bi-code-slash',_('codeBlock','Code block')) +
         B('insertBlockquote','bi bi-chat-quote',_('blockquote','Blockquote')) +
+        B('insertCallout','bi bi-info-square',_('insertCallout','Callout box')) +
         B('insertEmoji','bi bi-emoji-smile',_('emoji','Emoji')) +
         B('insertSpecialChar','bi bi-alphabet',_('specialChars','Special characters')) +
         GE + SEP +
         GS +
         B('findReplace','bi bi-search',_('findReplace','Find & Replace'),'Ctrl+H') +
         B('wordCount','bi bi-bar-chart-line',_('wordCount','Word count')) +
+        B('showBlocks','bi bi-layout-text-window',_('showBlocks','Show blocks')) +
+        B('viewSource','bi bi-braces',_('viewSource','HTML source')) +
         B('focusMode','bi bi-eye',_('focusMode','Focus mode'),'F12') +
         B('fullscreen','bi bi-fullscreen',_('fullscreen','Fullscreen'),'F11') +
         B('shortcutsHelp','bi bi-keyboard',_('shortcutsHelp','Keyboard shortcuts'),'Ctrl+/') +
@@ -501,6 +506,8 @@ class LocalNotesEditor {
             insertSpecialChar: function() { this._modalSpecialChars(); },
             findReplace:       function() { this._toggleFindBar(); },
             wordCount:         function() { this._modalWordCount(); },
+            viewSource:        function() { this._modalSourceView(); },
+            insertFormula:     function() { this._modalFormula(); },
             shortcutsHelp:     function() { this._modalShortcuts(); },
             tplCustomManage:   function() { this._modalCustomTemplates(); },
             foreColor:         function() {
@@ -523,6 +530,9 @@ class LocalNotesEditor {
             insertWikiLink:   function() { this._triggerWikiLinkPopup(); },
             insertCode:       function() { this._insertCodeBlock(); },
             insertBlockquote: function() { this._insertBlockquote(); },
+            insertCallout:    function() { this._insertCallout('note'); },
+            insertDateTime:   function() { this._insertDateTime(); },
+            showBlocks:       function() { this._toggleShowBlocks(); },
             focusMode:        function() { this._toggleFocusMode(); },
             fullscreen:       function() { this._toggleFullscreen(); },
             tplMeeting:       function() { this._insertTemplate('meeting'); },
@@ -745,6 +755,85 @@ class LocalNotesEditor {
         }
     }
 
+    // Guarantees the user can always click / arrow-key / Enter their way to a
+    // new line after a "special" block. Plain <p>/<div>/<li>/<h1-6> are all
+    // normal parts of the same editing host, so the browser can always
+    // synthesize a line after them — but a video embed is
+    // contenteditable="false" (the caret can never enter it), and code
+    // blocks / callouts / tables are nested contenteditable "islands", so
+    // Enter inside them only adds lines *within* that island, never escapes
+    // it. Without a real block after them, a note whose last saved element
+    // is one of these leaves the cursor with nowhere to go. This is the fix
+    // for "нельзя перенести курсор из блоков на новую строку": it runs after
+    // every content load/insert (_initAll), not on every keystroke, so old
+    // notes saved before this fix get healed the moment they're reopened.
+    _ensureBlockSpacing() {
+        var self = this;
+        var isSpecial = function(el) {
+            if (!el || el.nodeType !== 1) return false;
+            if (el.classList && (
+                el.classList.contains('lne-video-wrapper') ||
+                el.classList.contains('video-embed-wrapper') ||
+                el.classList.contains('lne-code-wrapper') ||
+                el.classList.contains('lne-callout') ||
+                el.classList.contains('table-responsive')
+            )) return true;
+            return el.tagName === 'TABLE' || el.tagName === 'HR' || el.tagName === 'BLOCKQUOTE';
+        };
+        Array.prototype.slice.call(this.ed.children).forEach(function(el) {
+            if (!isSpecial(el)) return;
+            var next = el.nextElementSibling;
+            if (!next || isSpecial(next)) {
+                var p = document.createElement('p');
+                p.innerHTML = '<br>';
+                self.ed.insertBefore(p, next || null);
+            }
+        });
+        this._ensureFormulaCaretSpacing();
+    }
+
+    // A formula chip (.lne-formula-wrap) is contenteditable="false" — same
+    // deal as the video/code/table blocks above, but inline: it sits inside
+    // an ordinary <p>. If it's the *only* thing in that paragraph (typically
+    // a note whose entire content is one formula), there is no text node or
+    // <br> left for the caret to land on, so the user can't click into the
+    // note, press Enter, or start a new line at all. Give every formula-only
+    // paragraph a real caret slot. Runs from _ensureBlockSpacing, so it heals
+    // old notes on load and runs right after every fresh insert.
+    _ensureFormulaCaretSpacing() {
+        this.ed.querySelectorAll('.lne-formula-wrap').forEach(function(wrap) {
+            var parent = wrap.parentNode;
+            if (!parent) return;
+            var hasCaretSpot = false;
+            Array.prototype.forEach.call(parent.childNodes, function(n) {
+                if (n === wrap) return;
+                if (n.nodeType === 3 && n.textContent.length) hasCaretSpot = true;
+                if (n.nodeType === 1 && n.tagName === 'BR') hasCaretSpot = true;
+                if (n.nodeType === 1 && n.getAttribute && n.getAttribute('contenteditable') !== 'false') hasCaretSpot = true;
+            });
+            if (!hasCaretSpot) parent.insertBefore(document.createElement('br'), wrap.nextSibling);
+        });
+    }
+
+    // Pulls a caret that ended up inside a formula chip's MathML back out
+    // to just before/after the chip. See the mousedown/click and ArrowLeft/
+    // Right/Up/Down handling above for where this gets called from.
+    _escapeFormulaCaret(dir) {
+        var sel = window.getSelection();
+        if (!sel || !sel.rangeCount || !sel.isCollapsed) return false;
+        var node = sel.anchorNode;
+        if (!node) return false;
+        var el = node.nodeType === 1 ? node : node.parentNode;
+        var wrap = el && el.closest ? el.closest('.lne-formula-wrap') : null;
+        if (!wrap || !this.ed.contains(wrap)) return false;
+        var r = document.createRange();
+        if (dir === 'before') r.setStartBefore(wrap); else r.setStartAfter(wrap);
+        r.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(r);
+        return true;
+    }
+
     _insertHTML(html) {
         this._saveSnap();
         this._restoreRange();
@@ -824,6 +913,11 @@ class LocalNotesEditor {
         });
         d.querySelectorAll('.cl-opts-btn').forEach(function(btn) {
             btn.remove();
+        });
+        // "Show blocks" debug labels (see _toggleShowBlocks) are purely a
+        // live editing aid — never persist them into saved note HTML.
+        d.querySelectorAll('[data-lne-tag]').forEach(function(el) {
+            el.removeAttribute('data-lne-tag');
         });
         // Remove zero-width space spans left by old collapsed font-size logic
         d.querySelectorAll('span[style]').forEach(function(sp) {
@@ -940,6 +1034,40 @@ class LocalNotesEditor {
             self._saveSnap(); self._updateStatusbar(); self._onWikiLinkTyping();
         });
         this.ed.addEventListener('focus',     function() { if (!self.ed.innerHTML) self.ed.innerHTML = '<p><br></p>'; });
+
+        // Callout header controls — one delegated listener so they keep
+        // working after setContent()/undo()/paste rebuilds the DOM, with no
+        // separate per-block rebind step needed.
+        this.ed.addEventListener('click', function(e) {
+            var cycleBtn = e.target.closest('.lne-callout-type');
+            if (cycleBtn) { e.preventDefault(); e.stopPropagation(); self._cycleCallout(cycleBtn.closest('.lne-callout')); return; }
+            var delBtn = e.target.closest('.lne-callout-del');
+            if (delBtn) { e.preventDefault(); e.stopPropagation(); self._removeCallout(delBtn.closest('.lne-callout')); return; }
+        });
+        // Double-click a formula chip to edit its source (see _modalFormula)
+        this.ed.addEventListener('dblclick', function(e) {
+            var wrap = e.target.closest('.lne-formula-wrap');
+            if (wrap) { e.preventDefault(); self._modalFormula(wrap); }
+        });
+        // A formula chip renders raw MathML, and MathML's internal nodes
+        // confuse some browsers' caret placement even under
+        // contenteditable="false" on the wrapping span — a click landing on
+        // an <mi>/<mn>/<mo> glyph can park the caret *inside* that MathML
+        // subtree instead of just outside the chip, which is what "cursor
+        // stuck inside the formula" actually is. Take over the click
+        // ourselves and always land the caret right after the chip.
+        this.ed.addEventListener('mousedown', function(e) {
+            if (e.target.closest && e.target.closest('.lne-formula-wrap')) e.preventDefault();
+        });
+        this.ed.addEventListener('click', function(e) {
+            var wrap = e.target.closest && e.target.closest('.lne-formula-wrap');
+            if (!wrap) return;
+            var r = document.createRange();
+            r.setStartAfter(wrap); r.collapse(true);
+            var sel = window.getSelection();
+            sel.removeAllRanges(); sel.addRange(r);
+            self.ed.focus();
+        });
         
         // Selection change for bubble toolbar
         document.addEventListener('selectionchange', function() {
@@ -1034,6 +1162,20 @@ class LocalNotesEditor {
         }
         if (e.key === 'F12') { e.preventDefault(); this._toggleFocusMode(); return; }
         if (e.key === 'F11') { e.preventDefault(); this._toggleFullscreen(); return; }
+
+        // Same MathML-caret quirk as the click handler above, but for
+        // keyboard navigation: arrowing toward a formula chip can leave the
+        // caret parked somewhere inside its MathML instead of skipping over
+        // the (supposedly atomic) chip entirely. Let the browser's default
+        // movement happen, then on the next tick check whether we ended up
+        // inside a .lne-formula-wrap and, if so, hop out the same direction
+        // we were already travelling — so the caret keeps moving instead of
+        // getting stuck.
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+            var dir = (e.key === 'ArrowLeft' || e.key === 'ArrowUp') ? 'before' : 'after';
+            var self0 = this;
+            setTimeout(function() { self0._escapeFormulaCaret(dir); }, 0);
+        }
         
         // Slash commands — capture caret rect BEFORE preventDefault,
         // Slash menu trigger - multiple ways to activate for different keyboard layouts
@@ -1047,7 +1189,7 @@ class LocalNotesEditor {
         var isSlashTrigger = (
             (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) || // Normal slash
             (e.code === 'Slash' && !e.ctrlKey && !e.metaKey && !e.altKey) || // Slash by code
-            (e.ctrlKey && e.code === 'Space' && !e.metaKey && !e.altKey) // Ctrl+Space
+            (e.ctrlKey && e.code === 'Space' && !e.metaKey && !e.altKey && !e.shiftKey) // Ctrl+Space (not Ctrl+Shift+Space — that's non-breaking space, see below)
         );
         if (isSlashTrigger && !this._slashMenuOpen) {
             var _slashSel = window.getSelection();
@@ -1117,6 +1259,12 @@ class LocalNotesEditor {
         }
         // Tab inside editor → indent
         if (e.key === 'Tab') { e.preventDefault(); this._saveSnap(); document.execCommand(e.shiftKey ? 'outdent' : 'indent'); }
+        // Ctrl+Shift+Space → non-breaking space (TinyMCE's "nonbreaking" plugin)
+        if (e.code === 'Space' && e.shiftKey && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault(); this._saveSnap();
+            document.execCommand('insertHTML', false, '&nbsp;');
+            this._syncState();
+        }
     }
 
     _onPaste(e) {
@@ -1587,7 +1735,450 @@ class LocalNotesEditor {
     _insertBlockquote() {
         this._saveSnap();
         document.execCommand('formatBlock', false, 'blockquote');
+        this._ensureBlockSpacing();
         this._syncState();
+    }
+
+    // ── Callout blocks (Note / Tip / Warning / Important) ──────────────────
+    // Not part of TinyMCE Free — added because a block-level "callout" box is
+    // one of the most-requested upgrades over a plain blockquote in modern
+    // note apps. Reuses the exact architecture the code block already uses
+    // above: a contenteditable="false" header with controls, plus a
+    // separate editable island for the text — so it costs no new plumbing,
+    // only new markup + CSS, staying true to the project's zero-dependency
+    // philosophy. Header buttons are wired via one delegated listener in
+    // _wireEditor (see below), so they keep working after reload / undo /
+    // paste without a separate rebind step.
+    _calloutMeta(type) {
+        var m = {
+            note:    { icon: 'bi-info-circle-fill',         label: this._('calloutNote','Note') },
+            tip:     { icon: 'bi-lightbulb-fill',            label: this._('calloutTip','Tip') },
+            warning: { icon: 'bi-exclamation-triangle-fill', label: this._('calloutWarning','Warning') },
+            danger:  { icon: 'bi-exclamation-octagon-fill',  label: this._('calloutDanger','Important') }
+        };
+        return m[type] || m.note;
+    }
+
+    _makeCalloutWrapper(type, bodyHtml) {
+        var meta = this._calloutMeta(type);
+        var wrapper = document.createElement('div');
+        wrapper.className = 'lne-callout lne-callout-' + type;
+        wrapper.setAttribute('data-callout', type);
+        wrapper.innerHTML =
+            '<div class="lne-callout-header" contenteditable="false">' +
+                '<span class="lne-callout-icon"><i class="bi ' + meta.icon + '"></i></span>' +
+                '<button type="button" class="lne-callout-type" title="' + this._('calloutCycle','Change type') + '">' + meta.label + '</button>' +
+                '<button type="button" class="lne-callout-del" title="' + this._('remove','Remove') + '"><i class="bi bi-trash3"></i></button>' +
+            '</div>' +
+            '<div class="lne-callout-body" contenteditable="true">' + (bodyHtml || ('<p>' + this._('calloutPlaceholder','Note text…') + '</p>')) + '</div>';
+        return wrapper;
+    }
+
+    _insertCallout(type) {
+        this._saveSnap();
+        var wrapper = this._makeCalloutWrapper(type || 'note');
+        var body = wrapper.querySelector('.lne-callout-body');
+        this._insertBlockNode(wrapper, body);
+        this._syncState();
+    }
+
+    _cycleCallout(wrapper) {
+        if (!wrapper) return;
+        var order = ['note', 'tip', 'warning', 'danger'];
+        var cur = wrapper.getAttribute('data-callout') || 'note';
+        var next = order[(order.indexOf(cur) + 1) % order.length];
+        this._saveSnap();
+        wrapper.className = 'lne-callout lne-callout-' + next;
+        wrapper.setAttribute('data-callout', next);
+        var meta = this._calloutMeta(next);
+        var icon = wrapper.querySelector('.lne-callout-icon');
+        var label = wrapper.querySelector('.lne-callout-type');
+        if (icon) icon.innerHTML = '<i class="bi ' + meta.icon + '"></i>';
+        if (label) label.textContent = meta.label;
+        this._syncState();
+    }
+
+    _removeCallout(wrapper) {
+        if (!wrapper || !wrapper.parentNode) return;
+        this._saveSnap();
+        wrapper.parentNode.removeChild(wrapper);
+        this._syncState();
+    }
+
+    // ── Show blocks (TinyMCE "visualblocks" ported as a pure CSS toggle) ───
+    _toggleShowBlocks() {
+        var on = this.ed.classList.toggle('lne-show-blocks');
+        if (on) {
+            // Tag each block with its element name once — the CSS reads it
+            // back via attr(data-lne-tag) to draw the little label, so no
+            // per-toggle DOM walk is needed after the first time.
+            this.ed.querySelectorAll('p, div, h1, h2, h3, h4, h5, h6, blockquote, li').forEach(function(el) {
+                if (!el.hasAttribute('data-lne-tag')) el.setAttribute('data-lne-tag', el.tagName.toLowerCase());
+            });
+        }
+        var btn = this.toolbar ? this.toolbar.querySelector('[data-cmd="showBlocks"]') : null;
+        if (btn) btn.classList.toggle('active', on);
+    }
+
+    // ── Insert date/time (TinyMCE "insertdatetime") ─────────────────────────
+    _insertDateTime() {
+        this._saveSnap();
+        var lang = (typeof getCurrentLanguage === 'function' ? getCurrentLanguage() : null) ||
+                   (typeof window.currentLang !== 'undefined' ? window.currentLang : 'en');
+        var locale = lang === 'ru' ? 'ru-RU' : lang === 'ua' ? 'uk-UA' : lang;
+        var now = new Date(), text;
+        try {
+            text = now.toLocaleDateString(locale, { day: '2-digit', month: 'short', year: 'numeric' }) +
+                ' ' + now.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+        } catch (e) { text = now.toLocaleString(); }
+        document.execCommand('insertHTML', false, text);
+        this._syncState();
+    }
+
+    // ── HTML source view/edit (TinyMCE "code" plugin) ───────────────────────
+    // Pretty-printed with a small hand-rolled DOM-walking formatter (no
+    // library) so nested blocks are readable/editable — but the added
+    // indentation whitespace is only for display: on Apply it's stripped
+    // back out (see _htmlCleanupWhitespace) before the HTML becomes real
+    // note content, so it can never leak an extra visible space into the
+    // rendered note. <pre>/<code> content is always left byte-for-byte
+    // untouched since whitespace there is meaningful.
+    _htmlBlockTags() {
+        return ['P','DIV','H1','H2','H3','H4','H5','H6','BLOCKQUOTE','UL','OL','LI',
+                'TABLE','THEAD','TBODY','TR','TD','TH','HR','PRE'];
+    }
+
+    _htmlHasBlockDescendant(node) {
+        var blocks = this._htmlBlockTags();
+        for (var i = 0; i < node.children.length; i++) {
+            var c = node.children[i];
+            if (blocks.indexOf(c.tagName) !== -1) return true;
+            if (this._htmlHasBlockDescendant(c)) return true;
+        }
+        return false;
+    }
+
+    _prettyPrintHTML(html) {
+        var self = this;
+        var container = document.createElement('div');
+        container.innerHTML = html;
+        var blocks = this._htmlBlockTags();
+        var voidTags = { BR: 1, HR: 1, IMG: 1, INPUT: 1 };
+
+        function openTag(el) {
+            var attrs = Array.prototype.map.call(el.attributes, function(a) {
+                return ' ' + a.name + '="' + a.value.replace(/"/g, '&quot;') + '"';
+            }).join('');
+            return '<' + el.tagName.toLowerCase() + attrs + '>';
+        }
+        function closeTag(el) { return '</' + el.tagName.toLowerCase() + '>'; }
+        function serializeInline(node) {
+            if (node.nodeType === 3) return node.nodeValue;
+            if (node.nodeType !== 1) return '';
+            if (node.tagName === 'MATH') return node.outerHTML; // never touch MathML internals
+            if (voidTags[node.tagName]) return openTag(node);
+            return openTag(node) + Array.prototype.map.call(node.childNodes, serializeInline).join('') + closeTag(node);
+        }
+        function serializeBlock(node, depth) {
+            var indent = '  '.repeat(depth);
+            if (node.tagName === 'PRE') return indent + node.outerHTML + '\n'; // verbatim, whitespace-sensitive
+            if (!self._htmlHasBlockDescendant(node)) return indent + serializeInline(node) + '\n';
+            var out = indent + openTag(node) + '\n';
+            var lineBuf = '';
+            var flush = function() { if (lineBuf.trim()) out += indent + '  ' + lineBuf.trim() + '\n'; lineBuf = ''; };
+            Array.prototype.forEach.call(node.childNodes, function(child) {
+                if (child.nodeType === 1 && blocks.indexOf(child.tagName) !== -1) { flush(); out += serializeBlock(child, depth + 1); }
+                else if (child.nodeType === 3) { if (child.nodeValue.trim()) lineBuf += child.nodeValue; }
+                else if (child.nodeType === 1) { lineBuf += serializeInline(child); }
+            });
+            flush();
+            return out + indent + closeTag(node) + '\n';
+        }
+
+        var result = '';
+        Array.prototype.forEach.call(container.childNodes, function(top) {
+            if (top.nodeType === 1) result += serializeBlock(top, 0);
+            else if (top.nodeType === 3 && top.nodeValue.trim()) result += top.nodeValue.trim() + '\n';
+        });
+        return result.replace(/\n+$/, '');
+    }
+
+    // Strips only the indentation whitespace *we* introduced (any
+    // whitespace-only text node that contains a newline), everywhere except
+    // inside <pre>/<code> — so re-applying unedited pretty-printed HTML
+    // round-trips back to the original, and hand-typed edits keep any real
+    // spaces the user typed (those never contain a newline).
+    _htmlCleanupWhitespace(container) {
+        var walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
+        var toRemove = [];
+        var node;
+        while ((node = walker.nextNode())) {
+            if (!/\n/.test(node.nodeValue) || !/^\s*$/.test(node.nodeValue)) continue;
+            if (node.parentNode && node.parentNode.closest && node.parentNode.closest('pre, code')) continue;
+            toRemove.push(node);
+        }
+        toRemove.forEach(function(n) { n.parentNode.removeChild(n); });
+    }
+
+    _modalSourceView() {
+        var self = this;
+        var esc = function(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
+        this._modal(this._('viewSource', 'HTML source'), 'bi bi-braces',
+            '<textarea id="lne-src" class="lne-inp lne-src-ta" spellcheck="false">' + esc(this._prettyPrintHTML(this.getContent())) + '</textarea>' +
+            '<p class="lne-hint">' + this._('viewSourceHint', 'Edit the raw HTML and apply — use with care.') + '</p>',
+        function(ov, close) {
+            var ta = ov.querySelector('#lne-src');
+            self._saveSnap();
+            self.ed.innerHTML = ta.value;
+            self._htmlCleanupWhitespace(self.ed);
+            self._cleanZeroWidthSpans(self.ed);
+            self._initAll();
+            self._saveSnap();
+            self._updateStatusbar();
+            self._syncState();
+            close();
+        }, true);
+    }
+
+    // ── Formula insertion ────────────────────────────────────────────────
+    // A full MathJax/KaTeX integration would each add hundreds of KB of JS —
+    // directly against this project's "close to zero dependencies" ethos.
+    // Modern engines (Chromium 109+, Firefox, Safari 16.4+) render MathML
+    // natively, so instead of shipping a rendering *library* we ship a small
+    // hand-written parser that turns a short, readable text syntax
+    // (a/b, x^2, sqrt(x), sum_(i=1)^n, pi, alpha, <=, ->, …) into a <math>
+    // element the browser draws for free. Each formula keeps its source
+    // string on the wrapper so it can be reopened and edited (double-click).
+    _formulaExamples() {
+        return [
+            { key: 'formulaExQuadratic',  label: 'Quadratic formula',        src: 'x = (-b pm sqrt(b^2-4ac))/(2a)' },
+            { key: 'formulaExPythagoras', label: 'Pythagorean theorem',      src: 'a^2+b^2=c^2' },
+            { key: 'formulaExCircleArea', label: 'Circle area',              src: 'S = pi r^2' },
+            { key: 'formulaExMassEnergy', label: 'Mass–energy equivalence',  src: 'E = m c^2' },
+            { key: 'formulaExSum',        label: 'Sum',                      src: 'sum_(i=1)^n x_i' },
+            { key: 'formulaExIntegral',   label: 'Definite integral',        src: 'int_a^b f(x) dx' },
+            { key: 'formulaExLimit',      label: 'Limit',                    src: 'lim_(x->0) (sin x)/x = 1' },
+            { key: 'formulaExEuler',      label: "Euler's identity",         src: 'e^(i pi) + 1 = 0' },
+            { key: 'formulaExDerivative', label: 'Derivative',               src: '(df)/(dx) = lim_(h->0) (f(x+h)-f(x))/h' },
+            { key: 'formulaExSqrt',       label: 'Square root',              src: 'sqrt(x^2+y^2)' }
+        ];
+    }
+
+    _formulaSymbols() {
+        return {
+            pi:'π', alpha:'α', beta:'β', gamma:'γ', delta:'δ', epsilon:'ε', zeta:'ζ', eta:'η',
+            theta:'θ', iota:'ι', kappa:'κ', lambda:'λ', mu:'μ', nu:'ν', xi:'ξ', rho:'ρ',
+            sigma:'σ', tau:'τ', upsilon:'υ', phi:'φ', chi:'χ', psi:'ψ', omega:'ω',
+            Gamma:'Γ', Delta:'Δ', Theta:'Θ', Lambda:'Λ', Xi:'Ξ', Pi:'Π', Sigma:'Σ', Phi:'Φ', Psi:'Ψ', Omega:'Ω',
+            infinity:'∞', infty:'∞', partial:'∂', nabla:'∇', degree:'°',
+            pm:'±', mp:'∓', cdot:'⋅', times:'×', divsym:'÷',
+            le:'≤', leq:'≤', ge:'≥', geq:'≥', ne:'≠', neq:'≠', approx:'≈', equiv:'≡', propto:'∝',
+            rarr:'→', larr:'←', harr:'↔', implies:'⇒', iff:'⇔',
+            isin:'∈', notin:'∉', subset:'⊂', supset:'⊃', cup:'∪', cap:'∩',
+            forall:'∀', exists:'∃', emptyset:'∅'
+        };
+    }
+
+    _formulaFunctions() {
+        return ['sin','cos','tan','cot','sec','csc','sinh','cosh','tanh','log','ln','lim','min','max','exp','det','gcd','arg','mod'];
+    }
+
+    _formulaBigOps() { return { sum:'∑', prod:'∏', int:'∫', oint:'∮', coprod:'∐' }; }
+
+    // Tiny tokenizer + recursive-descent parser.
+    //   expr  := term (('+'|'-'|'='|'<'|'>'|'<='|'>='|'!=') term)*
+    //   term  := power (('*'|'/') power | power)*   -- '/' → fraction, juxtaposition → implicit product
+    //   power := atom (('^'|'_') atom)*
+    //   atom  := number | 'sqrt(' expr ')' | 'frac(' expr ',' expr ')' | name '(' expr ')' | name | '(' expr ')'
+    _formulaTokenize(src) {
+        var toks = [];
+        var re = /\s*(->|<=|>=|!=|[A-Za-z]+|[0-9]+(?:\.[0-9]+)?|.)\s*/g;
+        var m;
+        while ((m = re.exec(src)) && m[1]) toks.push(m[1]);
+        return toks;
+    }
+
+    _formulaParse(src) {
+        var self = this;
+        var toks = this._formulaTokenize(src);
+        var pos = 0;
+        function peek() { return toks[pos]; }
+        function next() { return toks[pos++]; }
+        function parseExpr() {
+            var node = parseTerm();
+            while (['+','-','=','<','>','<=','>=','!=','->'].indexOf(peek()) !== -1) {
+                var op = next();
+                node = { t: 'row', c: [node, { t: 'op', v: op === '->' ? '→' : op }, parseTerm()] };
+            }
+            return node;
+        }
+        function parseTerm() {
+            var node = parsePower();
+            while (peek() === '*' || peek() === '/' || (peek() !== undefined && /^[A-Za-z0-9(]/.test(peek()))) {
+                if (peek() === '/') { next(); node = { t: 'frac', num: node, den: parsePower() }; }
+                else if (peek() === '*') { next(); node = { t: 'row', c: [node, { t: 'op', v: '⋅' }, parsePower()] }; }
+                else { node = { t: 'row', c: [node, parsePower()] }; }
+            }
+            return node;
+        }
+        function parsePower() {
+            var node = parseAtom();
+            while (peek() === '^' || peek() === '_') {
+                var op = next();
+                node = { t: op === '^' ? 'sup' : 'sub', base: node, script: parseAtom() };
+            }
+            return node;
+        }
+        function parseAtom() {
+            var tk = peek();
+            if (tk === undefined) return { t: 'row', c: [] };
+            if (tk === '(') { next(); var e = parseExpr(); if (peek() === ')') next(); return { t: 'paren', c: e }; }
+            if (/^[0-9]/.test(tk)) { next(); return { t: 'num', v: tk }; }
+            if (/^[A-Za-z]+$/.test(tk)) {
+                next();
+                if (tk === 'sqrt' && peek() === '(') { next(); var inner = parseExpr(); if (peek() === ')') next(); return { t: 'sqrt', c: inner }; }
+                if (tk === 'frac' && peek() === '(') {
+                    next(); var a = parseExpr(); if (peek() === ',') next();
+                    var b = parseExpr(); if (peek() === ')') next();
+                    return { t: 'frac', num: a, den: b };
+                }
+                if (self._formulaFunctions().indexOf(tk) !== -1 || self._formulaBigOps()[tk] || self._formulaSymbols()[tk]) {
+                    return { t: 'sym', v: tk };
+                }
+                return { t: 'id', v: tk };
+            }
+            next();
+            return { t: 'op', v: tk === ',' ? ',' : tk };
+        }
+        return parseExpr();
+    }
+
+    _formulaEsc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    _formulaNodeToMathML(node) {
+        var self = this;
+        if (!node) return '';
+        var rec = function(n) { return self._formulaNodeToMathML(n); };
+        var esc = function(s) { return self._formulaEsc(s); };
+        switch (node.t) {
+            case 'row':   return node.c.map(rec).join('');
+            case 'paren': return '<mo>(</mo>' + rec(node.c) + '<mo>)</mo>';
+            case 'num':   return '<mn>' + esc(node.v) + '</mn>';
+            case 'op': {
+                var opMap = { '<=':'≤', '>=':'≥', '!=':'≠' };
+                return '<mo>' + esc(opMap[node.v] || node.v) + '</mo>';
+            }
+            case 'id':    return '<mi>' + esc(node.v) + '</mi>';
+            case 'sym': {
+                var big = this._formulaBigOps()[node.v];
+                if (big) return '<mo>' + esc(big) + '</mo>';
+                if (this._formulaFunctions().indexOf(node.v) !== -1) return '<mi mathvariant="normal">' + esc(node.v) + '</mi>';
+                var sym = this._formulaSymbols()[node.v];
+                return '<mi>' + esc(sym || node.v) + '</mi>';
+            }
+            case 'sqrt':  return '<msqrt>' + rec(node.c) + '</msqrt>';
+            case 'frac':  return '<mfrac><mrow>' + rec(node.num) + '</mrow><mrow>' + rec(node.den) + '</mrow></mfrac>';
+            case 'sup':   return '<msup><mrow>' + rec(node.base) + '</mrow><mrow>' + rec(node.script) + '</mrow></msup>';
+            case 'sub':   return '<msub><mrow>' + rec(node.base) + '</mrow><mrow>' + rec(node.script) + '</mrow></msub>';
+            default:      return '';
+        }
+    }
+
+    _formulaToMathML(src) {
+        var ast;
+        try { ast = this._formulaParse(src); } catch (e) { ast = { t: 'id', v: src }; }
+        return '<math xmlns="http://www.w3.org/1998/Math/MathML" class="lne-formula">' + this._formulaNodeToMathML(ast) + '</math>';
+    }
+
+    _makeFormulaWrapper(src) {
+        var span = document.createElement('span');
+        span.className = 'lne-formula-wrap';
+        span.contentEditable = 'false';
+        span.setAttribute('data-formula-src', src);
+        span.title = this._('formulaEditHint', 'Double-click to edit');
+        span.innerHTML = this._formulaToMathML(src);
+        return span;
+    }
+
+    _insertFormula(src) {
+        if (!src || !src.trim()) return;
+        this._saveSnap();
+        this._restoreRange();
+        var wrapper = this._makeFormulaWrapper(src.trim());
+        var sel = window.getSelection();
+        if (sel && sel.rangeCount) {
+            var r = sel.getRangeAt(0);
+            r.deleteContents();
+            r.insertNode(wrapper);
+            this._ensureFormulaCaretSpacing();
+            r.setStartAfter(wrapper); r.collapse(true);
+            sel.removeAllRanges(); sel.addRange(r);
+        } else { this.ed.appendChild(wrapper); this._ensureFormulaCaretSpacing(); }
+        this._syncState();
+    }
+
+    _updateFormulaWrapper(wrapper, src) {
+        if (!wrapper || !src || !src.trim()) return;
+        this._saveSnap();
+        wrapper.setAttribute('data-formula-src', src.trim());
+        wrapper.innerHTML = this._formulaToMathML(src.trim());
+        this._syncState();
+    }
+
+    _modalFormula(existingWrapper) {
+        var self = this;
+        var examples = this._formulaExamples();
+        var exGrid = examples.map(function(ex, i) {
+            return '<button type="button" class="lne-formula-ex" data-i="' + i + '">' + self._formulaToMathML(ex.src) +
+                '<span class="lne-formula-ex-label">' + self._(ex.key, ex.label) + '</span></button>';
+        }).join('');
+        var initialSrc = existingWrapper ? (existingWrapper.getAttribute('data-formula-src') || '') : '';
+        var escAttr = function(s) { return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;'); };
+
+        var r = this._modal(this._(existingWrapper ? 'formulaEditTitle' : 'insertFormula', existingWrapper ? 'Edit formula' : 'Insert formula'), 'bi bi-plus-slash-minus',
+            '<div class="lne-tabs">' +
+                '<button type="button" class="lne-tab' + (existingWrapper ? '' : ' lne-tab-a') + '" data-t="examples">' + this._('formulaExamples','Examples') + '</button>' +
+                '<button type="button" class="lne-tab' + (existingWrapper ? ' lne-tab-a' : '') + '" data-t="custom">' + this._('formulaCustom','Custom') + '</button>' +
+            '</div>' +
+            '<div class="lne-tp" id="lne-tp-examples" style="' + (existingWrapper ? 'display:none' : '') + '"><div class="lne-formula-grid">' + exGrid + '</div></div>' +
+            '<div class="lne-tp" id="lne-tp-custom" style="' + (existingWrapper ? '' : 'display:none') + '">' +
+                '<input type="text" id="lne-formula-src" class="lne-inp" placeholder="a/b + sqrt(x^2+y^2)" value="' + escAttr(initialSrc) + '">' +
+                '<div class="lne-formula-preview" id="lne-formula-preview">' + (initialSrc ? this._formulaToMathML(initialSrc) : '') + '</div>' +
+                '<p class="lne-hint">' + this._formulaEsc(this._('formulaHint','a/b — fraction · x^n — power · x_n — index · sqrt(x) — root · frac(a,b) · pi, alpha, sum, int, infinity · <=, >=, !=, ->')) + '</p>' +
+            '</div>',
+        function(ov, close) {
+            var onCustom = ov.querySelector('#lne-tp-custom').style.display !== 'none';
+            if (onCustom) {
+                var val = ov.querySelector('#lne-formula-src').value;
+                if (existingWrapper) self._updateFormulaWrapper(existingWrapper, val);
+                else self._insertFormula(val);
+            }
+            close();
+        }, true);
+
+        setTimeout(function() {
+            r.ov.querySelectorAll('.lne-tab').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    r.ov.querySelectorAll('.lne-tab').forEach(function(b) { b.classList.remove('lne-tab-a'); });
+                    btn.classList.add('lne-tab-a');
+                    r.ov.querySelector('#lne-tp-examples').style.display = (btn.dataset.t === 'examples') ? '' : 'none';
+                    r.ov.querySelector('#lne-tp-custom').style.display = (btn.dataset.t === 'custom') ? '' : 'none';
+                });
+            });
+            r.ov.querySelectorAll('.lne-formula-ex').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var ex = examples[+btn.getAttribute('data-i')];
+                    if (existingWrapper) self._updateFormulaWrapper(existingWrapper, ex.src);
+                    else self._insertFormula(ex.src);
+                    r.close();
+                });
+            });
+            var input = r.ov.querySelector('#lne-formula-src');
+            var preview = r.ov.querySelector('#lne-formula-preview');
+            input.addEventListener('input', function() {
+                preview.innerHTML = input.value.trim() ? self._formulaToMathML(input.value) : '';
+            });
+        }, 0);
     }
 
     _insertTemplate(type) {
@@ -3038,8 +3629,10 @@ class LocalNotesEditor {
         var formatting = this._shortcutRow('bold') + this._shortcutRow('italic') + this._shortcutRow('underline') +
             this._shortcutRow('indent') + this._shortcutRow('outdent');
         var inserting = this._shortcutRow('insertLink') + this._shortcutRow('insertWikiLink') +
-            this._shortcutRowRaw('bi bi-lightning-charge', _('slashMenuTitle','Quick Insert'), '/');
-        var viewing = this._shortcutRow('focusMode') + this._shortcutRow('fullscreen') + this._shortcutRow('shortcutsHelp');
+            this._shortcutRowRaw('bi bi-lightning-charge', _('slashMenuTitle','Quick Insert'), '/') +
+            this._shortcutRowRaw('bi bi-fonts', _('nonbreakingSpace','Non-breaking space'), 'Ctrl+Shift+Space');
+        var viewing = this._shortcutRow('focusMode') + this._shortcutRow('fullscreen') +
+            this._shortcutRow('showBlocks') + this._shortcutRow('viewSource') + this._shortcutRow('shortcutsHelp');
         var body =
             group(_('shortcutsGroupEditing','Editing'), editing) +
             group(_('shortcutsGroupFormatting','Formatting'), formatting) +
@@ -4000,10 +4593,31 @@ class LocalNotesEditor {
         this._initWikiLinks();
         this._initChecklists();
         this._initCodeBlocks();
+        this._ensureBlockSpacing();
         this._initContextToolbars();
     }
 
-    focus()  { this.ed.focus(); }
+    // Places the caret at a well-defined boundary — the very start of the
+    // editor's own content — instead of leaving it to whatever the browser
+    // decides on focus(). A raw ed.focus() lets the browser pick where the
+    // caret lands, and for a note that opens with a formula chip first,
+    // that can dive into its MathML the same way a stray click can (see
+    // the mousedown/click and Arrow key handling above). setStart(this.ed,
+    // 0) is a boundary of the editor *container* itself, not of any one
+    // child, so there's no "first selectable position inside the content"
+    // for the browser to resolve into the formula's interior.
+    _placeSafeCaret() {
+        if (!this.ed.firstChild) return;
+        var r = document.createRange();
+        r.setStart(this.ed, 0);
+        r.collapse(true);
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(r);
+        this._escapeFormulaCaret('before');
+    }
+
+    focus()  { this.ed.focus(); this._placeSafeCaret(); }
 
     clear()  {
         this.ed.innerHTML = ''; this.undoStack = []; this.redoStack = [];
