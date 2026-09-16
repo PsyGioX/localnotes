@@ -31,13 +31,13 @@
     const texts = loadingTexts[lang] || loadingTexts.en;
 
     el.innerHTML = `
-        <div style="display:flex;flex-direction:column;align-items:center;gap:16px;">
+        <div class="app-preloader-inner">
             <div id="app-preloader-spinner"></div>
             <div id="app-preloader-text">Local Notes</div>
-            <div style="width:220px;height:3px;background:rgba(174,252,110,0.15);border-radius:3px;overflow:hidden;margin-top:4px;">
-                <div id="app-preloader-bar" style="height:100%;width:0%;background:#aefc6e;border-radius:3px;transition:width 0.3s cubic-bezier(0.4,0,0.2,1);"></div>
+            <div class="app-preloader-progress">
+                <div id="app-preloader-bar"></div>
             </div>
-            <div id="app-preloader-status" style="font-family:sans-serif;font-size:12px;color:rgba(255,255,255,0.45);min-height:18px;">${texts[0]}</div>
+            <div id="app-preloader-status">${texts[0]}</div>
         </div>
     `;
 
@@ -53,14 +53,19 @@
         if (status) status.textContent = texts[textIndex];
     }, 600);
 
-    // Progress fills to 90% over 3s, then polls window.appReady flag
+    // Progress reaches the end independently; the overlay still waits for
+    // the real appReady signal before fading out.
     const startTime = Date.now();
     const tick = () => {
         if (hidden) return;
         const t = Math.min((Date.now() - startTime) / 3000, 1);
-        if (bar) bar.style.width = (easeOut(t) * 90) + '%';
+        if (bar) bar.style.width = (easeOut(t) * 100) + '%';
 
-        if (window.appReady) {
+        // App Lock deliberately waits for user input before the main init
+        // promise resolves. Let the lock screen become interactive instead
+        // of keeping it trapped behind the preloader.
+        const lockIsVisible = document.querySelector('.ln-lock-overlay');
+        if (window.appReady || lockIsVisible) {
             hidePreloader();
         } else {
             requestAnimationFrame(tick);
@@ -84,8 +89,9 @@
         }, 200);
     }
 
-    // Safety fallback — hide after 10s no matter what
-    setTimeout(() => { window.appReady = true; }, 10000);
+    // Safety fallback — a slow optional module must never leave the app
+    // permanently covered by the startup screen.
+    setTimeout(() => { window.appReady = true; }, 6000);
 
     window.resetPreloader = function () { sessionStorage.removeItem('preloaderLastShown'); };
 })();

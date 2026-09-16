@@ -14,29 +14,15 @@
     "categories": ["productivity", "utilities", "business", "education", "lifestyle", "security", "privacy"],
     "keywords": ["notes", "secure", "encryption", "AES-256", "offline", "PWA", "productivity", "privacy", "local storage", "multi-language", "GDPR", "zero-data", "industry-standard", "cross-platform"],
     "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7",
-    "screenshots": [
-        {
-            "src": "/resources/screenshot-desktop.png",
-            "sizes": "1280x720",
-            "type": "image/png",
-            "form_factor": "wide",
-            "label": "Desktop view of Local Notes application"
-        },
-        {
-            "src": "/resources/screenshot-mobile.png",
-            "sizes": "390x844",
-            "type": "image/png",
-            "form_factor": "narrow",
-            "label": "Mobile view of Local Notes application"
-        },
-        {
-            "src": "/resources/obl_web.jpg",
-            "sizes": "1200x630",
-            "type": "image/jpeg",
-            "form_factor": "wide",
-            "label": "Local Notes - Secure note-taking with AES-256 encryption"
-        }
-    ],
+        "screenshots": [
+            {
+                "src": "/resources/obl_web.jpg",
+                "sizes": "1200x630",
+                "type": "image/jpeg",
+                "form_factor": "wide",
+                "label": "Local Notes - Secure note-taking with AES-256 encryption"
+            }
+        ],
     "icons": [
         {
             "src": "/favicon/favicon-16x16.png",

@@ -1325,6 +1325,8 @@ textarea.lne-inp { resize: vertical; }
     border-bottom: 1px solid var(--border-color, #272727);
     box-shadow: 0 2px 8px rgba(0,0,0,.2);
     animation: lneFindSlideDown .18s ease;
+    box-sizing: border-box;
+    max-width: 100%;
 }
 @keyframes lneFindSlideDown {
     from { opacity: 0; transform: translateY(-100%); }
@@ -1334,6 +1336,9 @@ textarea.lne-inp { resize: vertical; }
     display: flex;
     align-items: center;
     gap: 8px;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
 }
 .lne-find-bar-row2 {
     padding-top: 4px;
@@ -1348,6 +1353,7 @@ textarea.lne-inp { resize: vertical; }
 .lne-find-bar-inp,
 .lne-find-bar-repl {
     flex: 1;
+    min-width: 0;
     max-width: 280px;
     height: 32px;
     padding: 0 10px;

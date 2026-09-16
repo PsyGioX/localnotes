@@ -15,20 +15,6 @@
     "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7",
     "screenshots": [
         {
-            "src": "/resources/screenshot-desktop-pl.png",
-            "sizes": "1280x720",
-            "type": "image/png",
-            "form_factor": "wide",
-            "label": "Widok desktopowy aplikacji Lokalne Notatki"
-        },
-        {
-            "src": "/resources/screenshot-mobile-pl.png",
-            "sizes": "390x844",
-            "type": "image/png",
-            "form_factor": "narrow",
-            "label": "Widok mobilny aplikacji Lokalne Notatki"
-        },
-        {
             "src": "/resources/obl_web_pl.jpg",
             "sizes": "1200x630",
             "type": "image/jpeg",

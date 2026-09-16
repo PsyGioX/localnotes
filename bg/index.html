@@ -251,55 +251,26 @@
     
     <!-- Prevent FOUC: hide only main content, NOT the preloader -->
     <style>
-        #app-preloader {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: #0a0a0a;
-            transition: opacity 0.3s ease;
-        }
-        @media (prefers-color-scheme: light) {
-            #app-preloader { background: #ffffff; }
-            #app-preloader-spinner { border-top-color: #28a745 !important; }
-            #app-preloader-text { color: #212529 !important; }
-        }
-        #app-preloader-spinner {
-            width: 48px; height: 48px;
-            border: 4px solid rgba(174,252,110,0.2);
-            border-top: 4px solid #aefc6e;
-            border-radius: 50%;
-            animation: _spin 0.8s linear infinite;
-        }
-        @keyframes _spin { to { transform: rotate(360deg); } }
-        #app-preloader-text {
-            margin-top: 18px;
-            color: #ffffff;
-            font-family: sans-serif;
-            font-size: 15px;
-            opacity: 0.75;
-        }
-        body.styles-loading .info-app,
-        body.styles-loading .center_nav,
-        body.styles-loading .app-notes-center,
-        body.styles-loading footer { visibility: hidden; }
+        #app-preloader { position:fixed; inset:0; z-index:100000; display:flex; align-items:center; justify-content:center; background:radial-gradient(circle at 50% 42%,rgba(174,252,110,.09),transparent 34%),#0a0a0a; transition:opacity .45s ease,visibility .45s ease; }
+        #app-preloader-spinner { position:relative; width:clamp(54px,14vw,76px); height:clamp(54px,14vw,76px); border:2px solid rgba(174,252,110,.18); border-top-color:#aefc6e; border-right-color:rgba(174,252,110,.7); border-radius:50%; box-shadow:0 0 30px rgba(174,252,110,.18),inset 0 0 18px rgba(174,252,110,.08); animation:none; }
+        .app-preloader-inner { display:flex; flex-direction:column; align-items:center; gap:16px; width:min(86vw,280px); }
+        #app-preloader-text { color:#fff; font:15px sans-serif; opacity:.75; }
+        @keyframes _spin { to { transform:rotate(360deg); } } @keyframes _counterSpin { to { transform:rotate(-360deg); } }
+        @media (prefers-color-scheme:light) { #app-preloader { background:#fff; } #app-preloader-spinner { border-top-color:#28a745; } #app-preloader-text { color:#212529; } }
+        @media (prefers-reduced-motion:reduce) { #app-preloader-spinner,#app-preloader-spinner::before { animation:none; } }
+        body.styles-loading .info-app, body.styles-loading .center_nav, body.styles-loading .app-notes-center, body.styles-loading footer { visibility:hidden; }
     </style>
     <!-- Page init: styles-loading class, cache cleanup, async CSS loading -->
-    <script src="/js/page-init.js?v=1.9.14"></script>
-    
+    <script src="../js/page-init.js?v=1.9.14"></script>
     <link rel="apple-touch-icon" sizes="180x180" href="../favicon/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="../favicon/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="../favicon/favicon-16x16.png">
     <link rel="manifest" href="../favicon/site.webmanifest">
-
     <!-- Hreflang tags for SEO — defined once above -->
 </head>
 
 <body class="styles-loading">
+    <div id="app-preloader" aria-label="Loading" role="status"><div class="app-preloader-inner"><div id="app-preloader-spinner"></div><div id="app-preloader-text">Local Notes</div></div></div>
 
     <!-- Google Tag Manager (noscript) -->
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MVKPW88F" height="0" width="0"

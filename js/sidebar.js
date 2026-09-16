@@ -20,7 +20,7 @@
         return fallback;
     }
 
-    let sidebarEl, listEl, headerCountEl, emptyEl, toggleTabEl, backdropEl;
+    let sidebarEl, listEl, headerCountEl, emptyEl, toggleTabEl, backdropEl, sidebarSearchEl;
     let selectionBarEl, selectionTextEl;
     let highlightTimeout = null;
     let currentQuery = '';
@@ -35,9 +35,10 @@
         sidebarEl.className = 'ln-sidebar';
         sidebarEl.innerHTML =
             '<div class="ln-sidebar-header">' +
-                '<span class="ln-sidebar-title"></span>' +
+                '<div class="ln-sidebar-heading"><span class="ln-sidebar-title"></span><span class="ln-sidebar-search-icon"><i class="bi bi-search"></i></span></div>' +
                 '<button type="button" class="ln-sidebar-close" aria-label="Close"><i class="bi bi-x-lg"></i></button>' +
             '</div>' +
+            '<div class="ln-sidebar-search-wrap"><i class="bi bi-search" aria-hidden="true"></i><input type="search" class="ln-sidebar-search" autocomplete="off"><button type="button" class="ln-sidebar-search-clear" aria-label="Clear search"><i class="bi bi-x-lg"></i></button></div>' +
             '<div class="ln-sidebar-selection-bar" style="display:none">' +
                 '<span class="ln-sidebar-selection-text"></span>' +
                 '<button type="button" class="ln-sidebar-clear-selection"></button>' +
@@ -66,11 +67,28 @@
         emptyEl = sidebarEl.querySelector('.ln-sidebar-empty');
         selectionBarEl = sidebarEl.querySelector('.ln-sidebar-selection-bar');
         selectionTextEl = sidebarEl.querySelector('.ln-sidebar-selection-text');
+        sidebarSearchEl = sidebarEl.querySelector('.ln-sidebar-search');
+        sidebarSearchEl.placeholder = gt('sidebarSearch', 'Search notes...');
 
         toggleTabEl.addEventListener('click', toggleSidebar);
         sidebarEl.querySelector('.ln-sidebar-close').addEventListener('click', closeSidebar);
         backdropEl.addEventListener('click', closeSidebar);
         sidebarEl.querySelector('.ln-sidebar-clear-selection').addEventListener('click', clearSelection);
+        sidebarSearchEl.addEventListener('input', function () {
+            const value = sidebarSearchEl.value;
+            currentQuery = value.trim();
+            const mainInput = document.getElementById('searchInput');
+            if (mainInput && mainInput.value !== value) {
+                mainInput.value = value;
+                if (typeof filterNotes === 'function') filterNotes();
+            }
+            applyFilterToList(currentQuery);
+        });
+        sidebarEl.querySelector('.ln-sidebar-search-clear').addEventListener('click', function () {
+            sidebarSearchEl.value = '';
+            sidebarSearchEl.dispatchEvent(new Event('input', { bubbles: true }));
+            sidebarSearchEl.focus();
+        });
         sidebarEl.querySelector('.ln-sidebar-clear-selection').textContent = gt('sidebarClearSelection', 'Clear');
 
 
@@ -330,6 +348,7 @@
         if (!sidebarEl) return;
         toggleTabEl.title = gt('sidebarToggle', 'All notes');
         sidebarEl.querySelector('.ln-sidebar-clear-selection').textContent = gt('sidebarClearSelection', 'Clear');
+        sidebarSearchEl.placeholder = gt('sidebarSearch', 'Search notes...');
         renderList();
     }
 
@@ -370,7 +389,11 @@
         const input = document.getElementById('searchInput');
         if (!input || input.__sidebarHooked) return;
         input.__sidebarHooked = true;
-        input.addEventListener('input', function () { applyFilterToList(input.value.trim()); });
+        input.addEventListener('input', function () {
+            const value = input.value;
+            if (sidebarSearchEl && sidebarSearchEl.value !== value) sidebarSearchEl.value = value;
+            applyFilterToList(value.trim());
+        });
     }
 
     function init() {

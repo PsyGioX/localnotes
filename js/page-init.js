@@ -34,7 +34,8 @@ document.addEventListener('DOMContentLoaded', function() {
         '/css/task-board.css?v=1.9.14',
         '/css/action-bar.css?v=1.9.14',
         '/css/onboarding-tour.css?v=1.9.14',
-        '/css/sidebar.css?v=1.9.14'
+        '/css/sidebar.css?v=1.9.14',
+        '/css/modal-system.css?v=1.9.14'
     ];
     sheets.forEach(function(href) {
         var link = document.createElement('link');

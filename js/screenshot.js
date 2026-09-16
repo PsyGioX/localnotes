@@ -87,7 +87,23 @@
             let first = true;
 
             for (const word of words) {
-                const candidate = line ? line + ' ' + word : word;
+                // Break URLs and other unbroken tokens by character when a
+                // single word is wider than the available canvas line.
+                const parts = [];
+                let part = '';
+                for (const char of word) {
+                    const candidatePart = part + char;
+                    if (measure(candidatePart, fSize, state.bold || !!state.heading,
+                                state.italic, state.code) > avail && part) {
+                        parts.push(part);
+                        part = char;
+                    } else {
+                        part = candidatePart;
+                    }
+                }
+                if (part) parts.push(part);
+                for (const token of (parts.length ? parts : [''])) {
+                const candidate = line ? line + (token === parts[0] ? ' ' : '') + token : token;
                 if (measure(candidate, fSize, state.bold || !!state.heading,
                             state.italic, state.code) > avail && line) {
                     segs.push({ kind:'text', text: line, bold: state.bold,
@@ -96,10 +112,11 @@
                         heading: state.heading, quote: state.quote,
                         listItem: state.listItem && first,
                         fontSize: fSize, indentPx: indent });
-                    line = word;
+                    line = token;
                     first = false;
                 } else {
                     line = candidate;
+                }
                 }
             }
             if (line) {
@@ -164,12 +181,26 @@
             let line = '';
             const lines = [];
             for (const word of words) {
-                const candidate = line ? line + ' ' + word : word;
+                const parts = [];
+                let part = '';
+                for (const char of word) {
+                    const candidatePart = part + char;
+                    if (measure(candidatePart, fSize, false, false, false) > avail && part) {
+                        parts.push(part);
+                        part = char;
+                    } else {
+                        part = candidatePart;
+                    }
+                }
+                if (part) parts.push(part);
+                for (const token of (parts.length ? parts : [''])) {
+                const candidate = line ? line + (token === parts[0] ? ' ' : '') + token : token;
                 if (measure(candidate, fSize, false, false, false) > avail && line) {
                     lines.push(line);
-                    line = word;
+                    line = token;
                 } else {
                     line = candidate;
+                }
                 }
             }
             if (line) lines.push(line);
@@ -404,6 +435,11 @@
 
         // ── Body segments — y is always TOP of line box ───────────────────────
         const rightEdge = cX + cW - PAD; // right boundary of content area
+        const bodyClipBottom = cY + cH - FOOTER_H;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(conX, y, rightEdge - conX, Math.max(0, bodyClipBottom - y));
+        ctx.clip();
 
         for (const seg of segs) {
             if (seg.kind === 'hr') {
@@ -618,6 +654,8 @@
 
             y += lh;
         }
+
+        ctx.restore();
 
         y += 20;
 

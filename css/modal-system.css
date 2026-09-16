@@ -1,0 +1,176 @@
+/* Unified modal language for regular dialogs. Fullscreen/editor/lock surfaces
+   keep their own geometry because their interaction model is different. */
+:root {
+    --modal-system-scrim: rgba(7, 10, 9, .68);
+    --modal-system-blur: blur(8px) saturate(1.08);
+    --modal-system-radius: 16px;
+    --modal-system-border: color-mix(in srgb, var(--border-color, #272727) 82%, var(--primary-color, #28a745) 18%);
+    --modal-system-shadow: 0 24px 70px rgba(0, 0, 0, .38), 0 2px 8px rgba(0, 0, 0, .16);
+    --modal-system-surface: var(--modal-bg, #1a1a1a);
+}
+
+/* Backdrops share one quiet depth cue while preserving each component's layout. */
+.modal:not(#editModal),
+.cal-overlay,
+.nsm-overlay,
+.dcm-overlay,
+.ln-screenshot-overlay,
+.lnp-ov,
+.lngv-ov,
+.lnse-ov,
+.theme-modal,
+.import-modal,
+.ln-import-progress-overlay,
+.pwa-modal-overlay,
+.cnp-overlay,
+.ws-selector-overlay {
+    background: var(--modal-system-scrim) !important;
+    -webkit-backdrop-filter: var(--modal-system-blur);
+    backdrop-filter: var(--modal-system-blur);
+}
+
+/* Centered dialog surfaces use one border, radius and elevation. */
+.modal:not(#editModal) > .modal-content-error,
+.modal:not(#editModal) > .modal-content-warning,
+.cal-modal,
+.nsm-panel,
+.dcm-panel,
+.ln-screenshot-panel,
+.lnp-box,
+.lngv-box,
+.lnse-box,
+.theme-modal-content,
+.import-modal-content,
+.ln-import-progress-panel,
+.cnp-panel,
+.lne-modal {
+    background: var(--modal-system-surface) !important;
+    border: 1px solid var(--modal-system-border) !important;
+    border-radius: var(--modal-system-radius) !important;
+    box-shadow: var(--modal-system-shadow) !important;
+}
+
+/* Keep the shared title/action rhythm predictable across dialog families. */
+.modal-content-error .modal-content-inner,
+.modal-content-warning .modal-content-inner,
+.cal-header,
+.nsm-header,
+.dcm-header,
+.ln-screenshot-header,
+.lne-mhd {
+    border-bottom-color: var(--border-color, #272727);
+}
+
+.modal-content-error h3,
+.modal-content-warning h3,
+.cal-title,
+.nsm-title,
+.dcm-title,
+.ln-screenshot-title,
+.lne-mhd h3 {
+    color: var(--text-color, #e0e0e0);
+}
+
+.lnse-box .lnse-btn {
+    transition: background-color .16s ease, border-color .16s ease, color .16s ease, transform .12s ease, box-shadow .16s ease;
+}
+.lnse-box .lnse-btn.primary:hover {
+    background: #c5ff91 !important;
+    box-shadow: 0 6px 18px rgba(174, 252, 110, .22);
+    transform: translateY(-1px);
+}
+.lnse-box .lnse-btn.secondary:hover {
+    background: var(--button-hover, #2a2a2a) !important;
+    border-color: var(--primary-color, #28a745) !important;
+    color: var(--primary-color, #28a745) !important;
+    transform: translateY(-1px);
+}
+.lnse-box .lnse-btn:active { transform: translateY(0) scale(.98); }
+
+/* One keyboard-visible language for all regular modal controls. */
+.modal:not(#editModal) button:focus-visible,
+.cal-modal button:focus-visible,
+.nsm-panel button:focus-visible,
+.dcm-panel button:focus-visible,
+.ln-screenshot-panel button:focus-visible,
+.lnp-box button:focus-visible,
+.lngv-box button:focus-visible,
+.lnse-box button:focus-visible,
+.theme-modal-content button:focus-visible,
+.import-modal-content button:focus-visible,
+.ln-import-progress-panel button:focus-visible,
+.cnp-panel button:focus-visible,
+.lne-modal button:focus-visible {
+    outline: 2px solid var(--primary-color, #28a745);
+    outline-offset: 2px;
+}
+
+/* The app's mobile dialogs become comfortable sheets with one shared edge. */
+@media (max-width: 768px) {
+    .modal:not(#editModal) > .modal-content-error,
+    .modal:not(#editModal) > .modal-content-warning,
+    .cal-modal,
+    .nsm-panel,
+    .dcm-panel,
+    .ln-screenshot-panel,
+    .lnp-box,
+    .lngv-box,
+    .lnse-box,
+    .theme-modal-content,
+    .import-modal-content,
+    .ln-import-progress-panel,
+    .cnp-panel,
+    .lne-modal {
+        border-radius: 14px !important;
+    }
+    .modal:not(#editModal) .modal-buttons-container,
+    .cal-header,
+    .nsm-header,
+    .nsm-footer,
+    .dcm-footer,
+    .ln-screenshot-header {
+        padding-left: max(16px, env(safe-area-inset-left, 0px));
+        padding-right: max(16px, env(safe-area-inset-right, 0px));
+    }
+}
+
+[data-theme="light"] {
+    --modal-system-scrim: rgba(24, 32, 28, .34);
+    --modal-system-border: #dce3e8;
+    --modal-system-shadow: 0 24px 70px rgba(34, 50, 60, .18), 0 2px 8px rgba(34, 50, 60, .08);
+    --modal-system-surface: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .modal:not(#editModal),
+    .cal-overlay,
+    .nsm-overlay,
+    .dcm-overlay,
+    .ln-screenshot-overlay,
+    .lnp-ov,
+    .lngv-ov,
+    .lnse-ov,
+    .theme-modal,
+    .import-modal,
+    .ln-import-progress-overlay,
+    .pwa-modal-overlay,
+    .cnp-overlay,
+    .ws-selector-overlay,
+    .modal:not(#editModal) > .modal-content-error,
+    .modal:not(#editModal) > .modal-content-warning,
+    .cal-modal,
+    .nsm-panel,
+    .dcm-panel,
+    .ln-screenshot-panel,
+    .lnp-box,
+    .lngv-box,
+    .lnse-box,
+    .theme-modal-content,
+    .import-modal-content,
+    .ln-import-progress-panel,
+    .cnp-panel,
+    .lne-modal {
+        animation: none !important;
+        transition: none !important;
+    }
+}

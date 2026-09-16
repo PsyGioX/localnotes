@@ -29,6 +29,22 @@
     border-bottom: 1px solid var(--border-color);
     flex: 0 0 auto;
 }
+.ln-sidebar-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+.ln-sidebar-search-icon {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    color: var(--primary-color);
+    background: rgba(174, 252, 110, .1);
+    font-size: 13px;
+}
 .ln-sidebar-title {
     font-size: 15px;
     font-weight: 700;
@@ -47,6 +63,57 @@
     justify-content: center;
 }
 .ln-sidebar-close:hover { background: var(--button-hover); color: var(--text-color); }
+
+.ln-sidebar-search-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+    margin: 12px 12px 4px;
+}
+.ln-sidebar-search-wrap > i {
+    position: absolute;
+    left: 11px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    pointer-events: none;
+}
+.ln-sidebar-search {
+    width: 100%;
+    min-width: 0;
+    height: 38px;
+    padding: 0 36px 0 32px;
+    box-sizing: border-box;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: var(--bg-secondary, #111);
+    color: var(--text-color);
+    font: inherit;
+    font-size: 13px;
+    outline: none;
+    transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.ln-sidebar-search::placeholder { color: var(--text-secondary); opacity: .72; }
+.ln-sidebar-search:focus {
+    border-color: var(--primary-color);
+    background: var(--button-bg);
+    box-shadow: 0 0 0 3px rgba(40, 167, 69, .13);
+}
+.ln-sidebar-search-clear {
+    position: absolute;
+    right: 5px;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 7px;
+    color: var(--text-secondary);
+    background: transparent;
+    cursor: pointer;
+}
+.ln-sidebar-search-clear:hover { color: var(--text-color); background: var(--button-hover); }
 
 .ln-sidebar-list {
     flex: 1 1 auto;

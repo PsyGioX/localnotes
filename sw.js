@@ -47,7 +47,6 @@ const STATIC_FILES = [
     '/fonts/lekton-nerd-font-mono/lekton-nerd-font-mono.woff2',
 
     // Bootstrap Icons (редактор)
-    '/localnoteseditor/bootstrap-icons/font/bootstrap-icons.css',
     '/localnoteseditor/bootstrap-icons/font/bootstrap-icons.min.css',
     '/localnoteseditor/bootstrap-icons/font/fonts/bootstrap-icons.woff2',
     '/localnoteseditor/bootstrap-icons/font/fonts/bootstrap-icons.woff',

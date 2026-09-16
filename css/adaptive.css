@@ -139,6 +139,28 @@
     }
 }
 
+/* Welcome panel in the notes grid: square displays otherwise give it only
+   one card column, which makes the content look squeezed against the left. */
+@media (min-width: 600px) and (min-aspect-ratio: 0.85) and (max-aspect-ratio: 1.5) {
+    #notesContainer.default-view .welcome-message,
+    #notesContainer.full-width-view .welcome-message {
+        grid-column: 1 / -1;
+        width: min(100%, 900px);
+        justify-self: center;
+        box-sizing: border-box;
+        margin: 24px auto 36px;
+    }
+    .welcome-message .welcome-content {
+        width: 100%;
+        max-width: 860px;
+        margin: 0 auto;
+        padding: clamp(24px, 4vw, 40px) clamp(20px, 4vw, 35px);
+        box-sizing: border-box;
+    }
+    .welcome-message .welcome-header { max-width: 720px; margin: 0 auto 28px; }
+    .welcome-message .welcome-section { width: 100%; box-sizing: border-box; }
+}
+
 /* ── 1:1 Квадратные мониторы (1024×1024, 800×800) ───────────────── */
 @media (min-aspect-ratio: 0.85) and (max-aspect-ratio: 1.15) {
     

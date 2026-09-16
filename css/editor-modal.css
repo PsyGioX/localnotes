@@ -418,3 +418,101 @@
         }
     }
 }
+
+/* ── EDITOR SURFACE POLISH ────────────────────────────────────────────────── */
+#editModal .modal-content {
+    width: min(94vw, 1120px);
+    height: min(88dvh, 900px);
+    max-height: min(88dvh, 900px);
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--modal-bg, #1a1a1a) 96%, #fff 4%);
+    border-color: color-mix(in srgb, var(--border-color, #272727) 85%, var(--primary-color, #28a745) 15%);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, .42), 0 0 0 1px rgba(255,255,255,.025);
+}
+#editModal .modal-content::before { height: 2px; border-radius: 18px 18px 0 0; }
+#editModal .lne-editor-wrapper {
+    padding: 14px;
+    background: color-mix(in srgb, var(--bg-secondary, #111) 35%, transparent);
+}
+#editModal .lne-wrapper {
+    height: 100%;
+    min-height: 0;
+    border-radius: 15px;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, .16);
+}
+#editModal .lne-wrapper:focus-within {
+    border-color: var(--primary-color, #28a745);
+    box-shadow: inset 0 0 0 2px var(--primary-color, #28a745), 0 10px 28px rgba(0, 0, 0, .16);
+}
+#editModal .lne-body { background: color-mix(in srgb, var(--modal-bg, #1a1a1a) 94%, var(--bg-secondary, #111) 6%); }
+#editModal .lne-editor {
+    width: 100%;
+    max-width: none;
+    min-height: 100%;
+    margin: 0;
+    padding: 20px 18px 56px;
+    box-sizing: border-box;
+    font-size: 16px;
+    line-height: 1.8;
+}
+#editModal .lne-toolbar {
+    border-bottom-color: color-mix(in srgb, var(--border-color, #272727) 80%, var(--primary-color, #28a745) 20%);
+    border-radius: 14px 14px 0 0;
+    overflow: hidden;
+    clip-path: inset(0 round 14px 14px 0 0);
+}
+#editModal .modal-buttons-container {
+    align-items: center;
+    padding: 14px 20px 16px;
+    gap: 10px;
+    background: color-mix(in srgb, var(--modal-bg, #1a1a1a) 92%, var(--bg-secondary, #111) 8%);
+}
+#editModal .modal-buttons-container button { min-height: 44px; border-radius: 10px; }
+#editModal #noteSettingsBtn {
+    flex: 0 0 44px;
+    width: 44px;
+    margin-right: auto;
+    padding: 0;
+    border-radius: 10px;
+}
+#editModal #saveNoteButton, #editModal #cancelNoteButton { flex: 0 0 auto; min-width: 132px; }
+#editModal #saveNoteButton { box-shadow: 0 7px 18px rgba(40, 167, 69, .2); }
+#editModal #cancelNoteButton { background: transparent; }
+
+[data-theme="light"] #editModal .modal-content { background: #fff; border-color: #dce3e8; box-shadow: 0 24px 70px rgba(34, 50, 60, .18), 0 0 0 1px rgba(34,50,60,.03); }
+[data-theme="light"] #editModal .lne-editor-wrapper { background: #f4f7f8; }
+[data-theme="light"] #editModal .lne-body { background: #fff; }
+[data-theme="light"] #editModal .modal-buttons-container { background: #fbfcfc; }
+
+@media (max-width: 1100px) and (min-width: 769px) {
+    #editModal .modal-content { width: min(96vw, 960px); }
+    #editModal .lne-editor-wrapper { padding: 10px; }
+    #editModal .lne-editor { padding-left: 18px; padding-right: 18px; }
+}
+
+@media (max-width: 768px) {
+    #editModal .modal-content { width: 100%; max-width: none; border-radius: 0; background: var(--modal-bg, #1a1a1a); }
+    #editModal .modal-content::before { display: none; }
+    #editModal .lne-editor-wrapper { padding: 0; background: var(--modal-bg, #1a1a1a); }
+    #editModal .lne-wrapper { border-radius: 0; box-shadow: none; }
+    #editModal .lne-toolbar { border-radius: 0; clip-path: none; }
+    #editModal .lne-editor {
+        width: 100%;
+        padding: 20px max(16px, env(safe-area-inset-right, 0px)) 52px max(16px, env(safe-area-inset-left, 0px));
+        font-size: 16px;
+        line-height: 1.72;
+    }
+    #editModal .modal-buttons-container {
+        padding: 10px max(14px, env(safe-area-inset-right, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(14px, env(safe-area-inset-left, 0px));
+        background: color-mix(in srgb, var(--modal-bg, #1a1a1a) 96%, #fff 4%);
+        box-shadow: 0 -8px 20px rgba(0,0,0,.12);
+    }
+    #editModal #noteSettingsBtn { margin-right: 0; }
+    #editModal #saveNoteButton, #editModal #cancelNoteButton { min-width: 0; }
+}
+
+@media (max-width: 420px) {
+    #editModal .modal-buttons-container { gap: 6px; }
+    #editModal .modal-buttons-container button { font-size: 12px; padding-left: 10px; padding-right: 10px; }
+    #editModal #noteSettingsBtn { flex-basis: 42px; width: 42px; }
+}

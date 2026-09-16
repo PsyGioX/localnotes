@@ -1360,7 +1360,7 @@ function fileToBase64(file) {
 // MODAL SYSTEM (from backup, adapted for LocalNotesEditor)
 // ============================================================================
 function showCustomAlert(title, message, type = 'info') {
-    const iconMap = { info: 'ℹ️', success: '✅', warning: '⚠️', error: '❌' };
+    const iconMap = { info: 'bi-info-circle', success: 'bi-check-circle', warning: 'bi-exclamation-triangle', error: 'bi-x-circle' };
     const colorMap = { info: '#007bff', success: '#28a745', warning: '#ffc107', error: '#dc3545' };
     const alertModal = document.createElement('div');
     alertModal.className = 'modal';
@@ -1368,7 +1368,7 @@ function showCustomAlert(title, message, type = 'info') {
     alertModal.innerHTML = `
         <div class="modal-content-error">
             <h3 style="display:flex;align-items:center;gap:10px;color:${colorMap[type]};">
-                <span style="font-size:24px;">${iconMap[type]}</span><span id="_caa_title"></span>
+                <i class="bi ${iconMap[type]}" style="font-size:24px;" aria-hidden="true"></i><span id="_caa_title"></span>
             </h3>
             <p style="margin:15px 0;line-height:1.5;" id="_caa_msg"></p>
             <div style="display:flex;justify-content:center;margin-top:20px;">
@@ -1394,7 +1394,7 @@ function showCustomPrompt(title, message, defaultValue = '', onConfirm = null) {
     promptModal.innerHTML = `
         <div class="modal-content-error">
             <h3 style="display:flex;align-items:center;gap:10px;color:#007bff;">
-                <span style="font-size:24px;">✏️</span><span id="_csp_title"></span>
+                <i class="bi bi-pencil-square" style="font-size:24px;" aria-hidden="true"></i><span id="_csp_title"></span>
             </h3>
             <p style="margin:15px 0;line-height:1.5;" id="_csp_msg"></p>
             <input id="customPromptInput" type="text" value=""
@@ -1550,51 +1550,149 @@ function showConfirmModal(message, onConfirm) {
 // ============================================================================
 function showClearAllConfirmationModal() {
     const modal = document.createElement('div');
-    modal.className = 'modal'; modal.style.display = 'block';
-    modal.innerHTML = `<div class="modal-content modal-content-warning">
-        <div class="modal-content-inner">
-            <h3><i class="bi bi-exclamation-triangle"></i> <span id="_sca_title"></span></h3>
-            <p id="_sca_msg"></p>
-            <div class="warning-details">
-                <p><strong>⚠️ <span id="_sca_warn_label"></span>:</strong> <span id="_sca_warn"></span></p>
-                <ul>
-                    <li id="_sca_w1"></li>
-                    <li id="_sca_w2"></li>
-                    <li id="_sca_w3"></li>
-                </ul>
+    modal.className = 'modal clear-notes-modal';
+    modal.style.display = 'block';
+    modal.innerHTML = `<div class="modal-content modal-content-warning clear-notes-dialog" role="dialog" aria-modal="true">
+        <div class="clear-notes-header">
+            <div class="clear-notes-title"><span class="clear-notes-icon"><i class="bi bi-trash3"></i></span><div><h3></h3><p class="clear-notes-subtitle"></p></div></div>
+            <button type="button" class="clear-notes-close" aria-label="Close"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="clear-notes-body">
+            <div class="clear-notes-modes" role="radiogroup">
+                <label class="clear-notes-mode is-active"><input type="radio" name="clearNotesScope" value="all" checked><span class="clear-notes-radio"></span><span><strong></strong><small></small></span></label>
+                <label class="clear-notes-mode"><input type="radio" name="clearNotesScope" value="workspace"><span class="clear-notes-radio"></span><span><strong></strong><small></small></span></label>
             </div>
+            <div class="clear-notes-selection-head"><strong></strong><label class="clear-notes-select-all"><input type="checkbox"><span class="clear-notes-checkbox"></span><span></span></label></div>
+            <div class="clear-notes-list" role="group"></div>
+            <div class="clear-notes-empty" hidden></div>
+            <div class="clear-notes-warning"><i class="bi bi-exclamation-triangle"></i><span></span></div>
         </div>
         <div class="modal-buttons-container">
-            <button id="confirmClearAllBtn" class="btn cancel"><i class="bi bi-trash3"></i> <span id="_sca_del"></span></button>
-            <button id="cancelClearAllBtn" class="btn save"><i class="bi bi-x-lg"></i> <span id="_sca_cancel"></span></button>
-        </div></div>`;
+            <button type="button" class="btn cancel clear-notes-delete" disabled><i class="bi bi-trash3"></i><span></span></button>
+            <button type="button" class="btn save clear-notes-cancel"><i class="bi bi-x-lg"></i><span></span></button>
+        </div>
+    </div>`;
     document.body.appendChild(modal);
-    modal.querySelector('#_sca_title').textContent   = typeof t === 'function' ? t('confirmDeleteAllTitle') : 'Delete All Notes';
-    modal.querySelector('#_sca_msg').textContent     = typeof t === 'function' ? t('confirmDeleteAll') : 'Delete ALL notes?';
-    modal.querySelector('#_sca_warn_label').textContent = typeof t === 'function' ? t('warning') : 'Warning';
-    modal.querySelector('#_sca_warn').textContent    = typeof t === 'function' ? t('clearAllWarning') : 'This action is irreversible!';
-    modal.querySelector('#_sca_w1').textContent      = typeof t === 'function' ? t('clearAllWarning1') : 'All notes will be deleted permanently';
-    modal.querySelector('#_sca_w2').textContent      = typeof t === 'function' ? t('clearAllWarning2') : 'Recovery will be impossible';
-    modal.querySelector('#_sca_w3').textContent      = typeof t === 'function' ? t('clearAllWarning3') : 'Make a backup before deleting';
-    modal.querySelector('#_sca_del').textContent     = typeof t === 'function' ? t('deleteAll') : 'Delete All';
-    modal.querySelector('#_sca_cancel').textContent  = typeof t === 'function' ? t('cancel') : 'Cancel';
+    const text = (key, fallback) => typeof t === 'function' ? (t(key) || fallback) : fallback;
+    const title = modal.querySelector('h3');
+    const subtitle = modal.querySelector('.clear-notes-subtitle');
+    const modes = modal.querySelectorAll('.clear-notes-mode');
+    const scopeInputs = modal.querySelectorAll('input[name="clearNotesScope"]');
+    const selectAll = modal.querySelector('.clear-notes-select-all input');
+    const selectAllText = modal.querySelector('.clear-notes-select-all span:last-child');
+    const selectionTitle = modal.querySelector('.clear-notes-selection-head strong');
+    const list = modal.querySelector('.clear-notes-list');
+    const empty = modal.querySelector('.clear-notes-empty');
+    const warning = modal.querySelector('.clear-notes-warning span');
+    const deleteButton = modal.querySelector('.clear-notes-delete');
+    const closeButton = modal.querySelector('.clear-notes-close');
+    const selectedIds = new Set();
+    let allNotes = [];
+    let visibleNotes = [];
+
+    title.textContent = text('confirmDeleteAllTitle', 'Delete notes');
+    subtitle.textContent = text('clearNotesChooseScope', 'Choose what you want to remove');
+    modes[0].querySelector('strong').textContent = text('clearNotesAllScope', 'All notes');
+    modes[0].querySelector('small').textContent = text('clearNotesAllScopeHint', 'Delete every note in LocalNotes');
+    modes[1].querySelector('strong').textContent = text('clearNotesWorkspaceScope', 'Notes in this workspace');
+    modes[1].querySelector('small').textContent = text('clearNotesWorkspaceScopeHint', 'Only notes from the current workspace');
+    selectionTitle.textContent = text('clearNotesSelectTitle', 'Notes to delete');
+    selectAllText.textContent = text('clearNotesSelectAll', 'Select all');
+    warning.textContent = text('clearAllWarning', 'This action is irreversible!');
+    deleteButton.querySelector('span').textContent = text('deleteAll', 'Delete selected');
+    modal.querySelector('.clear-notes-cancel span').textContent = text('cancel', 'Cancel');
     document.body.classList.add('modal-open');
     const close = () => { if (modal.parentNode) document.body.removeChild(modal); document.body.classList.remove('modal-open'); };
-    document.getElementById('confirmClearAllBtn').addEventListener('click', () => { clearAllNotes(); close(); });
-    document.getElementById('cancelClearAllBtn').addEventListener('click', close);
+
+    const getVisibleNotes = () => {
+        const scope = modal.querySelector('input[name="clearNotesScope"]:checked').value;
+        if (scope === 'workspace' && typeof workspacesManager !== 'undefined' && workspacesManager) {
+            return workspacesManager.filterNotesByWorkspace(allNotes);
+        }
+        return allNotes;
+    };
+    const updateState = () => {
+        const checked = visibleNotes.filter(note => selectedIds.has(note.id)).length;
+        selectAll.checked = visibleNotes.length > 0 && checked === visibleNotes.length;
+        selectAll.indeterminate = checked > 0 && checked < visibleNotes.length;
+        deleteButton.disabled = selectedIds.size === 0;
+        deleteButton.querySelector('span').textContent = `${text('deleteAll', 'Delete selected')} (${selectedIds.size})`;
+    };
+    const renderNotes = () => {
+        visibleNotes = getVisibleNotes();
+        list.innerHTML = '';
+        empty.hidden = visibleNotes.length > 0;
+        empty.textContent = text('clearNotesEmpty', 'There are no notes in this selection.');
+        visibleNotes.forEach(note => {
+            const item = document.createElement('label');
+            item.className = 'clear-notes-item';
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = selectedIds.has(note.id);
+            checkbox.dataset.noteId = note.id;
+            const checkmark = document.createElement('span');
+            checkmark.className = 'clear-notes-checkbox';
+            const content = document.createElement('span');
+            content.className = 'clear-notes-item-content';
+            const noteTitle = document.createElement('strong');
+            noteTitle.textContent = note.title || notesDB.extractTitle(note.content) || text('untitled', 'Untitled');
+            const noteMeta = document.createElement('small');
+            noteMeta.textContent = note.lastModified ? new Date(note.lastModified).toLocaleDateString() : '';
+            content.append(noteTitle, noteMeta);
+            item.append(checkbox, checkmark, content);
+            list.appendChild(item);
+        });
+        updateState();
+    };
+    const loadNotesForModal = async () => {
+        try {
+            allNotes = await notesDB.getAllNotes();
+            renderNotes();
+        } catch (error) {
+            console.error('Failed to load notes for deletion:', error);
+            empty.hidden = false;
+            empty.textContent = text('errorLoadingNotes', 'Unable to load notes.');
+        }
+    };
+    scopeInputs.forEach(input => input.addEventListener('change', () => {
+        modes.forEach(mode => mode.classList.toggle('is-active', mode.querySelector('input').checked));
+        selectedIds.clear();
+        renderNotes();
+    }));
+    selectAll.addEventListener('change', () => {
+        visibleNotes.forEach(note => selectAll.checked ? selectedIds.add(note.id) : selectedIds.delete(note.id));
+        renderNotes();
+    });
+    list.addEventListener('change', event => {
+        if (!event.target.matches('input[type="checkbox"]')) return;
+        event.target.checked ? selectedIds.add(event.target.dataset.noteId) : selectedIds.delete(event.target.dataset.noteId);
+        updateState();
+    });
+    deleteButton.addEventListener('click', async () => {
+        deleteButton.disabled = true;
+        await clearNotesByIds([...selectedIds]);
+        close();
+    });
+    modal.querySelector('.clear-notes-cancel').addEventListener('click', close);
+    closeButton.addEventListener('click', close);
     modal.addEventListener('click', e => { if (e.target === modal) close(); });
     document.addEventListener('keydown', function esc(e) { if (e.key === 'Escape') { document.removeEventListener('keydown', esc); close(); } });
+    loadNotesForModal();
 }
 
-async function clearAllNotes() {
+async function clearNotesByIds(noteIds) {
     try {
-        const notes = await notesDB.getAllNotes();
-        for (const n of notes) { await notesDB.deleteNote(n.id); await notesDB.deleteVersionsForNote(n.id); }
+        for (const id of noteIds) { await notesDB.deleteNote(id); await notesDB.deleteVersionsForNote(id); }
         await loadNotes();
-        showCustomAlert(typeof t === 'function' ? t('success') : 'Success', typeof t === 'function' ? t('allNotesDeleted') : 'All notes deleted!', 'success');
+        showCustomAlert(typeof t === 'function' ? t('success') : 'Success', typeof t === 'function' ? t('allNotesDeleted') : 'Notes deleted!', 'success');
     } catch (e) {
         showCustomAlert(typeof t === 'function' ? t('error') : 'Error', typeof t === 'function' ? t('errorClearingNotes') : 'Error clearing notes!', 'error');
     }
+}
+
+async function clearAllNotes() {
+    const notes = await notesDB.getAllNotes();
+    return clearNotesByIds(notes.map(note => note.id));
 }
 
 // ============================================================================
@@ -3298,7 +3396,10 @@ function initSearchTagAutocomplete() {
 
     const positionDropdown = (el) => {
         const rect = input.getBoundingClientRect();
-        el.style.cssText = `position:fixed;top:${rect.bottom + 4}px;left:${rect.left}px;min-width:${Math.max(rect.width, 280)}px;z-index:9999;`;
+        const viewportPadding = 8;
+        const dropdownWidth = Math.min(Math.max(rect.width, 280), window.innerWidth - viewportPadding * 2);
+        const left = Math.min(Math.max(rect.left, viewportPadding), window.innerWidth - dropdownWidth - viewportPadding);
+        el.style.cssText = `position:fixed;top:${rect.bottom + 4}px;left:${left}px;width:${dropdownWidth}px;max-width:calc(100vw - ${viewportPadding * 2}px);box-sizing:border-box;z-index:9999;`;
     };
 
     const closeDropdown = () => {
@@ -3925,14 +4026,36 @@ async function buildShareableNoteLink(note) {
 // preserves block-level line breaks (unlike sidebar.js's snippetFor, which
 // collapses everything to one line for a search snippet).
 function noteContentToPlainText(html) {
-    const withBreaks = (html || '')
-        .replace(/<\/(p|div|h[1-6]|li|blockquote|pre|tr)>/gi, '</$1>\n')
-        .replace(/<br\s*\/?>/gi, '\n');
     const d = document.createElement('div');
     d.innerHTML = (typeof DOMPurify !== 'undefined')
-        ? DOMPurify.sanitize(withBreaks, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] })
-        : withBreaks.replace(/<[^>]*>/g, '');
-    return (d.textContent || '')
+        ? DOMPurify.sanitize(html || '')
+        : String(html || '').replace(/<[^>]*>/g, '');
+
+    const blockTags = new Set(['address', 'article', 'aside', 'blockquote', 'dd', 'div', 'dl', 'dt', 'fieldset', 'figcaption', 'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'hr', 'li', 'main', 'nav', 'ol', 'p', 'pre', 'section', 'table', 'tbody', 'td', 'tfoot', 'th', 'thead', 'tr', 'ul']);
+    const ignoredClasses = '.cl-opts-btn, .cl-opts-panel, .checklist-add-desc';
+    let output = '';
+    const append = value => { output += value; };
+    const walk = node => {
+        if (node.nodeType === Node.TEXT_NODE) { append(node.nodeValue || ''); return; }
+        if (node.nodeType !== Node.ELEMENT_NODE || node.matches(ignoredClasses)) return;
+        const tag = node.tagName.toLowerCase();
+        if (tag === 'br' || tag === 'hr') { append('\n'); return; }
+        if (node.matches('.cl-item, .checklist-item-wrapper')) {
+            const textInput = node.querySelector('.cl-text, .checklist-text-content, .checklist-text-ios');
+            append(textInput ? (textInput.value || textInput.textContent || textInput.getAttribute('value') || '') : node.textContent || '');
+            append('\n');
+            return;
+        }
+        if (tag === 'input' || tag === 'textarea') {
+            if (tag === 'textarea' || node.type !== 'checkbox') append(node.value || node.getAttribute('value') || '');
+            return;
+        }
+        const before = output.length;
+        node.childNodes.forEach(walk);
+        if (blockTags.has(tag) && output.length > before && !output.endsWith('\n')) append('\n');
+    };
+    d.childNodes.forEach(walk);
+    return output
         .replace(/[ \t]+\n/g, '\n')
         .replace(/\n{3,}/g, '\n\n')
         .trim();

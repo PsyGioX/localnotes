@@ -255,7 +255,7 @@
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            z-index: 9999;
+            z-index: 100000;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -273,33 +273,24 @@
             border: 4px solid rgba(174,252,110,0.2);
             border-top: 4px solid #aefc6e;
             border-radius: 50%;
-            animation: _spin 0.8s linear infinite;
+            animation: none;
         }
         @keyframes _spin { to { transform: rotate(360deg); } }
-        #app-preloader-text {
-            margin-top: 18px;
-            color: #ffffff;
-            font-family: sans-serif;
-            font-size: 15px;
-            opacity: 0.75;
-        }
-        body.styles-loading .info-app,
-        body.styles-loading .center_nav,
-        body.styles-loading .app-notes-center,
-        body.styles-loading footer { visibility: hidden; }
+        #app-preloader-text { margin-top:18px; color:#fff; font:15px sans-serif; opacity:.75; }
+        body.styles-loading .info-app, body.styles-loading .center_nav, body.styles-loading .app-notes-center, body.styles-loading footer { visibility:hidden; }
+        @media (prefers-reduced-motion:reduce) { #app-preloader-spinner,#app-preloader-spinner::before { animation:none; } }
     </style>
     <!-- Page init: styles-loading class, cache cleanup, async CSS loading -->
-    <script src="/js/page-init.js?v=1.9.14"></script>
-    
+    <script src="../js/page-init.js?v=1.9.14"></script>
     <link rel="apple-touch-icon" sizes="180x180" href="../favicon/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="../favicon/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="../favicon/favicon-16x16.png">
     <link rel="manifest" href="../favicon/site.webmanifest">
-
     <!-- Hreflang tags for SEO — defined once above -->
 </head>
 
 <body class="styles-loading">
+    <div id="app-preloader" aria-label="Loading" role="status"><div class="app-preloader-inner"><div id="app-preloader-spinner"></div><div id="app-preloader-text">Local Notes</div></div></div>
 
     <!-- Google Tag Manager (noscript) -->
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MVKPW88F" height="0" width="0"
