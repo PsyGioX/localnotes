@@ -223,6 +223,7 @@ class LocalNotesEditor {
         B('insertHorizontalRule','bi bi-dash-lg',_('horizontalLine','Horizontal rule')) +
         B('insertDateTime','bi bi-calendar-event',_('insertDateTime','Insert date/time')) +
         B('insertFormula','bi bi-plus-slash-minus',_('insertFormula','Insert formula')) +
+        B('insertDrawing','bi bi-brush',_('insertDrawing','Insert drawing')) +
         GE + SEP +
         GS +
         B('insertCode','bi bi-code-slash',_('codeBlock','Code block')) +
@@ -508,6 +509,7 @@ class LocalNotesEditor {
             wordCount:         function() { this._modalWordCount(); },
             viewSource:        function() { this._modalSourceView(); },
             insertFormula:     function() { this._modalFormula(); },
+            insertDrawing:     function() { this._modalDrawing(); },
             shortcutsHelp:     function() { this._modalShortcuts(); },
             tplCustomManage:   function() { this._modalCustomTemplates(); },
             foreColor:         function() {
@@ -838,7 +840,7 @@ class LocalNotesEditor {
         this._saveSnap();
         this._restoreRange();
         // execCommand strips iframes — use direct DOM insertion when html contains iframe/video
-        if (/<iframe|<video/i.test(html)) {
+        if (/<iframe|<video|lne-drawing/i.test(html)) {
             var sel = window.getSelection();
             if (sel && sel.rangeCount) {
                 var range = sel.getRangeAt(0);
@@ -1047,7 +1049,10 @@ class LocalNotesEditor {
         // Double-click a formula chip to edit its source (see _modalFormula)
         this.ed.addEventListener('dblclick', function(e) {
             var wrap = e.target.closest('.lne-formula-wrap');
-            if (wrap) { e.preventDefault(); self._modalFormula(wrap); }
+            if (wrap) { e.preventDefault(); self._modalFormula(wrap); return; }
+            // Double-click a drawing to reopen it in the drawing pad
+            var dimg = e.target.closest && e.target.closest('img.lne-drawing');
+            if (dimg && self.ed.contains(dimg)) { e.preventDefault(); self._modalDrawing(dimg); }
         });
         // A formula chip renders raw MathML, and MathML's internal nodes
         // confuse some browsers' caret placement even under
@@ -2948,10 +2953,16 @@ class LocalNotesEditor {
 
     // ── Modal factory ────────────────────────────────────────────────────
 
-    _modal(title, icon, body, onOk, wide) {
+    // opts (all optional):
+    //   className       — extra class on the overlay (e.g. a size modifier)
+    //   noBackdropClose — ignore clicks on the dimmed backdrop (tools that hold
+    //                     unsaved work, where a stroke ending outside would close it)
+    //   onClose         — called exactly once when the modal goes away, however it closed
+    _modal(title, icon, body, onOk, wide, opts) {
+        opts = opts || {};
         var self = this;
         var ov = document.createElement('div');
-        ov.className = 'lne-modal-ov' + (wide ? ' lne-modal-wide' : '');
+        ov.className = 'lne-modal-ov' + (wide ? ' lne-modal-wide' : '') + (opts.className ? ' ' + opts.className : '');
         ov.innerHTML =
             '<div class="lne-modal">' +
             '<div class="lne-mhd"><h3><i class="' + icon + '"></i> ' + title + '</h3>' +
@@ -2980,10 +2991,6 @@ class LocalNotesEditor {
             setTimeout(function () { void _edForRepaint.offsetHeight; }, 350);
         }
         var modal = ov.querySelector('.lne-modal');
-        var close = function() {
-            if (window.visualViewport) window.visualViewport.removeEventListener('resize', onVpResize);
-            if (ov.parentNode) document.body.removeChild(ov);
-        };
 
         // ── visualViewport: keep modal visible above keyboard on iOS/Android ──
         var onVpResize = function() {
@@ -2993,19 +3000,33 @@ class LocalNotesEditor {
             modal.style.maxHeight = (vv.height * 0.92) + 'px';
             modal.style.marginBottom = '';
         };
+        var closed = false;
+        var onEsc = function(e) { if (e.key === 'Escape') close(); };
+        // Closing only ever removes THIS overlay — the note editor underneath
+        // (#editModal) is a separate element and stays open with its content.
+        var close = function() {
+            if (closed) return;
+            closed = true;
+            document.removeEventListener('keydown', onEsc);
+            if (window.visualViewport) window.visualViewport.removeEventListener('resize', onVpResize);
+            if (ov.parentNode) ov.parentNode.removeChild(ov);
+            if (typeof opts.onClose === 'function') {
+                try { opts.onClose(); } catch (err) { console.error('Modal onClose failed', err); }
+            }
+        };
         if (window.visualViewport) {
             window.visualViewport.addEventListener('resize', onVpResize);
         }
         ov.querySelector('.lne-mclose').addEventListener('click', close);
         ov.querySelector('.lne-mcancel').addEventListener('click', close);
-        ov.addEventListener('click', function(e) { if (e.target === ov) close(); });
+        if (!opts.noBackdropClose) {
+            ov.addEventListener('click', function(e) { if (e.target === ov) close(); });
+        }
         ov.querySelector('.lne-mok').addEventListener('click', function() { onOk(ov, close); });
-        document.addEventListener('keydown', function esc(e) {
-            if (e.key === 'Escape') { document.removeEventListener('keydown', esc); close(); }
-        });
+        document.addEventListener('keydown', onEsc);
         // Auto-focus first input only on non-touch devices
         var isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-        if (!isTouchDevice) {
+        if (!isTouchDevice && !opts.noAutofocus) {
             setTimeout(function() { var inp = ov.querySelector('input,textarea'); if (inp) inp.focus(); }, 60);
         }
 
@@ -3284,6 +3305,561 @@ class LocalNotesEditor {
                 if (e.target.files[0]) dz.querySelector('p').textContent = e.target.files[0].name;
             });
         }, 0);
+    }
+
+    // ── Drawing modal ────────────────────────────────────────────────────
+    //
+    // Vector sketch pad shown in the regular editor modal (`_modal`). The
+    // drawing is kept as a list of compact objects (strokes + shapes) so it
+    // can be re-opened and edited later: the inserted <img class="lne-drawing">
+    // carries the PNG in `src` and the object list in `data-lne-draw`.
+    //
+    // The note editor is never touched while the pad is open: it lives in its
+    // own overlay, ignores backdrop clicks (a stroke that ends outside the
+    // canvas must not throw the sketch away) and, if it is closed without
+    // inserting, the unfinished sketch is kept as a draft for the next open.
+    _modalDrawing(existingImg) {
+        var self = this;
+        var _ = this._.bind(this);
+        var editing = !!existingImg;
+        var COLORS = ['#000000', '#a020f0', '#e02020', '#5ad600', '#4a9cf5', '#ff8c00', '#ffd60a', '#ffffff'];
+        var RATIOS = { '16:9': [1280, 720], '4:3': [1200, 900], '3:2': [1200, 800], '1:1': [1000, 1000], '3:4': [900, 1200] };
+        var MAX_OBJS = 4000, MAX_JSON = 400000, HIST_LIMIT = 80;
+        var SHAPES = { r: 1, o: 1, t: 1, l: 1, a: 1 };
+        // Brush types: p pen, m marker, n pencil, c calligraphy, s spray, d dotted
+        var BRUSHES = { p: 1, m: 1, n: 1, c: 1, s: 1, d: 1 };
+        var isColor = function(c) { return typeof c === 'string' && /^#[0-9a-f]{3,8}$/i.test(c); };
+        var num = function(n) { return typeof n === 'number' && isFinite(n); };
+
+        // ── State ──
+        var st = { tool: 'b', brush: 'p', color: '#000000', size: 4, fill: false, keep: false, W: 1200, H: 800, objs: [], base: null };
+        // Remember the last used settings for the next time the pad is opened
+        var pf = this._drawPrefs;
+        if (pf) {
+            if (/^[berotla]$/.test(pf.tool)) st.tool = pf.tool;
+            if (BRUSHES[pf.brush]) st.brush = pf.brush;
+            if (isColor(pf.color)) st.color = pf.color;
+            if (num(pf.size)) st.size = Math.max(1, Math.min(48, pf.size));
+            st.fill = !!pf.fill; st.keep = !!pf.keep;
+        }
+        var hist = [], hi = -1, cur = null, activeId = null, restored = false, done = false;
+
+        // Validate + load stored vector data (never trust attribute content)
+        var parse = function(json) {
+            try {
+                var d = JSON.parse(json);
+                if (!d || d.v !== 1 || !num(d.w) || !num(d.h) || !Array.isArray(d.o)) return null;
+                var w = Math.max(200, Math.min(2400, Math.round(d.w)));
+                var h = Math.max(200, Math.min(2400, Math.round(d.h)));
+                var out = [];
+                for (var i = 0; i < d.o.length && out.length < MAX_OBJS; i++) {
+                    var o = d.o[i];
+                    if (!o || !isColor(o.c) || !num(o.s)) continue;
+                    var s = Math.max(1, Math.min(96, o.s));
+                    if (o.k === 'b' || o.k === 'e') {
+                        if (!Array.isArray(o.p) || o.p.length < 2 || o.p.length % 2) continue;
+                        if (!o.p.every(num)) continue;
+                        var so = { k: o.k, c: o.c, s: s, p: o.p };
+                        if (o.k === 'b') {
+                            so.t = BRUSHES[o.t] ? o.t : 'p';
+                            if (num(o.r)) so.r = o.r >>> 0;
+                        }
+                        out.push(so);
+                    } else if (SHAPES[o.k]) {
+                        if (!Array.isArray(o.a) || o.a.length !== 4 || !o.a.every(num)) continue;
+                        out.push({ k: o.k, c: o.c, s: s, f: o.f ? 1 : 0, a: o.a });
+                    }
+                }
+                return { w: w, h: h, o: out };
+            } catch (e) { return null; }
+        };
+
+        var initial = null;
+        if (editing) {
+            var raw = existingImg.getAttribute('data-lne-draw');
+            initial = raw ? parse(raw) : null;
+            if (initial) { st.W = initial.w; st.H = initial.h; st.objs = initial.o; }
+            else {
+                // Legacy / oversized drawing: use the PNG itself as the base layer
+                var nw = existingImg.naturalWidth || 1200, nh = existingImg.naturalHeight || 800;
+                var k = Math.min(1, 2400 / Math.max(nw, nh));
+                st.W = Math.max(200, Math.round(nw * k)); st.H = Math.max(200, Math.round(nh * k));
+                var bi = new Image(); bi.src = existingImg.currentSrc || existingImg.src; st.base = bi;
+            }
+        } else if (this._drawDraft) {
+            var dd = this._drawDraft;
+            st.W = dd.W; st.H = dd.H; st.objs = dd.o.slice(); restored = st.objs.length > 0;
+        }
+
+        var ratioKey = '';
+        Object.keys(RATIOS).forEach(function(k) { if (RATIOS[k][0] === st.W && RATIOS[k][1] === st.H) ratioKey = k; });
+
+        // ── Markup ──
+        var tool = function(id, icon, label) {
+            return '<button type="button" class="lne-draw-tool" data-tool="' + id + '" aria-pressed="false" title="' + label + '" aria-label="' + label + '">' +
+                '<i class="' + icon + '"></i><span class="lne-draw-lbl">' + label + '</span></button>';
+        };
+        var btype = function(id, icon, label) {
+            return '<button type="button" class="lne-draw-tool lne-draw-btype" data-brush="' + id + '" aria-pressed="false" title="' + label + '" aria-label="' + label + '">' +
+                '<i class="' + icon + '"></i><span class="lne-draw-lbl">' + label + '</span></button>';
+        };
+        var ibtn = function(cls, icon, label) {
+            return '<button type="button" class="lne-draw-ibtn ' + cls + '" title="' + label + '" aria-label="' + label + '"><i class="' + icon + '"></i></button>';
+        };
+        var html =
+            '<div class="lne-draw">' +
+              '<div class="lne-draw-panel" role="toolbar">' +
+                '<div class="lne-draw-sec lne-draw-sec-opts"><div class="lne-draw-h">' + _('drawOptions', 'Options') + '</div>' +
+                  '<div class="lne-draw-tools lne-draw-cols2">' +
+                    tool('b', 'bi bi-brush', _('drawBrush', 'Brush')) +
+                    tool('e', 'bi bi-eraser', _('drawEraser', 'Eraser')) +
+                  '</div></div>' +
+                '<div class="lne-draw-sec lne-draw-sec-brushes"><div class="lne-draw-h">' + _('drawBrushType', 'Brush type') + '</div>' +
+                  '<div class="lne-draw-tools lne-draw-cols2">' +
+                    btype('p', 'bi bi-pen', _('drawBrushPen', 'Pen')) +
+                    btype('m', 'bi bi-highlighter', _('drawBrushMarker', 'Marker')) +
+                    btype('n', 'bi bi-pencil', _('drawBrushPencil', 'Pencil')) +
+                    btype('c', 'bi bi-vector-pen', _('drawBrushCalligraphy', 'Calligraphy')) +
+                    btype('s', 'bi bi-droplet', _('drawBrushSpray', 'Spray')) +
+                    btype('d', 'bi bi-three-dots', _('drawBrushDotted', 'Dotted')) +
+                  '</div></div>' +
+                '<div class="lne-draw-sec lne-draw-sec-shapes"><div class="lne-draw-h">' + _('drawShapeType', 'Shape type') + '</div>' +
+                  '<div class="lne-draw-tools">' +
+                    tool('r', 'bi bi-square', _('drawRectangle', 'Rectangle')) +
+                    tool('o', 'bi bi-circle', _('drawCircle', 'Circle')) +
+                    tool('t', 'bi bi-triangle', _('drawTriangle', 'Triangle')) +
+                    tool('l', 'bi bi-slash-lg', _('drawLine', 'Line')) +
+                    tool('a', 'bi bi-arrow-up-right', _('drawArrow', 'Arrow')) +
+                  '</div>' +
+                  '<label class="lne-chk lne-draw-chk"><input type="checkbox" class="lne-draw-fill"> <span>' + _('drawFill', 'Fill shapes with color') + '</span></label>' +
+                  '<label class="lne-chk lne-draw-chk"><input type="checkbox" class="lne-draw-keep"> <span>' + _('drawKeepRatio', 'Keep proportions') + '</span></label>' +
+                '</div>' +
+                '<div class="lne-draw-sec lne-draw-sec-size"><div class="lne-draw-h">' + _('drawBrushSize', 'Brush size') + '</div>' +
+                  '<div class="lne-draw-sizerow"><input type="range" class="lne-draw-size" min="1" max="48" step="1" value="4" aria-label="' + _('drawBrushSize', 'Brush size') + '">' +
+                  '<canvas class="lne-draw-prevcv" width="240" height="56" aria-hidden="true"></canvas></div></div>' +
+                '<div class="lne-draw-sec lne-draw-sec-colors"><div class="lne-draw-h">' + _('drawColor', 'Choose color') + '</div>' +
+                  '<div class="lne-draw-colors">' +
+                    COLORS.map(function(c) {
+                        return '<button type="button" class="lne-draw-sw" data-color="' + c + '" style="background:' + c + '" title="' + c + '" aria-label="' + c + '" aria-pressed="false"></button>';
+                    }).join('') +
+                    '<label class="lne-draw-sw lne-draw-sw-custom" title="' + _('drawCustomColor', 'Custom color') + '"><i class="bi bi-palette"></i>' +
+                    '<input type="color" class="lne-draw-colorinp" value="#000000" aria-label="' + _('drawCustomColor', 'Custom color') + '"></label>' +
+                  '</div></div>' +
+              '</div>' +
+              '<div class="lne-draw-stage">' +
+                '<div class="lne-draw-bar">' +
+                  ibtn('lne-draw-undo', 'bi bi-arrow-counterclockwise', _('undo', 'Undo')) +
+                  ibtn('lne-draw-redo', 'bi bi-arrow-clockwise', _('redo', 'Redo')) +
+                  ibtn('lne-draw-clear', 'bi bi-trash3', _('clear', 'Clear')) +
+                  '<span class="lne-draw-status" aria-live="polite"></span>' +
+                  '<select class="lne-inp lne-draw-ratio" title="' + _('drawCanvasSize', 'Canvas size') + '" aria-label="' + _('drawCanvasSize', 'Canvas size') + '">' +
+                    (ratioKey ? '' : '<option value="" selected>' + st.W + '×' + st.H + '</option>') +
+                    Object.keys(RATIOS).map(function(k) {
+                        return '<option value="' + k + '"' + (k === ratioKey ? ' selected' : '') + '>' + k + '  (' + RATIOS[k][0] + '×' + RATIOS[k][1] + ')</option>';
+                    }).join('') +
+                  '</select>' +
+                '</div>' +
+                '<div class="lne-draw-wrap"><canvas class="lne-draw-cv" width="' + st.W + '" height="' + st.H + '"></canvas></div>' +
+              '</div>' +
+            '</div>';
+
+        var r = this._modal(
+            _(editing ? 'drawEditTitle' : 'drawTitle', editing ? 'Edit drawing' : 'Drawing'), 'bi bi-brush', html,
+            function(ov, close) { commit(ov, close); }, false,
+            {
+                className: 'lne-modal-draw',
+                noBackdropClose: true,
+                onClose: function() {
+                    cleanup();
+                    self._drawPrefs = { tool: st.tool, brush: st.brush, color: st.color, size: st.size, fill: st.fill, keep: st.keep };
+                    if (!editing) {
+                        // Keep an unfinished sketch so an accidental close is harmless
+                        self._drawDraft = (!done && st.objs.length) ? { W: st.W, H: st.H, o: st.objs.slice() } : null;
+                    }
+                }
+            }
+        );
+        var ov = r.ov;
+        var okBtn = ov.querySelector('.lne-mok');
+        okBtn.innerHTML = '<i class="bi bi-check-lg"></i> ' + (editing ? _('apply', 'Apply') : _('insertDrawing', 'Insert drawing'));
+
+        var cv = ov.querySelector('.lne-draw-cv'), ctx = cv.getContext('2d');
+        var wrap = ov.querySelector('.lne-draw-wrap');
+        var statusEl = ov.querySelector('.lne-draw-status');
+        var base = document.createElement('canvas'), bctx = base.getContext('2d');
+        var undoBtn = ov.querySelector('.lne-draw-undo'), redoBtn = ov.querySelector('.lne-draw-redo');
+        var fillChk = ov.querySelector('.lne-draw-fill'), keepChk = ov.querySelector('.lne-draw-keep');
+        var sizeInp = ov.querySelector('.lne-draw-size');
+        var pvCv = ov.querySelector('.lne-draw-prevcv'), pvCtx = pvCv.getContext('2d');
+        var colorInp = ov.querySelector('.lne-draw-colorinp');
+        base.width = st.W; base.height = st.H;
+
+        var setStatus = function(msg, warn) {
+            statusEl.textContent = msg || '';
+            statusEl.classList.toggle('is-warn', !!warn);
+        };
+        var defaultStatus = function() { setStatus(st.W + '×' + st.H + ' · ' + _('drawHint', 'Draw with a mouse, finger or stylus')); };
+
+        // ── Rendering ──
+        var strokePath = function(c, p, s) {
+            if (p.length === 2) { c.beginPath(); c.arc(p[0], p[1], s / 2, 0, Math.PI * 2); c.fill(); return; }
+            c.beginPath();
+            c.moveTo(p[0], p[1]);
+            for (var i = 2; i < p.length - 2; i += 2) {
+                c.quadraticCurveTo(p[i], p[i + 1], (p[i] + p[i + 2]) / 2, (p[i + 1] + p[i + 3]) / 2);
+            }
+            c.lineTo(p[p.length - 2], p[p.length - 1]);
+            c.stroke();
+        };
+        // Deterministic PRNG so textured brushes look identical every time a drawing is re-rendered
+        var rng = function(seed) {
+            var a = (seed >>> 0) || 1;
+            return function() {
+                a = (a + 0x6D2B79F5) >>> 0;
+                var t = a;
+                t = Math.imul(t ^ (t >>> 15), t | 1);
+                t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+                return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+            };
+        };
+        // Call fn(x, y) every `step` px along the polyline
+        var walk = function(p, step, fn) {
+            fn(p[0], p[1]);
+            var carry = 0;
+            for (var i = 2; i < p.length; i += 2) {
+                var x0 = p[i - 2], y0 = p[i - 1], dx = p[i] - x0, dy = p[i + 1] - y0, len = Math.hypot(dx, dy);
+                if (!len) continue;
+                var d = step - carry;
+                while (d <= len) { fn(x0 + dx * d / len, y0 + dy * d / len); d += step; }
+                carry = len - (d - step);
+            }
+        };
+        var brushStroke = function(c, o) {
+            var t = o.t || 'p', p = o.p, s = o.s, i;
+            if (t === 'm') {
+                // Highlighter: wide, translucent, flat ends; one path so overlaps inside a stroke don't darken
+                c.globalAlpha = 0.38; c.lineCap = 'square'; c.lineWidth = s * 2.2;
+                strokePath(c, p, s * 2.2);
+            } else if (t === 'd') {
+                c.setLineDash([0.01, Math.max(3, s * 2.2)]); c.lineCap = 'round';
+                if (p.length === 2) { c.beginPath(); c.arc(p[0], p[1], s / 2, 0, Math.PI * 2); c.fill(); }
+                else strokePath(c, p, s);
+            } else if (t === 'c') {
+                // Broad-nib pen held at 45°: thick on one diagonal, hairline on the other
+                var nl = s * 1.3 + 2, nx = nl * Math.SQRT1_2, ny = -nl * Math.SQRT1_2;
+                c.beginPath();
+                if (p.length === 2) { c.moveTo(p[0] + nx, p[1] + ny); c.lineTo(p[0] - nx, p[1] - ny); c.lineWidth = Math.max(1, s * 0.25); c.stroke(); }
+                for (i = 2; i < p.length; i += 2) {
+                    var ax = p[i - 2], ay = p[i - 1], bx = p[i], by = p[i + 1];
+                    c.moveTo(ax + nx, ay + ny); c.lineTo(bx + nx, by + ny);
+                    c.lineTo(bx - nx, by - ny); c.lineTo(ax - nx, ay - ny); c.closePath();
+                }
+                c.fill();
+                c.lineWidth = 0.6; c.stroke();
+            } else if (t === 'n') {
+                // Pencil: thin faint core plus grainy scatter
+                var rd = rng(o.r);
+                c.globalAlpha = 0.6; c.lineWidth = Math.max(1.2, s * 0.4);
+                strokePath(c, p, Math.max(1.2, s * 0.4));
+                var spread = Math.max(1.5, s * 0.9);
+                walk(p, 1, function(x, y) {
+                    for (var k = 0; k < 2; k++) {
+                        c.globalAlpha = 0.18 + rd() * 0.4;
+                        var sz = 0.6 + rd() * Math.min(1.6, 0.6 + s * 0.08);
+                        c.fillRect(x + (rd() - 0.5) * spread, y + (rd() - 0.5) * spread, sz, sz);
+                    }
+                });
+            } else if (t === 's') {
+                // Airbrush: random dots in a disc that follows the pointer
+                var rs = rng(o.r), R = s * 1.6 + 4, dots = Math.round(s * 1.1) + 5, dz = s > 18 ? 2 : 1.3;
+                walk(p, 2, function(x, y) {
+                    for (var k = 0; k < dots; k++) {
+                        var a = rs() * 6.2832, d = R * Math.sqrt(rs());
+                        c.globalAlpha = 0.35 + rs() * 0.4;
+                        c.fillRect(x + Math.cos(a) * d, y + Math.sin(a) * d, dz, dz);
+                    }
+                });
+            } else {
+                strokePath(c, p, s);
+            }
+        };
+        var drawObj = function(c, o) {
+            c.save();
+            c.lineCap = 'round'; c.lineJoin = 'round';
+            c.lineWidth = o.s; c.strokeStyle = o.c; c.fillStyle = o.c;
+            if (o.k === 'e') { c.globalCompositeOperation = 'destination-out'; c.strokeStyle = '#000'; c.fillStyle = '#000'; }
+            if (o.k === 'b') { brushStroke(c, o); c.restore(); return; }
+            if (o.k === 'e') { strokePath(c, o.p, o.s); c.restore(); return; }
+            var x1 = o.a[0], y1 = o.a[1], x2 = o.a[2], y2 = o.a[3];
+            var L = Math.min(x1, x2), T = Math.min(y1, y2), Rr = Math.max(x1, x2), B = Math.max(y1, y2);
+            c.beginPath();
+            if (o.k === 'r') c.rect(L, T, Rr - L, B - T);
+            else if (o.k === 'o') c.ellipse((L + Rr) / 2, (T + B) / 2, Math.max(0.5, (Rr - L) / 2), Math.max(0.5, (B - T) / 2), 0, 0, Math.PI * 2);
+            else if (o.k === 't') { c.moveTo((L + Rr) / 2, T); c.lineTo(Rr, B); c.lineTo(L, B); c.closePath(); }
+            else if (o.k === 'l' || o.k === 'a') { c.moveTo(x1, y1); c.lineTo(x2, y2); }
+            if (o.f && (o.k === 'r' || o.k === 'o' || o.k === 't')) c.fill();
+            c.stroke();
+            if (o.k === 'a') {
+                var ang = Math.atan2(y2 - y1, x2 - x1), hl = Math.max(12, o.s * 3.5), sp = Math.PI / 7;
+                if (Math.hypot(x2 - x1, y2 - y1) > 2) {
+                    c.beginPath();
+                    c.moveTo(x2, y2); c.lineTo(x2 - hl * Math.cos(ang - sp), y2 - hl * Math.sin(ang - sp));
+                    c.moveTo(x2, y2); c.lineTo(x2 - hl * Math.cos(ang + sp), y2 - hl * Math.sin(ang + sp));
+                    c.stroke();
+                }
+            }
+            c.restore();
+        };
+        var rebuild = function() {
+            bctx.clearRect(0, 0, base.width, base.height);
+            if (st.base && st.base.complete && st.base.naturalWidth) bctx.drawImage(st.base, 0, 0, st.W, st.H);
+            for (var i = 0; i < st.objs.length; i++) drawObj(bctx, st.objs[i]);
+            render();
+        };
+        var render = function() {
+            ctx.clearRect(0, 0, cv.width, cv.height);
+            ctx.drawImage(base, 0, 0);
+            if (cur) drawObj(ctx, cur);
+        };
+        var fit = function() {
+            var cs = window.getComputedStyle(wrap);
+            var pw = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+            var ph = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+            var wr = wrap.clientWidth - pw, hr = wrap.clientHeight - ph;
+            if (wr < 10 || hr < 10) return;
+            var s = Math.min(wr / st.W, hr / st.H);
+            cv.style.width = Math.floor(st.W * s) + 'px';
+            cv.style.height = Math.floor(st.H * s) + 'px';
+        };
+        if (st.base) st.base.onload = function() { rebuild(); };
+
+        // ── History (snapshots of the object list; objects are immutable once committed) ──
+        var snapshot = function() { return { o: st.objs.slice(), b: st.base }; };
+        var pushHist = function() {
+            hist = hist.slice(0, hi + 1);
+            hist.push(snapshot());
+            if (hist.length > HIST_LIMIT) hist.shift();
+            hi = hist.length - 1;
+            updateHistBtns();
+        };
+        var updateHistBtns = function() {
+            undoBtn.disabled = hi <= 0;
+            redoBtn.disabled = hi >= hist.length - 1;
+        };
+        var goHist = function(i) {
+            if (i < 0 || i >= hist.length) return;
+            hi = i;
+            st.objs = hist[hi].o.slice(); st.base = hist[hi].b;
+            rebuild(); updateHistBtns();
+        };
+        hist.push(snapshot()); hi = 0; updateHistBtns();
+
+        // ── UI sync ──
+        var syncUI = function() {
+            ov.querySelectorAll('.lne-draw-tool[data-tool]').forEach(function(b) { b.setAttribute('aria-pressed', b.dataset.tool === st.tool ? 'true' : 'false'); });
+            ov.querySelectorAll('.lne-draw-btype').forEach(function(b) { b.setAttribute('aria-pressed', b.dataset.brush === st.brush ? 'true' : 'false'); });
+            ov.querySelector('.lne-draw-sec-brushes').classList.toggle('is-dim', st.tool !== 'b');
+            var isEraser = st.tool === 'e';
+            var fillable = st.tool === 'r' || st.tool === 'o' || st.tool === 't';
+            fillChk.disabled = !fillable; keepChk.disabled = !(st.tool === 'r' || st.tool === 'o' || st.tool === 't');
+            fillChk.closest('label').classList.toggle('is-off', !fillable);
+            keepChk.closest('label').classList.toggle('is-off', keepChk.disabled);
+            ov.querySelector('.lne-draw-sec-colors').classList.toggle('is-off', isEraser);
+            var customSel = true;
+            ov.querySelectorAll('.lne-draw-sw[data-color]').forEach(function(b) {
+                var on = b.dataset.color.toLowerCase() === st.color.toLowerCase();
+                if (on) customSel = false;
+                b.setAttribute('aria-pressed', on ? 'true' : 'false');
+            });
+            ov.querySelector('.lne-draw-sw-custom').classList.toggle('is-on', customSel && !isEraser);
+            if (customSel) colorInp.value = st.color.length === 7 ? st.color : '#000000';
+            drawPreview();
+            cv.style.cursor = isEraser ? 'cell' : 'crosshair';
+        };
+        var drawPreview = function() {
+            var W = pvCv.width, H = pvCv.height, s = Math.min(st.size, 24);
+            pvCtx.clearRect(0, 0, W, H);
+            if (st.tool === 'e') {
+                pvCtx.save();
+                pvCtx.strokeStyle = '#555'; pvCtx.lineWidth = 1.5; pvCtx.setLineDash([4, 3]);
+                pvCtx.beginPath(); pvCtx.arc(W / 2, H / 2, Math.max(2, s / 2), 0, Math.PI * 2); pvCtx.stroke();
+                pvCtx.restore();
+                return;
+            }
+            var pts = [];
+            for (var i = 0; i <= 40; i++) { var u = i / 40; pts.push(18 + u * (W - 36), H / 2 + Math.sin(u * Math.PI * 2) * H * 0.2); }
+            drawObj(pvCtx, { k: 'b', c: st.color, s: s, t: st.tool === 'b' ? st.brush : 'p', r: 7, p: pts });
+        };
+        var setTool = function(t) { st.tool = t; syncUI(); };
+        var setBrush = function(b) { if (!BRUSHES[b]) return; st.brush = b; st.tool = 'b'; syncUI(); };
+        var setColor = function(c) { st.color = c; if (st.tool === 'e') st.tool = 'b'; syncUI(); };
+
+        ov.addEventListener('click', function(e) {
+            var tb = e.target.closest('.lne-draw-tool');
+            if (tb) { if (tb.dataset.brush) setBrush(tb.dataset.brush); else setTool(tb.dataset.tool); return; }
+            var sw = e.target.closest('.lne-draw-sw[data-color]'); if (sw) { setColor(sw.dataset.color); return; }
+        });
+        colorInp.addEventListener('input', function() { setColor(colorInp.value); });
+        sizeInp.addEventListener('input', function() { st.size = parseInt(sizeInp.value, 10) || 4; syncUI(); });
+        fillChk.addEventListener('change', function() { st.fill = fillChk.checked; });
+        keepChk.addEventListener('change', function() { st.keep = keepChk.checked; });
+        undoBtn.addEventListener('click', function() { goHist(hi - 1); });
+        redoBtn.addEventListener('click', function() { goHist(hi + 1); });
+        ov.querySelector('.lne-draw-clear').addEventListener('click', function() {
+            if (!st.objs.length && !st.base) return;
+            st.objs = []; st.base = null; pushHist(); rebuild();
+        });
+        ov.querySelector('.lne-draw-ratio').addEventListener('change', function(e) {
+            var d = RATIOS[e.target.value]; if (!d) return;
+            st.W = d[0]; st.H = d[1];
+            cv.width = base.width = st.W; cv.height = base.height = st.H;
+            fit(); rebuild(); defaultStatus();
+        });
+
+        // ── Pointer input ──
+        var toPt = function(e) {
+            var rc = cv.getBoundingClientRect();
+            var x = (e.clientX - rc.left) * (st.W / rc.width), y = (e.clientY - rc.top) * (st.H / rc.height);
+            return [Math.max(0, Math.min(st.W, Math.round(x * 10) / 10)), Math.max(0, Math.min(st.H, Math.round(y * 10) / 10))];
+        };
+        var constrain = function(o, force) {
+            if (!(force || st.keep) || !(o.k === 'r' || o.k === 'o' || o.k === 't')) return;
+            var dx = o.a[2] - o.a[0], dy = o.a[3] - o.a[1], m = Math.max(Math.abs(dx), Math.abs(dy));
+            o.a[2] = o.a[0] + (dx < 0 ? -m : m); o.a[3] = o.a[1] + (dy < 0 ? -m : m);
+        };
+        cv.addEventListener('pointerdown', function(e) {
+            if (activeId !== null) return;
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+            e.preventDefault();
+            activeId = e.pointerId;
+            try { cv.setPointerCapture(e.pointerId); } catch (err) {}
+            var p = toPt(e);
+            if (st.tool === 'b') cur = { k: 'b', c: st.color, s: st.size, t: st.brush, r: (Math.random() * 4294967295) >>> 0, p: [p[0], p[1]] };
+            else if (st.tool === 'e') cur = { k: 'e', c: st.color, s: st.size, p: [p[0], p[1]] };
+            else cur = { k: st.tool, c: st.color, s: st.size, f: st.fill ? 1 : 0, a: [p[0], p[1], p[0], p[1]] };
+            render();
+        });
+        cv.addEventListener('pointermove', function(e) {
+            if (e.pointerId !== activeId || !cur) return;
+            e.preventDefault();
+            if (cur.p) {
+                var evs = (typeof e.getCoalescedEvents === 'function' && e.getCoalescedEvents()) || [];
+                if (!evs.length) evs = [e];
+                for (var i = 0; i < evs.length; i++) {
+                    var q = toPt(evs[i]), n = cur.p.length;
+                    var dx = q[0] - cur.p[n - 2], dy = q[1] - cur.p[n - 1];
+                    if (dx * dx + dy * dy >= 0.64) cur.p.push(q[0], q[1]);
+                }
+            } else {
+                var q2 = toPt(e); cur.a[2] = q2[0]; cur.a[3] = q2[1];
+                constrain(cur, e.shiftKey);
+            }
+            render();
+        });
+        var endStroke = function(e, cancel) {
+            if (e.pointerId !== activeId) return;
+            try { cv.releasePointerCapture(e.pointerId); } catch (err) {}
+            activeId = null;
+            var o = cur; cur = null;
+            if (!cancel && o) {
+                var keep = true;
+                if (o.a && Math.abs(o.a[2] - o.a[0]) < 2 && Math.abs(o.a[3] - o.a[1]) < 2) keep = false; // accidental tap with a shape tool
+                if (keep && st.objs.length < MAX_OBJS) {
+                    if (o.p && o.p.length > 6) o.p = simplify(o.p);
+                    st.objs.push(o); drawObj(bctx, o); pushHist();
+                } else if (keep) setStatus(_('drawFailed', 'Could not create the drawing'), true);
+            }
+            render();
+        };
+        // Drop points that sit almost on the line between their neighbours (keeps the stored JSON small)
+        var simplify = function(p) {
+            var out = [p[0], p[1]];
+            for (var i = 2; i < p.length - 2; i += 2) {
+                var ax = out[out.length - 2], ay = out[out.length - 1];
+                var dx = p[i] - ax, dy = p[i + 1] - ay;
+                if (dx * dx + dy * dy >= 1.0) out.push(p[i], p[i + 1]);
+            }
+            out.push(p[p.length - 2], p[p.length - 1]);
+            return out;
+        };
+        cv.addEventListener('pointerup', function(e) { endStroke(e, false); });
+        cv.addEventListener('pointercancel', function(e) { endStroke(e, true); });
+        cv.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+
+        // ── Keyboard: Ctrl/Cmd+Z, Ctrl+Y / Ctrl+Shift+Z while the pad is open ──
+        var onKey = function(e) {
+            if (!ov.parentNode) return;
+            var mod = e.ctrlKey || e.metaKey, k = (e.key || '').toLowerCase();
+            if (mod && k === 'z') { e.preventDefault(); e.stopPropagation(); goHist(e.shiftKey ? hi + 1 : hi - 1); }
+            else if (mod && k === 'y') { e.preventDefault(); e.stopPropagation(); goHist(hi + 1); }
+        };
+        document.addEventListener('keydown', onKey, true);
+
+        // ── Responsive fit ──
+        var ro = null;
+        var onWinResize = function() { fit(); };
+        if (typeof ResizeObserver === 'function') { ro = new ResizeObserver(function() { fit(); }); ro.observe(wrap); }
+        window.addEventListener('resize', onWinResize);
+        window.addEventListener('orientationchange', onWinResize);
+        if (window.visualViewport) window.visualViewport.addEventListener('resize', onWinResize);
+        var cleanup = function() {
+            document.removeEventListener('keydown', onKey, true);
+            window.removeEventListener('resize', onWinResize);
+            window.removeEventListener('orientationchange', onWinResize);
+            if (window.visualViewport) window.visualViewport.removeEventListener('resize', onWinResize);
+            if (ro) ro.disconnect();
+        };
+
+        // ── Insert / apply ──
+        var commit = function(ovEl, close) {
+            var hasBase = !!(st.base && st.base.complete && st.base.naturalWidth);
+            if (!st.objs.length && !hasBase) { setStatus(_('drawEmpty', 'Draw something first'), true); return; }
+            var url;
+            try {
+                var out = document.createElement('canvas'); out.width = st.W; out.height = st.H;
+                var oc = out.getContext('2d');
+                oc.fillStyle = '#ffffff'; oc.fillRect(0, 0, st.W, st.H);
+                oc.drawImage(base, 0, 0);
+                url = out.toDataURL('image/png');
+            } catch (err) { console.error('Drawing export failed', err); setStatus(_('drawFailed', 'Could not create the drawing'), true); return; }
+            var json = '';
+            if (!hasBase) {
+                json = JSON.stringify({ v: 1, w: st.W, h: st.H, o: st.objs });
+                if (json.length > MAX_JSON) json = ''; // too heavy to store: the PNG is still editable as a base layer
+            }
+            var alt = editing ? (existingImg.getAttribute('alt') || '') : '';
+            alt = alt || _('drawTitle', 'Drawing');
+            done = true;
+            if (editing) {
+                self._saveSnap();
+                existingImg.setAttribute('src', url);
+                existingImg.setAttribute('alt', alt);
+                existingImg.setAttribute('width', st.W);
+                existingImg.setAttribute('height', st.H);
+                if (json) existingImg.setAttribute('data-lne-draw', json); else existingImg.removeAttribute('data-lne-draw');
+                existingImg.classList.add('lne-drawing');
+                self._initAll();
+                self._syncState();
+            } else {
+                var img = document.createElement('img');
+                img.className = 'lne-drawing';
+                img.setAttribute('src', url);
+                img.setAttribute('alt', alt);
+                img.setAttribute('width', st.W);
+                img.setAttribute('height', st.H);
+                img.setAttribute('style', 'max-width:100%;height:auto;display:block;margin:8px 0;border-radius:6px;');
+                if (json) img.setAttribute('data-lne-draw', json);
+                self._insertHTML(img.outerHTML);
+            }
+            close();
+        };
+
+        fit(); syncUI(); rebuild();
+        sizeInp.value = st.size; fillChk.checked = st.fill; keepChk.checked = st.keep;
+        if (restored) setStatus(_('drawRestored', 'Unsaved sketch restored')); else defaultStatus();
+        // Layout is final one frame after the overlay is attached
+        requestAnimationFrame(function() { fit(); });
+        return r;
     }
 
     // ── Video modal ──────────────────────────────────────────────────────
@@ -4029,7 +4605,7 @@ class LocalNotesEditor {
     _ctxBar(items) {
         var bar = document.createElement('div');
         bar.className = 'lne-ctx-toolbar-float';
-        items.forEach(function(item) {
+        items.filter(Boolean).forEach(function(item) {
             var btn = document.createElement('button');
             btn.className = 'lne-ctx-btn';
             btn.innerHTML = '<i class="' + item.icon + '"></i>';
@@ -4083,7 +4659,25 @@ class LocalNotesEditor {
 
     _showImageCtx(img) {
         var self = this;
+        var isDrawing = img.classList.contains('lne-drawing');
         var bar = this._ctxBar([
+            {
+                icon: 'bi bi-arrows-fullscreen', label: this._('viewerOpen','View full size'),
+                action: function() {
+                    if (self._removeCtx) self._removeCtx();
+                    if (typeof window.openImageViewer !== 'function') return;
+                    // Page through every image of the note being edited
+                    var list = [].slice.call(self.ed.querySelectorAll('img')).filter(function(im) { return im.getAttribute('src'); });
+                    var at = list.indexOf(img); if (at < 0) { list.push(img); at = list.length - 1; }
+                    window.openImageViewer(list.map(function(im) {
+                        return { src: im.currentSrc || im.src, alt: im.getAttribute('alt') || '', drawing: im.classList.contains('lne-drawing') };
+                    }), at);
+                }
+            },
+            isDrawing ? {
+                icon: 'bi bi-brush', label: this._('drawEditTitle','Edit drawing'),
+                action: function() { if (self._removeCtx) self._removeCtx(); self._modalDrawing(img); }
+            } : null,
             {
                 icon: 'bi bi-pencil', label: this._('editImage','Edit image'),
                 action: function() { if (self._removeCtx) self._removeCtx(); self._modalImageEdit(img); }
@@ -4548,6 +5142,9 @@ class LocalNotesEditor {
     getText()     { return this.ed.innerText; }
 
     setContent(html) {
+        // A new note is being loaded (or the editor was closed): an unfinished
+        // sketch belongs to the previous note, so don't carry it over.
+        this._drawDraft = null;
         this.ed.innerHTML = html || '';
         this._snapDecode();
         this._cleanZeroWidthSpans(this.ed);
@@ -4830,7 +5427,8 @@ class LocalNotesEditor {
             { icon: 'bi-chat-quote',    label: this._('slashQuote', 'Quote'),                 cmd: 'quote' },
             { icon: 'bi-dash-lg',       label: this._('slashHorizontalRule', 'Horizontal Rule'), cmd: 'hr' },
             { icon: 'bi-image',         label: this._('slashImage', 'Image'),                 cmd: 'image' },
-            { icon: 'bi-play-circle',   label: this._('slashVideo', 'Video'),                 cmd: 'video' }
+            { icon: 'bi-play-circle',   label: this._('slashVideo', 'Video'),                 cmd: 'video' },
+            { icon: 'bi-brush',         label: this._('slashDrawing', 'Drawing'),             cmd: 'drawing' }
         ];
 
         var self = this;
@@ -4948,6 +5546,9 @@ class LocalNotesEditor {
                 break;
             case 'video':
                 this._modalVideo();
+                break;
+            case 'drawing':
+                this._modalDrawing();
                 break;
         }
     }
@@ -5089,6 +5690,7 @@ class LocalNotesEditor {
     redo()  { if (!this.redoStack.length) return; this.isRec=true; var s=this.redoStack.pop(); this.undoStack.push(s); this.ed.innerHTML=s.c; this.lastSnap=s; this.isRec=false; this._syncState(); }
     insertImage()       { this._modalImage(); }
     insertVideo()       { this._modalVideo(); }
+    insertDrawing()     { this._modalDrawing(); }
     insertChecklistItem(){ this._insertChecklist(); }
     execCommand(cmd,ui,val){ this._saveSnap(); document.execCommand(cmd, ui!==undefined?ui:false, val||null); }
 }

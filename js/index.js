@@ -4695,6 +4695,9 @@ function initializeEventListeners() {
     // Keyboard shortcuts
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape') {
+            // A tool modal (image, table, drawing…) or the image viewer sits on top of the
+            // editor: Escape must only close that layer, never the note editor beneath it.
+            if (document.querySelector('.lne-modal-ov, .ln-dv')) return;
             const m = document.getElementById('editModal'); if (m?.style.display === 'block') closeModal();
         }
     });

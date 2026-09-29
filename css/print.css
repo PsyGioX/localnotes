@@ -4,7 +4,7 @@
 @media print {
     /* Hide navigation, buttons, and UI elements */
     .header, .sidebar, .toolbar, .search-container, 
-    .theme-toggle, .language-selector, .fullscreen-overlay {
+    .theme-toggle, .language-selector, .fullscreen-overlay, .ln-dv {
         display: none !important;
     }
     

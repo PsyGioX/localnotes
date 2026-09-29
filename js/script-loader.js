@@ -17,23 +17,23 @@ function loadScriptsInOrder(scripts) {
 
 // Load scripts after DOM is ready
 var scripts = [
-    '/js/highlight.min.js?v=1.9.14',
-    '/js/i18n.js?v=1.9.14',
-    '/js/img.js?v=1.9.14',
-    '/js/date-utils.js?v=1.9.14',
-    '/js/editor-integration.js?v=1.9.14',
-    '/js/markdown.js?v=1.9.14',
-    '/js/import-formats.js?v=1.9.14',
-    '/js/tags-calendar.js?v=1.9.14',
-    '/js/task-board.js?v=1.9.14',
-    '/js/index.js?v=1.9.14',
-    '/js/graph-view.js?v=1.9.14',
-    '/js/site-export.js?v=1.9.14',
-    '/js/command-palette.js?v=1.9.14',
-    '/js/share-target.js?v=1.9.14',
-    '/js/onboarding-tour.js?v=1.9.14',
-    '/js/action-bar.js?v=1.9.14',
-    '/js/sidebar.js?v=1.9.14'
+    '/js/highlight.min.js?v=1.9.16',
+    '/js/i18n.js?v=1.9.16',
+    '/js/img.js?v=1.9.16',
+    '/js/date-utils.js?v=1.9.16',
+    '/js/editor-integration.js?v=1.9.16',
+    '/js/markdown.js?v=1.9.16',
+    '/js/import-formats.js?v=1.9.16',
+    '/js/tags-calendar.js?v=1.9.16',
+    '/js/task-board.js?v=1.9.16',
+    '/js/index.js?v=1.9.16',
+    '/js/graph-view.js?v=1.9.16',
+    '/js/site-export.js?v=1.9.16',
+    '/js/command-palette.js?v=1.9.16',
+    '/js/share-target.js?v=1.9.16',
+    '/js/onboarding-tour.js?v=1.9.16',
+    '/js/action-bar.js?v=1.9.16',
+    '/js/sidebar.js?v=1.9.16'
 ];
 
 if (document.readyState === 'loading') {

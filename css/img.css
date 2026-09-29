@@ -1,50 +1,144 @@
-﻿.fullscreen-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.349);
-    backdrop-filter: blur(50px);
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
+﻿/* ── Drawings inside notes ─────────────────────────────────────────────── */
+.noteContent img.lne-drawing,
+.note img.lne-drawing {
+    background: #fff;
+    border: 1px solid rgba(128, 128, 128, .25);
 }
-.fullscreen-overlay > img {
-    object-fit: contain;
-    width: 80%;
-    height: auto;
+.note img { cursor: zoom-in; }
+
+/* ── Image viewer (gallery / zoom / pan) ───────────────────────────────── */
+body.ln-dv-open { overflow: hidden; }
+.ln-dv {
+    position: fixed; inset: 0; z-index: 100001;
+    background: rgba(8, 10, 9, var(--dv-a, .94));
+    -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+    overscroll-behavior: contain; touch-action: none;
+    color: #fff; -webkit-tap-highlight-color: transparent;
+    animation: lnDvIn .2s ease both;
 }
-.fullscreen-image {
-    max-width: 100%;
-    max-height: 100%;
-    border-radius: 10px;
-    transition: transform 0.5s ease-in-out;
-    opacity: 0;
-    animation: slideIn 0.5s ease-in-out forwards;
+.ln-dv.is-closing { animation: lnDvOut .18s ease both; }
+@keyframes lnDvIn  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes lnDvOut { from { opacity: 1; } to { opacity: 0; } }
+
+.ln-dv-stage {
+    position: absolute; inset: 0; overflow: hidden; touch-action: none; cursor: default;
 }
-.fullscreen-image.closing {
-    animation: slideOut 0.5s ease-in-out forwards;
+.ln-dv.is-zoomed .ln-dv-stage { cursor: grab; }
+.ln-dv-stage.is-grabbing { cursor: grabbing !important; }
+.ln-dv-img {
+    position: absolute; left: 0; top: 0; max-width: none; max-height: none;
+    transform-origin: 0 0; will-change: transform;
+    border-radius: 3px; box-shadow: 0 10px 50px rgba(0, 0, 0, .5);
+    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+    opacity: 0; transition: opacity .15s; cursor: inherit;
 }
-@keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateY(50px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+.ln-dv-img.is-ready { opacity: 1; }
+.ln-dv-img.is-anim { transition: opacity .15s, transform .26s cubic-bezier(.2, .8, .2, 1); }
+.ln-dv-img.is-drawing { background: #fff; }
+
+/* Loading / error */
+.ln-dv-spin {
+    position: absolute; left: 50%; top: 50%; width: 38px; height: 38px; margin: -19px 0 0 -19px;
+    border-radius: 50%; border: 3px solid rgba(255, 255, 255, .22); border-top-color: #fff;
+    opacity: 0; pointer-events: none;
 }
-@keyframes slideOut {
-    from {
-        opacity: 1;
-        transform: translateY(0);
-    }
-    to {
-        opacity: 0;
-        transform: translateY(50px);
-    }
+.ln-dv.is-loading .ln-dv-spin { animation: lnDvSpin .8s linear infinite, lnDvFade .2s .25s forwards; }
+@keyframes lnDvSpin { to { transform: rotate(360deg); } }
+@keyframes lnDvFade { to { opacity: 1; } }
+.ln-dv-err {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    display: none; flex-direction: column; align-items: center; gap: 10px; padding: 0 24px;
+    text-align: center; color: rgba(255, 255, 255, .8); font-size: 15px; pointer-events: none;
+}
+.ln-dv-err i { font-size: 34px; }
+.ln-dv.is-error .ln-dv-err { display: flex; }
+
+/* Top bar */
+.ln-dv-bar {
+    position: absolute; left: 0; right: 0; top: 0; z-index: 2;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: max(10px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) 8px max(12px, env(safe-area-inset-left, 0px));
+    background: linear-gradient(to bottom, rgba(0, 0, 0, .45), transparent);
+    pointer-events: none;
+}
+.ln-dv-side { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ln-dv-group {
+    display: flex; align-items: center; gap: 2px; padding: 3px; pointer-events: auto;
+    background: rgba(255, 255, 255, .1); border: 1px solid rgba(255, 255, 255, .14); border-radius: 12px;
+}
+.ln-dv-btn {
+    width: 40px; height: 40px; min-width: 0; min-height: 0; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 0; border-radius: 9px; background: transparent; color: #fff; font-size: 17px; cursor: pointer;
+    transition: background-color .12s, opacity .12s;
+}
+.ln-dv-btn:hover:not(:disabled) { background: rgba(255, 255, 255, .16); }
+.ln-dv-btn:disabled { opacity: .3; cursor: default; }
+.ln-dv-btn:focus-visible, .ln-dv-thumb:focus-visible { outline: 2px solid #aefc6e; outline-offset: 1px; }
+.ln-dv-pct, .ln-dv-count {
+    min-width: 46px; padding: 0 6px; text-align: center; font-size: 13px;
+    color: rgba(255, 255, 255, .88); font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.ln-dv-count { min-width: 0; padding: 0 10px; line-height: 40px; }
+
+/* Prev / next */
+.ln-dv-nav {
+    position: absolute; top: 50%; z-index: 2; width: 46px; height: 46px; margin-top: -23px; font-size: 20px;
+    background: rgba(0, 0, 0, .42); border: 1px solid rgba(255, 255, 255, .16); border-radius: 50%;
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+}
+.ln-dv-prev { left: max(12px, env(safe-area-inset-left, 0px)); }
+.ln-dv-next { right: max(12px, env(safe-area-inset-right, 0px)); }
+
+/* Footer: caption + thumbnails */
+.ln-dv-foot {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 2;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    padding: 22px max(12px, env(safe-area-inset-right, 0px)) max(10px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+    background: linear-gradient(to top, rgba(0, 0, 0, .5), transparent);
+    pointer-events: none;
+}
+.ln-dv-cap {
+    max-width: min(92vw, 760px); font-size: 13px; color: rgba(255, 255, 255, .85);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; pointer-events: auto;
+}
+.ln-dv-thumbs {
+    display: flex; gap: 6px; max-width: 100%; padding: 3px 4px; overflow-x: auto; pointer-events: auto;
+    scrollbar-width: none; -webkit-overflow-scrolling: touch; justify-content: safe center;
+}
+.ln-dv-thumbs::-webkit-scrollbar { display: none; }
+.ln-dv-thumb {
+    flex: 0 0 auto; width: 48px; height: 48px; min-width: 0; min-height: 0; padding: 0; overflow: hidden;
+    border-radius: 8px; border: 2px solid transparent; background: #222; cursor: pointer;
+    opacity: .6; transition: opacity .12s, border-color .12s, transform .12s;
+}
+.ln-dv-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+.ln-dv-thumb:hover { opacity: .9; }
+.ln-dv-thumb.is-active { opacity: 1; border-color: #fff; transform: scale(1.06); }
+
+/* Tap-to-hide controls */
+.ln-dv-bar, .ln-dv-foot, .ln-dv-nav { transition: opacity .2s, visibility 0s; }
+.ln-dv.is-chrome-hidden .ln-dv-bar,
+.ln-dv.is-chrome-hidden .ln-dv-foot,
+.ln-dv.is-chrome-hidden .ln-dv-nav { opacity: 0; visibility: hidden; transition: opacity .2s, visibility 0s .2s; }
+
+/* Phones */
+@media (max-width: 600px) {
+    .ln-dv-hide-sm { display: none !important; }
+    .ln-dv-bar { gap: 6px; }
+    .ln-dv-btn { width: 42px; height: 42px; }
+    .ln-dv-count { line-height: 42px; }
+    .ln-dv-nav { width: 40px; height: 40px; margin-top: -20px; font-size: 18px; }
+    .ln-dv-thumb { width: 44px; height: 44px; }
+}
+/* Short screens (landscape phones): keep the picture as tall as possible */
+@media (max-height: 500px) {
+    .ln-dv-foot { display: none; }
+    .ln-dv-bar { padding-top: max(6px, env(safe-area-inset-top, 0px)); padding-bottom: 4px; }
+    .ln-dv-btn { width: 36px; height: 36px; font-size: 16px; }
+    .ln-dv-count { line-height: 36px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .ln-dv, .ln-dv.is-closing, .ln-dv-img, .ln-dv-img.is-anim, .ln-dv-thumb { animation: none !important; transition: none !important; }
+    .ln-dv.is-loading .ln-dv-spin { animation: lnDvSpin 1.6s linear infinite; opacity: 1; }
 }

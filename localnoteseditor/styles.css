@@ -2715,3 +2715,199 @@ textarea.lne-inp { resize: vertical; }
 @media (min-width: 769px) {
     .lne-md-tabs { display: none; }
 }
+
+/* ═══════════════════════════ DRAWING TOOL (modal) ═══════════════════════ */
+/* Drawings always sit on white paper so dark strokes stay readable in dark theme */
+.lne-editor img.lne-drawing { background: #fff; border: 1px solid rgba(128,128,128,.25); }
+
+.lne-modal-draw .lne-modal {
+    width: min(1080px, 96vw);
+    height: min(760px, 92vh);
+    height: min(760px, 92dvh);
+    max-height: none;
+}
+.lne-modal-draw .lne-mbody { padding: 12px; overflow: hidden; max-height: none; gap: 0; }
+
+.lne-draw { display: flex; gap: 14px; flex: 1; min-height: 0; width: 100%; }
+
+/* Left panel (tools) */
+.lne-draw-panel {
+    width: 224px; flex: 0 0 auto; min-height: 0;
+    display: flex; flex-direction: column; gap: 14px;
+    overflow-y: auto; overflow-x: hidden; padding: 2px 6px 2px 0;
+    -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+}
+.lne-draw-sec { display: flex; flex-direction: column; gap: 8px; }
+.lne-draw-sec.is-off { opacity: .45; pointer-events: none; }
+.lne-draw-h {
+    font-size: 11px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase;
+    color: var(--text-secondary, #999);
+}
+.lne-draw-tools { display: flex; flex-direction: column; gap: 6px; }
+.lne-draw-tools.lne-draw-cols2 { display: grid; grid-template-columns: 1fr 1fr; }
+.lne-draw-tool {
+    display: flex; align-items: center; gap: 8px; min-width: 0; min-height: 36px;
+    padding: 7px 10px; border-radius: 8px; cursor: pointer; text-align: left;
+    border: 1px solid var(--border-color, #272727);
+    background: var(--bg-secondary, #111); color: var(--text-color, #e0e0e0);
+    font: inherit; font-size: 13px;
+    transition: background-color .12s, border-color .12s, color .12s;
+}
+.lne-draw-tool i { font-size: 16px; flex: 0 0 auto; }
+.lne-draw-lbl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lne-draw-tool:hover { background: var(--button-hover, #2d2d2d); }
+.lne-draw-tool[aria-pressed="true"] {
+    border-color: var(--primary-color, #28a745); color: var(--primary-color, #28a745);
+    background: rgba(40,167,69,.12);
+}
+.lne-draw-chk { align-items: flex-start; }
+.lne-draw label.lne-chk { text-transform: none; letter-spacing: 0; font-size: 13px; font-weight: 400; color: var(--text-color, #e0e0e0); }
+.lne-draw-chk span { line-height: 1.3; min-width: 0; }
+.lne-draw-chk.is-off { opacity: .45; }
+
+.lne-draw-sizerow { display: flex; flex-direction: column; gap: 8px; }
+.lne-draw-size { width: 100%; min-width: 0; accent-color: var(--primary-color, #28a745); height: 28px; }
+.lne-draw-prevcv {
+    display: block; width: 100%; height: auto; aspect-ratio: 240 / 56;
+    border-radius: 8px; background: #d9dde3; border: 1px solid var(--border-color, #272727);
+}
+.lne-draw-sec.is-dim { opacity: .55; }
+.lne-draw-btype { font-size: 12px; padding: 6px 8px; gap: 6px; }
+.lne-draw-btype i { font-size: 15px; }
+
+.lne-draw-colors { display: flex; flex-wrap: wrap; gap: 10px; padding: 4px; }
+.lne-draw-sw {
+    width: 30px; height: 30px; min-width: 0; min-height: 0; padding: 0; border-radius: 50%; cursor: pointer; position: relative;
+    border: 2px solid transparent; box-shadow: inset 0 0 0 1px rgba(128,128,128,.5);
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: transform .1s, outline-color .1s;
+}
+.lne-draw-sw:hover { transform: scale(1.12); }
+.lne-draw-sw[aria-pressed="true"], .lne-draw-sw-custom.is-on {
+    box-shadow: inset 0 0 0 2px #fff, 0 0 0 2px var(--primary-color, #28a745);
+    transform: scale(1.1);
+}
+.lne-draw-sw-custom {
+    background: conic-gradient(#e02020, #ffd60a, #5ad600, #4a9cf5, #a020f0, #e02020);
+    color: #fff; font-size: 13px; overflow: hidden;
+}
+.lne-draw-sw-custom i { text-shadow: 0 0 3px rgba(0,0,0,.7); pointer-events: none; }
+.lne-draw-colorinp { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; padding: 0; }
+
+.lne-draw-ratio { width: auto; flex: 0 0 auto; max-width: 46%; padding: 6px 8px; font-size: 13px; height: 38px; min-height: 0; }
+
+/* Stage (canvas) */
+.lne-draw-stage { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+.lne-draw-bar { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; min-height: 36px; }
+.lne-draw-ibtn {
+    width: 38px; height: 38px; min-width: 0; min-height: 0; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 8px; border: 1px solid var(--border-color, #272727); cursor: pointer; font-size: 16px;
+    background: var(--bg-secondary, #111); color: var(--text-color, #e0e0e0);
+    transition: background-color .12s, border-color .12s, opacity .12s;
+}
+.lne-draw-ibtn:hover:not(:disabled) { background: var(--button-hover, #2d2d2d); border-color: var(--primary-color, #28a745); }
+.lne-draw-ibtn:disabled { opacity: .35; cursor: default; }
+.lne-draw-status {
+    flex: 1; min-width: 0; margin-left: 6px; font-size: 12px; color: var(--text-muted, #777);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.lne-draw-status.is-warn { color: #e74c3c; font-weight: 600; }
+.lne-draw-wrap {
+    flex: 1; min-height: 0; padding: 8px; display: flex; align-items: center; justify-content: center;
+    overflow: hidden; border-radius: 10px; border: 1px solid var(--border-color, #272727);
+    background: var(--bg-secondary, #111);
+}
+.lne-draw-cv {
+    display: block; background: #fff; border-radius: 4px; box-shadow: 0 2px 14px rgba(0,0,0,.35);
+    touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+    max-width: 100%; max-height: 100%;
+}
+
+[data-theme="light"] .lne-draw-tool,
+[data-theme="light"] .lne-draw-ibtn { background: #f8f9fa; color: #212529; border-color: #dee2e6; }
+[data-theme="light"] .lne-draw-tool:hover,
+[data-theme="light"] .lne-draw-ibtn:hover:not(:disabled) { background: #e9ecef; }
+[data-theme="light"] .lne-draw-tool[aria-pressed="true"] { background: rgba(40,167,69,.1); color: var(--primary-color, #28a745); border-color: var(--primary-color, #28a745); }
+[data-theme="light"] .lne-draw label.lne-chk { color: #212529; }
+[data-theme="light"] .lne-draw-wrap { background: #eef1f4; border-color: #dee2e6; }
+[data-theme="light"] .lne-draw-canvas-shadow, [data-theme="light"] .lne-draw-cv { box-shadow: 0 2px 12px rgba(34,50,60,.18); }
+
+/* Touch devices: comfortable hit targets */
+@media (pointer: coarse) {
+    .lne-draw-sw { width: 36px; height: 36px; }
+    .lne-draw-ibtn { width: 42px; height: 42px; }
+    .lne-draw-ratio { height: 42px; }
+    .lne-draw-tool { min-height: 44px; }
+    .lne-draw-size { height: 36px; }
+}
+
+/* Narrow / portrait: canvas on top, tools underneath (thumb-reachable) */
+@media (max-width: 720px) {
+    .lne-modal-draw .lne-modal { width: 100%; height: 96vh; height: 96dvh; }
+    .lne-modal-draw .lne-mbody { padding: 8px; }
+    .lne-draw { flex-direction: column; gap: 8px; }
+    .lne-draw-stage { order: 1; }
+    .lne-draw-panel {
+        order: 2; width: auto; flex: 0 0 auto; max-height: 38%;
+        flex-direction: column; gap: 10px; padding: 8px 2px 0 0;
+        border-top: 1px solid var(--border-color, #272727);
+    }
+    .lne-draw-h { display: none; }
+    .lne-draw-sec { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .lne-draw-tools, .lne-draw-tools.lne-draw-cols2 { display: flex; flex-direction: row; flex-wrap: wrap; gap: 6px; }
+    /* Most-used controls first: brush, brush type, colour, size — shapes scroll below */
+    .lne-draw-sec-opts { order: 1; }
+    .lne-draw-sec-brushes { order: 2; }
+    .lne-draw-sec-colors { order: 3; }
+    .lne-draw-sec-size { order: 4; }
+    .lne-draw-sec-shapes { order: 5; }
+    .lne-draw-colors { padding: 2px 4px; gap: 8px; }
+    .lne-draw-tool { width: 44px; height: 44px; min-height: 0; padding: 0; justify-content: center; }
+    .lne-draw-sw { width: 34px; height: 34px; }
+    .lne-draw-lbl { display: none; }
+    .lne-draw-chk { flex: 1 1 140px; }
+    .lne-draw-sizerow { flex: 1 1 100%; flex-direction: row; align-items: center; }
+    .lne-draw-size { flex: 1; width: auto; }
+    .lne-draw-prevcv { flex: 0 0 96px; width: 96px; }
+    .lne-draw-status { display: none; }
+    .lne-draw-ratio { margin-left: auto; max-width: 60%; }
+    .lne-draw-wrap { padding: 6px; }
+}
+@media (max-width: 380px) {
+    .lne-draw-tool { width: 40px; height: 40px; }
+    .lne-draw-sw { width: 30px; height: 30px; }
+    .lne-draw-colors { gap: 7px; }
+}
+
+/* Landscape phones / very short viewports: keep the side panel, tighten it */
+@media (max-height: 520px) and (min-width: 721px) {
+    .lne-modal-draw .lne-modal { height: 96vh; height: 96dvh; }
+    .lne-draw-panel { width: 176px; gap: 10px; }
+    .lne-draw-tool { min-height: 34px; padding: 5px 8px; }
+    .lne-draw-h { font-size: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .lne-draw-sw, .lne-draw-tool, .lne-draw-ibtn { transition: none; }
+}
+
+/* Short viewports (phones in landscape): give the canvas the height back */
+@media (max-height: 520px) {
+    .lne-modal-draw .lne-modal { height: 100vh; height: 100dvh; border-radius: 12px; }
+    .lne-modal-draw .lne-mhd { padding: 4px 12px; min-height: 0; }
+    .lne-modal-draw .lne-mhd h3 { font-size: 15px; }
+    .lne-modal-draw .lne-mclose { min-width: 0; min-height: 0; width: 36px; height: 36px; }
+    .lne-modal-draw .lne-mft { padding: 6px 12px; gap: 8px; }
+    .lne-modal-draw .lne-mft .lne-mbtn { min-height: 36px; padding: 6px 14px; }
+    .lne-modal-draw .lne-mbody { padding: 8px; }
+    .lne-draw-status { display: none; }
+    .lne-draw-bar { min-height: 0; }
+    .lne-draw-ibtn, .lne-draw-ratio { height: 34px; width: auto; min-width: 34px; }
+    .lne-draw-ratio { padding: 0 8px; }
+}
+
+/* Panel order (all layouts): brush → brush type → colour → size → shapes */
+.lne-draw-sec-opts { order: 1; }
+.lne-draw-sec-brushes { order: 2; }
+.lne-draw-sec-colors { order: 3; }
+.lne-draw-sec-size { order: 4; }
+.lne-draw-sec-shapes { order: 5; }
