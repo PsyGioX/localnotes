@@ -509,7 +509,7 @@ class NotesDatabase {
 
     async _decryptNoteFromStorage(note) {
         if (!note || !note.encrypted) return note; // legacy plaintext note, not yet migrated
-        if (!this._vaultKey) return note; // shouldn't happen — vault gate blocks app init until unlocked
+        if (!this._vaultKey) return { ...note, content: '', title: '' }; // locked: never expose ciphertext as content
         try {
             const out = { ...note };
             out.content = await this._fieldDecrypt(note.content);
@@ -2914,6 +2914,9 @@ function buildNoteCardElement(note, allTags) {
 }
 
 async function _loadNotesImpl() {
+    // Vault locked: notes are still ciphertext here. Rendering it as HTML puts
+    // megabytes of base64 into one text node and freezes layout (endless preloader).
+    if (!notesDB.vaultReady && await notesDB.isVaultSetup()) return;
     const viewer = document.querySelector('.btn_view_div');
     const notesContainer = document.getElementById('notesContainer');
     const notesCenter = document.querySelector('.notes_center');

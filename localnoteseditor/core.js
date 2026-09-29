@@ -3821,6 +3821,12 @@ class LocalNotesEditor {
                 oc.fillStyle = '#ffffff'; oc.fillRect(0, 0, st.W, st.H);
                 oc.drawImage(base, 0, 0);
                 url = out.toDataURL('image/png');
+                // Lossless WebP is ~25% smaller than PNG for typical sketches; keep PNG where the
+                // browser can't encode WebP (it silently falls back to PNG) or the result isn't smaller.
+                try {
+                    var wp = out.toDataURL('image/webp', 1);
+                    if (wp.indexOf('data:image/webp') === 0 && wp.length < url.length) url = wp;
+                } catch (e2) { /* keep PNG */ }
             } catch (err) { console.error('Drawing export failed', err); setStatus(_('drawFailed', 'Could not create the drawing'), true); return; }
             var json = '';
             if (!hasBase) {

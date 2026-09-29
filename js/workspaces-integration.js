@@ -128,7 +128,7 @@
                 patchOpenModal();
                 patchNotesDB();
                 // Перерисовываем заметки с фильтром
-                if (typeof loadNotes === 'function') loadNotes();
+                if (typeof loadNotes === 'function' && window.notesDB && window.notesDB.vaultReady) loadNotes();
             }
         );
     }
