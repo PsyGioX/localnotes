@@ -864,5 +864,6 @@
   "viewerDownload": "Stáhnout",
   "viewerFailed": "Obrázek se nepodařilo načíst",
   "viewerImage": "Obrázek",
-  "viewerOpen": "Zobrazit v plné velikosti"
+  "viewerOpen": "Zobrazit v plné velikosti",
+  "scrollToTop": "Nahoru"
 }

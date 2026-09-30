@@ -864,5 +864,6 @@
   "viewerDownload": "Преузми",
   "viewerFailed": "Слика није могла да се учита",
   "viewerImage": "Слика",
-  "viewerOpen": "Прикажи у пуној величини"
+  "viewerOpen": "Прикажи у пуној величини",
+  "scrollToTop": "На врх"
 }

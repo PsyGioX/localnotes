@@ -187,7 +187,7 @@
         }
 
         async updateTaskStatus(noteId, status, insertBeforeId) {
-            const note = await window.notesDB.getNote(noteId);
+            const note = await window.notesDB.getNote(noteId, { light: true });
             if (!note) return;
             note.taskStatus = status;
             note.lastModified = Date.now();

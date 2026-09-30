@@ -864,5 +864,6 @@
   "viewerDownload": "Скачать",
   "viewerFailed": "Не удалось загрузить изображение",
   "viewerImage": "Изображение",
-  "viewerOpen": "Открыть в полном размере"
+  "viewerOpen": "Открыть в полном размере",
+  "scrollToTop": "Наверх"
 }

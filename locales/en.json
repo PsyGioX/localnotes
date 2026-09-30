@@ -864,5 +864,6 @@
   "viewerDownload": "Download",
   "viewerFailed": "Could not load the image",
   "viewerImage": "Image",
-  "viewerOpen": "View full size"
+  "viewerOpen": "View full size",
+  "scrollToTop": "Back to top"
 }

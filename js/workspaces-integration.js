@@ -36,8 +36,8 @@
 
             // Подменяем getAllNotes для фильтрации по пространству
             const origGetAll = notesDB.getAllNotes.bind(notesDB);
-            notesDB.getAllNotes = async () => {
-                const all = await origGetAll();
+            notesDB.getAllNotes = async (...args) => {
+                const all = await origGetAll(...args);
                 return workspacesManager.filterNotesByWorkspace(all);
             };
 

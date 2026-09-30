@@ -5,6 +5,8 @@ function handleImageLoad(img) {
 }
 
 function handleImageError(img) {
+    // cid: placeholders are resolved to object URLs a moment later (see resolver below)
+    if (String(img.getAttribute('src') || '').startsWith('cid:ln-')) return;
     img.classList.add('error');
     img.classList.remove('loaded');
     console.warn('Failed to load image:', img.src);
@@ -153,6 +155,10 @@ function openImageViewer(items, startIndex) {
 
     // ── File info helpers ──
     const mimeOf = (src) => {
+        if (src.startsWith('blob:') && window.notesDB && window.notesDB.imageInfoForUrl) {
+            const info = window.notesDB.imageInfoForUrl(src);
+            if (info) return info.mime;
+        }
         const m = /^data:([^;,]+)/.exec(src);
         if (m) return m[1].toLowerCase();
         const e = (/\.([a-z0-9]{2,5})(?:[?#]|$)/i.exec(src) || [])[1];
@@ -161,6 +167,10 @@ function openImageViewer(items, startIndex) {
     const extOf = (mime) => ({ 'image/jpeg': 'jpg', 'image/png': 'png', 'image/gif': 'gif', 'image/webp': 'webp', 'image/svg+xml': 'svg', 'image/avif': 'avif', 'image/bmp': 'bmp' }[mime] || 'png');
     const fmtBytes = (b) => b < 1024 ? b + ' B' : b < 1048576 ? Math.round(b / 1024) + ' KB' : (b / 1048576).toFixed(1) + ' MB';
     const sizeOf = (src) => {
+        if (src.startsWith('blob:') && window.notesDB && window.notesDB.imageInfoForUrl) {
+            const info = window.notesDB.imageInfoForUrl(src);
+            if (info) return fmtBytes(info.size);
+        }
         const m = /^data:[^,]*?(;base64)?,/.exec(src);
         if (!m) return '';
         const body = src.length - m[0].length;
@@ -531,3 +541,30 @@ const imgObserver = new MutationObserver((mutations) => {
 });
 
 imgObserver.observe(document.body, { childList: true, subtree: true });
+
+// ── Image-store resolver ────────────────────────────────────────────────────
+// Notes keep big images in a separate encrypted store and reference them as
+// <img src="cid:ln-…">. Whenever such an <img> lands in the document (note
+// cards, calendar, sidebar preview...) it is pointed at an object URL of the
+// decrypted bytes — lazily, only for images that are actually rendered.
+(function () {
+    const SEL = 'img[src^="cid:ln-"]';
+    async function resolveImg(img) {
+        const src = img.getAttribute('src') || '';
+        const db = window.notesDB;
+        if (!db || !db.vaultReady || !src.startsWith('cid:ln-')) return;
+        try {
+            const url = await db.imageBlobUrl(src.slice(4));
+            if (url && img.getAttribute('src') === src) img.src = url;
+        } catch (e) { console.warn('Could not load stored image', e); }
+    }
+    function scan(node) {
+        if (!node || node.nodeType !== 1) return;
+        if (node.matches(SEL)) resolveImg(node);
+        node.querySelectorAll(SEL).forEach(resolveImg);
+    }
+    new MutationObserver((muts) => {
+        for (const m of muts) m.addedNodes.forEach(scan);
+    }).observe(document.documentElement, { childList: true, subtree: true });
+    window.lnResolveImages = scan; // for callers that need to force a pass
+})();

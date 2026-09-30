@@ -755,6 +755,13 @@ class LocalNotesEditor {
             sel.removeAllRanges();
             sel.addRange(r);
         }
+
+        // The block was added by direct DOM insertion, which fires no `input`
+        // event — so nothing recorded the state *with* the block. The undo
+        // stack's top must always equal the current content; without this
+        // snapshot Undo skipped one step (removing the block AND the last
+        // typed character) and Redo had nothing to restore it from.
+        this._saveSnap();
     }
 
     // Guarantees the user can always click / arrow-key / Enter their way to a
@@ -1679,6 +1686,7 @@ class LocalNotesEditor {
         copyBtn.className = 'lne-copy-btn';
         copyBtn.contentEditable = 'false';
         copyBtn.setAttribute('data-copy-state', 'idle');
+        copyBtn._lneCopyBound = true;
         copyBtn.innerHTML = '<i class="bi bi-clipboard"></i> ' + (this._('copy','Copy'));
 
         copyBtn.addEventListener('click', function(e) {
@@ -1687,7 +1695,8 @@ class LocalNotesEditor {
             // Prevent double-click while already showing feedback
             if (copyBtn.getAttribute('data-copy-state') === 'copied') return;
 
-            var prEl = wrapper.querySelector('pre');
+            var cwEl = copyBtn.closest('.lne-code-wrapper') || wrapper;
+            var prEl = cwEl.querySelector('pre');
             var codeEl = prEl ? prEl.querySelector('code') : null;
             // Use textContent to avoid hljs span artifacts
             var text = codeEl ? codeEl.textContent : (prEl ? prEl.textContent : '');
@@ -4377,6 +4386,18 @@ class LocalNotesEditor {
             newPre.className = pre.className || 'lne-code';
             pre.parentNode.replaceChild(wrapper, pre);
         });
+        // Wrappers restored from a snapshot (Undo / Redo) are plain DOM again:
+        // their Copy button lost its click handler and the code island may have
+        // lost its editable state. Swap in a live button and re-enable editing.
+        this.ed.querySelectorAll('.lne-code-wrapper').forEach(function(cw) {
+            var btn = cw.querySelector('.lne-copy-btn');
+            if (btn && !btn._lneCopyBound) {
+                var fresh = self._makeCodeWrapper('').querySelector('.lne-copy-btn');
+                btn.parentNode.replaceChild(fresh, btn);
+            }
+            var codeEl = cw.querySelector('pre code');
+            if (codeEl && codeEl.getAttribute('contenteditable') !== 'true') codeEl.contentEditable = 'true';
+        });
     }
 
     // ── Context toolbars for images, tables, videos ───────────────────
@@ -5691,9 +5712,7 @@ class LocalNotesEditor {
         `;
     }
 
-    // compat aliases
-    undo()  { if (this.undoStack.length <= 1) return; this.isRec=true; this.redoStack.push({c:this.ed.innerHTML,t:Date.now()}); this.undoStack.pop(); var p=this.undoStack[this.undoStack.length-1]; if(p){this.ed.innerHTML=p.c;this.lastSnap=p;} this.isRec=false; this._syncState(); }
-    redo()  { if (!this.redoStack.length) return; this.isRec=true; var s=this.redoStack.pop(); this.undoStack.push(s); this.ed.innerHTML=s.c; this.lastSnap=s; this.isRec=false; this._syncState(); }
+    // compat aliases (undo()/redo() live above — they must also run _snapDecode/_initAll)
     insertImage()       { this._modalImage(); }
     insertVideo()       { this._modalVideo(); }
     insertDrawing()     { this._modalDrawing(); }

@@ -864,5 +864,6 @@
   "viewerDownload": "Изтегли",
   "viewerFailed": "Изображението не можа да се зареди",
   "viewerImage": "Изображение",
-  "viewerOpen": "Покажи в пълен размер"
+  "viewerOpen": "Покажи в пълен размер",
+  "scrollToTop": "Нагоре"
 }

@@ -864,5 +864,6 @@
   "viewerDownload": "Pobierz",
   "viewerFailed": "Nie udało się wczytać obrazu",
   "viewerImage": "Obraz",
-  "viewerOpen": "Pokaż w pełnym rozmiarze"
+  "viewerOpen": "Pokaż w pełnym rozmiarze",
+  "scrollToTop": "Do góry"
 }

@@ -156,8 +156,21 @@ class NotesDatabase {
             };
         });
     }
+    // Partial update (content/title/timestamps) applied on top of the stored note,
+    // so fields the caller doesn't carry — tags, pinned, color, due date, task
+    // status — are never wiped. Card-level edits (checklist toggle, quick edit)
+    // used to call saveNote() with only {id, content, title, times} and silently
+    // erased all of them.
+    async saveNotePatch(patch) {
+        const cur = await this._getNoteLight(patch.id);
+        return this.saveNote({ ...(cur || {}), ...patch });
+    }
     async saveNote(note) {
         if (!this.db) await this.init();
+        if (this._vaultKey && note && typeof note.content === 'string') {
+            const c = await this.externalizeHTML(note.content);
+            if (c !== note.content) note = { ...note, content: c };
+        }
         const toStore = await this._encryptNoteForStorage(note);
         this._notesCacheDirty = true;
         return new Promise((resolve, reject) => {
@@ -178,7 +191,12 @@ class NotesDatabase {
     // memory/CPU use, not a leak. The cache is invalidated on any write
     // (saveNote/deleteNote) and concurrent callers share one in-flight
     // decrypt pass instead of each starting their own.
-    async getAllNotes() {
+    async getAllNotes(opts) {
+        const list = await this._getAllNotesLight();
+        if (opts && opts.light) return list;
+        return Promise.all(list.map(n => this._hydrateNote(n)));
+    }
+    async _getAllNotesLight() {
         if (!this.db) await this.init();
         if (this._notesCache && !this._notesCacheDirty) return this._notesCache.slice();
         if (this._notesCachePromise) return (await this._notesCachePromise).slice();
@@ -215,7 +233,11 @@ class NotesDatabase {
             this._notesCachePromise = null;
         }
     }
-    async getNote(id) {
+    async getNote(id, opts) {
+        const n = await this._getNoteLight(id);
+        return (opts && opts.light) ? n : this._hydrateNote(n);
+    }
+    async _getNoteLight(id) {
         if (!this.db) await this.init();
         // Serve from the list cache when it's fresh — same reasoning as
         // getAllNotes(), and avoids a second independent decrypt of the
@@ -235,6 +257,7 @@ class NotesDatabase {
     async deleteNote(id) {
         if (!this.db) await this.init();
         this._notesCacheDirty = true;
+        this._scheduleImageGc();
         return new Promise((resolve, reject) => {
             const tx = this.db.transaction(['notes'], 'readwrite');
             const req = tx.objectStore('notes').delete(id);
@@ -248,6 +271,7 @@ class NotesDatabase {
     // real past states a user can restore, not the current one.
     async saveVersion(noteId, content, savedAt) {
         if (!this.db) await this.init();
+        if (this._vaultKey) content = await this.externalizeHTML(content);
         const storedContent = this._vaultKey ? await this._fieldEncrypt(content) : content;
         return new Promise((resolve, reject) => {
             const tx = this.db.transaction(['noteVersions'], 'readwrite');
@@ -310,6 +334,260 @@ class NotesDatabase {
         });
     }
 
+    // ══ IMAGE STORE ═══════════════════════════════════════════════════════
+    // Big inline images (<img src="data:image/…;base64,…">) used to live inside
+    // every note's HTML — and inside every saved version of it. Each load then
+    // decrypted, sanitized and re-parsed megabytes of base64 several times, and
+    // the whole lot sat in the notes cache. Now such images are moved into their
+    // own AES-GCM records (raw bytes, no base64), addressed by SHA-256 of the
+    // bytes: identical images are stored once, so versions cost nothing extra.
+    // The note HTML keeps <img src="cid:ln-<hash>"> ("cid:" survives DOMPurify
+    // and never triggers a network request). Records live in the existing
+    // 'settings' store under "img:<hash>" — deliberately NO schema bump: an
+    // IndexedDB upgrade can be blocked by another open tab and would hang startup.
+    // getAllNotes()/getNote() return content with images inlined (as before)
+    // unless called with { light: true } — hot paths (lists, search, sidebar,
+    // graph, calendar) use the light form and never touch image bytes.
+    static get IMG_MIN_B64() { return 8000; }
+    _imgMimeCode(m) { return ({ 'image/png': 1, 'image/webp': 2, 'image/jpeg': 3, 'image/jpg': 3, 'image/gif': 4, 'image/avif': 5, 'image/bmp': 6 })[m] || 0; }
+    _imgMimeName(c) { return [null, 'image/png', 'image/webp', 'image/jpeg', 'image/gif', 'image/avif', 'image/bmp'][c] || 'application/octet-stream'; }
+    _b64ToBytes(b64) {
+        const bin = atob(b64), n = bin.length, u = new Uint8Array(n);
+        for (let i = 0; i < n; i++) u[i] = bin.charCodeAt(i);
+        return u;
+    }
+    _bytesToB64(u8) {
+        const parts = [];
+        for (let i = 0; i < u8.length; i += 0x8000) parts.push(String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)));
+        return btoa(parts.join(''));
+    }
+    async _imgPut(code, bytes) {
+        const dg = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes));
+        let hex = ''; for (let i = 0; i < 16; i++) hex += dg[i].toString(16).padStart(2, '0');
+        const id = 'ln-' + hex;
+        if (!this._imgPending) this._imgPending = new Map();
+        const running = this._imgPending.get(id);
+        if (running) { await running; return id; }
+        const job = (async () => {
+            const key = 'img:' + id;
+            const existing = await this.getSetting(key);
+            if (existing) {
+                // Refresh the timestamp so a concurrent cleanup never treats a
+                // just-reused image as abandoned.
+                if (Date.now() - (existing.t || 0) > 3600e3) await this.saveSetting(key, { ...existing, t: Date.now() });
+                return;
+            }
+            const plain = new Uint8Array(bytes.length + 1); plain[0] = code; plain.set(bytes, 1);
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+            const c = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, this._vaultKey, plain);
+            await this.saveSetting(key, { v: 1, t: Date.now(), iv, c });
+        })();
+        this._imgPending.set(id, job);
+        try { await job; } finally { this._imgPending.delete(id); }
+        return id;
+    }
+    async _imgLoad(id) {
+        if (!this._vaultKey) return null;
+        const rec = await this.getSetting('img:' + id);
+        if (!rec || !rec.c) return null;
+        const plain = new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: rec.iv }, this._vaultKey, rec.c));
+        return { mime: this._imgMimeName(plain[0]), bytes: plain.subarray(1) };
+    }
+    // Object URL for an image (cached per session; revoked when the vault locks).
+    async imageBlobUrl(id) {
+        if (!this._imgUrls) this._imgUrls = new Map();
+        if (!this._imgUrlToId) this._imgUrlToId = new Map();
+        if (!this._imgUrlJobs) this._imgUrlJobs = new Map();
+        const hit = this._imgUrls.get(id);
+        if (hit) return hit.url;
+        let job = this._imgUrlJobs.get(id);
+        if (!job) {
+            job = (async () => {
+                const img = await this._imgLoad(id);
+                if (!img) return null;
+                const url = URL.createObjectURL(new Blob([img.bytes], { type: img.mime }));
+                this._imgUrls.set(id, { url, mime: img.mime, size: img.bytes.length });
+                this._imgUrlToId.set(url, id);
+                return url;
+            })().finally(() => this._imgUrlJobs.delete(id));
+            this._imgUrlJobs.set(id, job);
+        }
+        return job;
+    }
+    isManagedBlob(url) { return !!(this._imgUrlToId && this._imgUrlToId.has(url)); }
+    imageInfoForUrl(url) {
+        const id = this._imgUrlToId && this._imgUrlToId.get(url);
+        return id ? this._imgUrls.get(id) : null;
+    }
+    _revokeImageUrls() {
+        // Keep url→id: a card rendered before an idle-lock can still be saved after
+        // unlock, and its (now revoked) blob src must still map back to its image.
+        if (this._imgUrls) for (const v of this._imgUrls.values()) { try { URL.revokeObjectURL(v.url); } catch { } }
+        this._imgUrls = new Map(); this._imgUrlJobs = new Map();
+    }
+    // data:/managed-blob images → cid tokens (the stored, "light" form).
+    async externalizeHTML(html) {
+        if (!html || typeof html !== 'string' || !this._vaultKey) return html;
+        if (html.indexOf('data:image') === -1 && html.indexOf('blob:') === -1) return html;
+        const tagRe = /<img\b[^>]*>/gi;
+        const jobs = [];
+        let m;
+        while ((m = tagRe.exec(html))) {
+            const tag = m[0];
+            const sm = /(\s)src\s*=\s*(["'])(.*?)\2/i.exec(tag);
+            if (!sm) continue;
+            const src = sm[3];
+            let p = null;
+            if (src.startsWith('blob:')) {
+                const id = this._imgUrlToId && this._imgUrlToId.get(src);
+                if (id) p = Promise.resolve(id);
+            } else if (src.length >= NotesDatabase.IMG_MIN_B64) {
+                const dm = /^data:(image\/[a-z0-9.+-]+);base64,/i.exec(src);
+                if (dm) {
+                    const code = this._imgMimeCode(dm[1].toLowerCase());
+                    if (code) p = Promise.resolve().then(() => this._imgPut(code, this._b64ToBytes(src.slice(dm[0].length))));
+                }
+            }
+            if (p) jobs.push({ at: m.index, tag, sm, p });
+        }
+        if (!jobs.length) return html;
+        let out = '', last = 0;
+        for (const j of jobs) {
+            let id = null;
+            try { id = await j.p; } catch (e) { console.warn('Image store: keeping image inline', e); }
+            out += html.slice(last, j.at);
+            out += id
+                ? j.tag.slice(0, j.sm.index) + j.sm[1] + 'src=' + j.sm[2] + 'cid:' + id + j.sm[2] + j.tag.slice(j.sm.index + j.sm[0].length)
+                : j.tag;
+            last = j.at + j.tag.length;
+        }
+        return out + html.slice(last);
+    }
+    // cid tokens → data: URIs (editor, export, share, screenshot).
+    async hydrateHTML(html) {
+        if (!html || typeof html !== 'string' || html.indexOf('cid:ln-') === -1 || !this._vaultKey) return html;
+        const ids = [...new Set(html.match(/cid:ln-[0-9a-f]{32}/g))].map(s => s.slice(4));
+        const map = new Map();
+        await Promise.all(ids.map(async id => {
+            try {
+                const img = await this._imgLoad(id);
+                if (img) map.set(id, 'data:' + img.mime + ';base64,' + this._bytesToB64(img.bytes));
+            } catch (e) { console.warn('Image store: could not read image', id, e); }
+        }));
+        return html.replace(/cid:(ln-[0-9a-f]{32})/g, (s, id) => map.get(id) || s);
+    }
+    // Anything (tokens, managed blobs, data:) → self-contained HTML.
+    async toPortableHTML(html) { return this.hydrateHTML(await this.externalizeHTML(html)); }
+    async _hydrateNote(n) {
+        if (!n || typeof n.content !== 'string' || n.content.indexOf('cid:ln-') === -1) return n;
+        return { ...n, content: await this.hydrateHTML(n.content) };
+    }
+
+    // ── small raw-store helpers (keys first, rows one at a time → low memory) ──
+    _idbKeys(store, range) {
+        return new Promise((resolve, reject) => {
+            const req = this.db.transaction([store], 'readonly').objectStore(store).getAllKeys(range);
+            req.onsuccess = () => resolve(req.result || []); req.onerror = () => reject(req.error);
+        });
+    }
+    _idbGet(store, key) {
+        return new Promise((resolve, reject) => {
+            const req = this.db.transaction([store], 'readonly').objectStore(store).get(key);
+            req.onsuccess = () => resolve(req.result); req.onerror = () => reject(req.error);
+        });
+    }
+    // Writes newRaw only if the row still satisfies `same(currentRow)` — read and
+    // write share one transaction, so a save made by the user in between wins.
+    _idbPutIfSame(store, key, same, newRaw) {
+        return new Promise((resolve, reject) => {
+            let wrote = false;
+            const tx = this.db.transaction([store], 'readwrite');
+            const st = tx.objectStore(store);
+            const g = st.get(key);
+            g.onsuccess = () => { if (g.result && same(g.result)) { st.put(newRaw); wrote = true; } };
+            tx.oncomplete = () => resolve(wrote);
+            tx.onerror = tx.onabort = () => reject(tx.error);
+        });
+    }
+    // One-time move of already-saved inline images (notes AND their versions)
+    // into the image store. Idempotent; resumes on the next start if interrupted.
+    async migrateInlineImages() {
+        if (!this._vaultKey || this._imgMigrating) return;
+        if (await this.getSetting('imgStoreMigrated_v1')) return;
+        this._imgMigrating = true;
+        let clean = true;
+        const tick = () => new Promise(r => setTimeout(r, 0));
+        try {
+            for (const key of await this._idbKeys('notes')) {
+                try {
+                    const raw = await this._idbGet('notes', key);
+                    if (!raw || !raw.encrypted) continue;
+                    const n = await this._decryptNoteFromStorage(raw);
+                    if (!n.content || n.content.indexOf('data:image') === -1) continue;
+                    const c = await this.externalizeHTML(n.content);
+                    if (c === n.content) continue;
+                    const newRaw = await this._encryptNoteForStorage({ ...n, content: c });
+                    const ok = await this._idbPutIfSame('notes', key, cur => cur.lastModified === raw.lastModified && cur.content === raw.content, newRaw);
+                    if (!ok) clean = false;
+                    this._notesCacheDirty = true;
+                } catch (e) { clean = false; console.warn('Image migration (note) skipped', e); }
+                await tick();
+            }
+            for (const key of await this._idbKeys('noteVersions')) {
+                try {
+                    const raw = await this._idbGet('noteVersions', key);
+                    if (!raw || !raw.encrypted) continue;
+                    const plain = await this._fieldDecrypt(raw.content);
+                    if (plain.indexOf('data:image') === -1) continue;
+                    const c = await this.externalizeHTML(plain);
+                    if (c === plain) continue;
+                    const newRaw = { ...raw, content: await this._fieldEncrypt(c) };
+                    const ok = await this._idbPutIfSame('noteVersions', key, cur => cur.content === raw.content, newRaw);
+                    if (!ok) clean = false;
+                } catch (e) { clean = false; console.warn('Image migration (version) skipped', e); }
+                await tick();
+            }
+            if (clean) await this.saveSetting('imgStoreMigrated_v1', true);
+        } finally { this._imgMigrating = false; }
+        if (clean) this.gcImages();
+    }
+    // Deletes image records no note or version refers to (and older than 15 min,
+    // so a save that is still in flight can never lose its images). Aborts on
+    // ANY doubt (undecryptable row) — a leftover record costs a few KB, a wrongly
+    // deleted one would cost a picture.
+    async gcImages() {
+        if (!this._vaultKey || this._imgGcRunning) return;
+        if (!(await this.getSetting('imgStoreMigrated_v1'))) return;
+        this._imgGcRunning = true;
+        try {
+            const refs = new Set();
+            const scan = s => { const f = typeof s === 'string' && s.match(/cid:ln-[0-9a-f]{32}/g); if (f) f.forEach(x => refs.add(x.slice(4))); };
+            for (const store of ['notes', 'noteVersions']) {
+                for (const key of await this._idbKeys(store)) {
+                    const raw = await this._idbGet(store, key);
+                    if (!raw) continue;
+                    if (raw.encrypted) scan(await this._fieldDecrypt(raw.content)); // throws → abort
+                    else scan(raw.content);
+                }
+            }
+            const cutoff = Date.now() - 15 * 60e3;
+            for (const key of await this._idbKeys('settings', IDBKeyRange.bound('img:', 'img:\uffff'))) {
+                if (refs.has(key.slice(4))) continue;
+                const rec = await this.getSetting(key);
+                if (rec && rec.t > cutoff) continue;
+                await new Promise((resolve, reject) => {
+                    const req = this.db.transaction(['settings'], 'readwrite').objectStore('settings').delete(key);
+                    req.onsuccess = () => resolve(); req.onerror = () => reject(req.error);
+                });
+            }
+        } catch (e) { console.warn('Image cleanup skipped:', e && e.message); }
+        finally { this._imgGcRunning = false; }
+    }
+    _scheduleImageGc() {
+        clearTimeout(this._imgGcTimer);
+        this._imgGcTimer = setTimeout(() => this.gcImages(), 20000);
+    }
+
     // Same key/value settings store, but for values that reveal something
     // about the user's actual notes (tag names, etc.) rather than app
     // preferences (theme, language, layout) — those stay in plain
@@ -335,7 +613,7 @@ class NotesDatabase {
     }
     async migrateFromLocalStorage() {
         try {
-            const existing = await this.getAllNotes();
+            const existing = await this.getAllNotes({ light: true });
             if (existing.length > 0) return;
             const keys = Object.keys(localStorage).filter(k => k.startsWith('note_'));
             for (const key of keys) {
@@ -441,7 +719,7 @@ class NotesDatabase {
     // "locked" would only be cosmetic: the plaintext from before locking
     // would still be sitting in this array in memory, inspectable via
     // devtools regardless of the lock screen being up.
-    lockVaultSession() { this._vaultKey = null; this._notesCache = null; this._notesCacheDirty = true; }
+    lockVaultSession() { this._vaultKey = null; this._notesCache = null; this._notesCacheDirty = true; this._revokeImageUrls(); }
 
     // Deliberately its own, self-contained PBKDF2 → AES-256-GCM key
     // derivation — NOT AdvancedEncryption.deriveKeys(), which hard-binds
@@ -1177,8 +1455,13 @@ function blobToBase64(blob) {
     return new Promise(resolve => { const r = new FileReader(); r.onloadend = () => resolve(r.result); r.readAsDataURL(blob); });
 }
 
-async function processMediaContent(content) {
+async function processMediaContent(content, opts) {
     if (!content) return content;
+    // opts.store (saving): images become compact cid tokens in the image store.
+    // default (export/share): fully self-contained HTML with inline images.
+    if (window.notesDB && window.notesDB.vaultReady) {
+        content = (opts && opts.store) ? await window.notesDB.externalizeHTML(content) : await window.notesDB.toPortableHTML(content);
+    }
     const safe = DOMPurify.sanitize(content, {
         ADD_TAGS: ['iframe', 'video', 'source'],
         ADD_ATTR: ['allowfullscreen', 'frameborder', 'scrolling', 'allow', 'src', 'width', 'height', 'controls', 'autoplay', 'muted', 'loop']
@@ -1646,7 +1929,7 @@ function showClearAllConfirmationModal() {
     };
     const loadNotesForModal = async () => {
         try {
-            allNotes = await notesDB.getAllNotes();
+            allNotes = await notesDB.getAllNotes({ light: true });
             renderNotes();
         } catch (error) {
             console.error('Failed to load notes for deletion:', error);
@@ -1691,7 +1974,7 @@ async function clearNotesByIds(noteIds) {
 }
 
 async function clearAllNotes() {
-    const notes = await notesDB.getAllNotes();
+    const notes = await notesDB.getAllNotes({ light: true });
     return clearNotesByIds(notes.map(note => note.id));
 }
 
@@ -1708,7 +1991,7 @@ window._noteMeta = { tags: [], dueDate: null, color: '', pinned: false, taskStat
 async function findBacklinks(noteId) {
     if (!noteId || !window.notesDB || typeof window.notesDB.getAllNotes !== 'function') return [];
     try {
-        const all = await window.notesDB.getAllNotes();
+        const all = await window.notesDB.getAllNotes({ light: true });
         const marker = 'data-note-id="' + noteId + '"';
         return all.filter(n => n.id !== noteId && typeof n.content === 'string' && n.content.indexOf(marker) !== -1);
     } catch (e) { return []; }
@@ -2120,12 +2403,14 @@ function openNoteSettings(noteId) {
                             </div>`;
                     }).join('');
                     vhContainer.querySelectorAll('.nsm-version-restore').forEach(btn => {
-                        btn.addEventListener('click', () => {
+                        btn.addEventListener('click', async () => {
                             const vid = parseInt(btn.closest('.nsm-version-item').dataset.vid, 10);
                             const version = versions.find(v => v.id === vid);
                             if (!version) return;
                             if (typeof localNotesEditorInstance !== 'undefined' && localNotesEditorInstance) {
-                                localNotesEditorInstance.setContent(version.content);
+                                let vHtml = version.content;
+                                try { vHtml = await notesDB.toPortableHTML(vHtml); } catch (e) { console.warn(e); }
+                                localNotesEditorInstance.setContent(vHtml);
                             }
                             cancelOv();
                         });
@@ -2277,7 +2562,7 @@ function openModal(noteId, noteContent, noteCreationTime) {
 
     // Init meta from existing note
     if (noteId) {
-        notesDB.getNote(noteId).then(note => {
+        notesDB.getNote(noteId, { light: true }).then(note => {
             if (note) {
                 window._noteMeta = {
                     tags:   note.tags   || [],
@@ -2319,6 +2604,14 @@ function openModal(noteId, noteContent, noteCreationTime) {
     });
 
     waitForEditor()
+        .then(async () => {
+            // Cards/lists hand over the light form of the note (images as cid
+            // tokens); the editor needs real image data.
+            if (noteId && noteContent && window.notesDB) {
+                try { noteContent = await window.notesDB.toPortableHTML(noteContent); }
+                catch (e) { console.warn('Could not inline images for editing:', e); }
+            }
+        })
         .then(() => {
             try {
                 // 1) Populate the editor FIRST, while the modal is still
@@ -2415,7 +2708,7 @@ function openModal(noteId, noteContent, noteCreationTime) {
             return;
         }
         try {
-            const processedContent = await processMediaContent(content);
+            const processedContent = await processMediaContent(content, { store: true });
             const timestamp = Date.now();
             const noteId2 = currentNoteId || secureNoteId();
             const meta = window._noteMeta || {};
@@ -2425,7 +2718,7 @@ function openModal(noteId, noteContent, noteCreationTime) {
             // and only if the content actually changed (skip no-op saves).
             if (currentNoteId) {
                 try {
-                    const prev = await notesDB.getNote(currentNoteId);
+                    const prev = await notesDB.getNote(currentNoteId, { light: true });
                     if (prev && prev.content && prev.content !== processedContent) {
                         await notesDB.saveVersion(currentNoteId, prev.content, prev.lastModified || timestamp);
                         await notesDB.pruneVersions(currentNoteId, 20); // keep last 20 snapshots per note
@@ -2565,7 +2858,9 @@ function renderAllRemainingNotes() {
     if (remaining > 0) renderNextNotesBatch(remaining);
 }
 
+const _imgCheckedNotes = new WeakSet(); // notes whose images were already validated (kept out of the note object so it never gets persisted)
 function buildNoteCardElement(note, allTags) {
+            if (note.content && !_imgCheckedNotes.has(note)) { note.content = validateAndFixImages(note.content); _imgCheckedNotes.add(note); }
             const noteEl = document.createElement('div');
             noteEl.classList.add('note');
             noteEl.dataset.noteId = note.id;
@@ -2700,7 +2995,7 @@ function buildNoteCardElement(note, allTags) {
                     const targetId = chip.getAttribute('data-note-id');
                     if (!targetId) return;
                     chip.classList.add('lne-wikilink-loading');
-                    notesDB.getNote(targetId).then(target => {
+                    notesDB.getNote(targetId, { light: true }).then(target => {
                         if (target && typeof window.openModal === 'function') window.openModal(target.id, target.content, target.creationTime);
                     }).catch(() => {}).finally(() => {
                         if (chip.isConnected) chip.classList.remove('lne-wikilink-loading');
@@ -2761,7 +3056,7 @@ function buildNoteCardElement(note, allTags) {
                     const updContent = notePreview.innerHTML;
                     const ts = Date.now();
                     try {
-                        await notesDB.saveNote({ id: note.id, content: updContent, creationTime: note.creationTime, lastModified: ts, title: notesDB.extractTitle(updContent) });
+                        await notesDB.saveNotePatch({ id: note.id, content: updContent, creationTime: note.creationTime, lastModified: ts, title: notesDB.extractTitle(updContent) });
                     } catch (err) { console.error('Checklist text save error:', err); }
                 });
             });
@@ -2799,7 +3094,7 @@ function buildNoteCardElement(note, allTags) {
                     const updContent = notePreview.innerHTML;
                     const ts = Date.now();
                     try {
-                        await notesDB.saveNote({ id: note.id, content: updContent, creationTime: note.creationTime, lastModified: ts, title: notesDB.extractTitle(updContent) });
+                        await notesDB.saveNotePatch({ id: note.id, content: updContent, creationTime: note.creationTime, lastModified: ts, title: notesDB.extractTitle(updContent) });
                         note.content = updContent;
                         const np = getChecklistProgress(updContent);
                         if (np) {
@@ -2898,10 +3193,12 @@ function buildNoteCardElement(note, allTags) {
             ssBtn.title = ssLabel;
             ssBtn.innerHTML = '<i class="bi bi-camera"></i>';
             ssBtn.setAttribute('aria-label', ssLabel);
-            ssBtn.onclick = () => {
+            ssBtn.onclick = async () => {
                 if (typeof takeNoteScreenshot === 'function') {
                     syncClInputs(notePreview);
-                    takeNoteScreenshot({ ...note, content: notePreview.innerHTML });
+                    let ssHtml = notePreview.innerHTML;
+                    if (window.notesDB) { try { ssHtml = await window.notesDB.toPortableHTML(ssHtml); } catch (e) { console.warn(e); } }
+                    takeNoteScreenshot({ ...note, content: ssHtml });
                 }
             };
 
@@ -2928,7 +3225,7 @@ async function _loadNotesImpl() {
 
     if (window.taskBoard && window.taskBoard.isActive()) {
         try {
-            const allNotes = await notesDB.getAllNotes();
+            const allNotes = await notesDB.getAllNotes({ light: true });
             const notes = typeof applyTagFilter === 'function' ? applyTagFilter(allNotes) : allNotes;
             notes.sort((a, b) => {
                 if (a.pinned && !b.pinned) return -1;
@@ -2969,7 +3266,7 @@ async function _loadNotesImpl() {
     }
 
     try {
-        const allNotes = await notesDB.getAllNotes();
+        const allNotes = await notesDB.getAllNotes({ light: true });
         // Apply tag filter
         const notes = typeof applyTagFilter === 'function' ? applyTagFilter(allNotes) : allNotes;
         // Sort: pinned first, then by lastModified
@@ -2978,7 +3275,7 @@ async function _loadNotesImpl() {
             if (!a.pinned && b.pinned) return 1;
             return b.lastModified - a.lastModified;
         });
-        notes.forEach(note => { if (note.content) note.content = validateAndFixImages(note.content); });
+        // (image validation now happens per card, only for notes that are actually rendered)
 
         if (notes.length === 0) {
             if (viewer) viewer.style.display = 'none';
@@ -3755,7 +4052,7 @@ async function saveQuickEdit(noteEl, content, noteId, noteCreationTime, options 
     const updatedContent = content.innerHTML;
     const timestamp = Date.now();
     try {
-        await notesDB.saveNote({ id: noteId, content: updatedContent, creationTime: noteCreationTime, lastModified: timestamp, title: notesDB.extractTitle(updatedContent) });
+        await notesDB.saveNotePatch({ id: noteId, content: updatedContent, creationTime: noteCreationTime, lastModified: timestamp, title: notesDB.extractTitle(updatedContent) });
         noteEl.dataset.noteCreationTime = noteCreationTime;
         const footer = noteEl.querySelector('.note-footer');
         if (footer) {
@@ -3998,7 +4295,7 @@ function lnBase64UrlEncode(bytes) {
 // short; falls back to plain base64 (larger, but works everywhere) since
 // CompressionStream isn't in older Safari/Firefox.
 async function encodeNoteForShareLink(note) {
-    const payload = JSON.stringify({ t: note.title || '', c: note.content || '' });
+    const payload = JSON.stringify({ t: note.title || '', c: (window.notesDB ? await window.notesDB.toPortableHTML(note.content || '') : (note.content || '')) });
     const bytes = new TextEncoder().encode(payload);
     if (typeof CompressionStream === 'function') {
         try {
@@ -4220,14 +4517,20 @@ function showExportOptions(noteContent) {
     document.body.appendChild(modal);
     const close = () => { if (modal.parentNode) document.body.removeChild(modal); };
     modal.querySelectorAll('.export-option').forEach(opt => {
-        opt.addEventListener('click', () => {
+        opt.addEventListener('click', async () => {
             const fmt = opt.dataset.format; close();
+            // Light notes keep images in the image store — inline them for export.
+            // (Only awaits when needed, so popup-based PDF export keeps its user gesture.)
+            let noteContent2 = noteContent;
+            if (window.notesDB && /cid:ln-|blob:/.test(noteContent || '')) {
+                try { noteContent2 = await window.notesDB.toPortableHTML(noteContent); } catch (e) { console.warn(e); }
+            }
             if (fmt === 'encrypted') {
                 showEncryptModal(pw => {
-                    if (pw?.trim()) exportNote(noteContent, pw.trim());
+                    if (pw?.trim()) exportNote(noteContent2, pw.trim());
                 });
-            } else if (fmt === 'html') { exportNoteHTML(noteContent); }
-            else { exportNoteWithFormat(noteContent, fmt); }
+            } else if (fmt === 'html') { exportNoteHTML(noteContent2); }
+            else { exportNoteWithFormat(noteContent2, fmt); }
         });
     });
     modal.querySelector('.export-close').addEventListener('click', close);
@@ -4719,6 +5022,11 @@ function initializeEventListeners() {
         if (window.AppLock) await window.AppLock.ensureUnlocked();
         await notesDB.migrateFromLocalStorage();
         await loadNotes();
+        // Background housekeeping — never blocks startup: move legacy inline images
+        // into the image store (once), then drop orphaned image records.
+        (window.requestIdleCallback || (fn => setTimeout(fn, 2500)))(() => {
+            notesDB.migrateInlineImages().then(() => notesDB.gcImages()).catch(() => {});
+        });
         restoreViewMode();
         restoreQuickEditMode();
         if (window.taskBoard) window.taskBoard.restore();

@@ -864,5 +864,6 @@
   "viewerDownload": "Prenesi",
   "viewerFailed": "Slike ni bilo mogoče naložiti",
   "viewerImage": "Slika",
-  "viewerOpen": "Prikaži v polni velikosti"
+  "viewerOpen": "Prikaži v polni velikosti",
+  "scrollToTop": "Na vrh"
 }

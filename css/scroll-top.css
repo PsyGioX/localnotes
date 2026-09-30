@@ -1,0 +1,72 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Back-to-top floating button
+   Same visual language as the other floating controls: round, themed via the
+   app's CSS variables (dark + light), soft shadow, primary accent on hover.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.ln-scroll-top {
+    position: fixed;
+    right: 24px;
+    /* Desktop: sit just above the footer bar (its height is synced by scroll-top.js) */
+    bottom: calc(var(--ln-footer-h, 80px) + 16px + env(safe-area-inset-bottom, 0px));
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 50%;
+    border: 1px solid var(--border-color, #272727);
+    background: var(--modal-bg, #1a1a1a);
+    color: var(--text-secondary, #b3b3b3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    /* Below the "Add note" FAB (40) and the sidebar tab (9400) so it can never
+       steal their taps, above page content */
+    z-index: 38;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(12px) scale(0.9);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0.2s,
+                color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.ln-scroll-top svg { width: 20px; height: 20px; display: block; pointer-events: none; }
+.ln-scroll-top.is-visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: none;
+    transition-delay: 0s;
+}
+@media (hover: hover) {
+    .ln-scroll-top:hover {
+        color: var(--primary-color, #28a745);
+        border-color: var(--primary-color, #28a745);
+    }
+}
+.ln-scroll-top:active { transform: scale(0.92); box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3); }
+.ln-scroll-top:focus-visible { outline: 2px solid var(--primary-color, #28a745); outline-offset: 3px; }
+
+/* Phones / small tablets: the right edge already carries a stack —
+       footer bar → "Add note" FAB (bottom 88px, 56px) → sidebar tab (+12px gap, 44px).
+   The back-to-top button continues that stack: one more 12px gap above the sidebar
+   tab, same right edge — so it can never overlap either of them. (Same numbers as
+   .mobile-add-fab in index.css and .ln-sidebar-toggle-tab in sidebar.css; scroll-top.js
+   additionally verifies at runtime and nudges up if anything ever collides.) */
+@media (max-width: 900px) {
+    .ln-scroll-top {
+        right: 18px;
+        bottom: calc(88px + 56px + 12px + 44px + 12px + env(safe-area-inset-bottom, 0px));
+    }
+}
+
+/* Same de-emphasis the FAB gets while quick-editing */
+body.quick-edit-active .ln-scroll-top.is-visible { opacity: 0.55; }
+
+@media (prefers-reduced-motion: reduce) {
+    .ln-scroll-top { transition: none; }
+}
+@media print { .ln-scroll-top { display: none !important; } }

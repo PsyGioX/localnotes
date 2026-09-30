@@ -46,7 +46,7 @@ async function deleteTag(tagId) {
     tags = tags.filter(t => t.id !== tagId);
     await saveTags(tags);
     // Remove tag from all notes
-    const notes = await notesDB.getAllNotes();
+    const notes = await notesDB.getAllNotes({ light: true });
     for (const note of notes) {
         if (note.tags && note.tags.includes(tagId)) {
             note.tags = note.tags.filter(t => t !== tagId);
@@ -56,7 +56,7 @@ async function deleteTag(tagId) {
 }
 
 async function addTagToNote(noteId, tagId) {
-    const note = await notesDB.getNote(noteId);
+    const note = await notesDB.getNote(noteId, { light: true });
     if (!note) return;
     if (!note.tags) note.tags = [];
     if (!note.tags.includes(tagId)) {
@@ -66,7 +66,7 @@ async function addTagToNote(noteId, tagId) {
 }
 
 async function removeTagFromNote(noteId, tagId) {
-    const note = await notesDB.getNote(noteId);
+    const note = await notesDB.getNote(noteId, { light: true });
     if (!note) return;
     note.tags = (note.tags || []).filter(t => t !== tagId);
     await notesDB.saveNote(note);
@@ -136,7 +136,7 @@ async function renderTagPanel() {
     if (!panel) return;
 
     const tags = await getTags();
-    const notes = await notesDB.getAllNotes();
+    const notes = await notesDB.getAllNotes({ light: true });
 
     panel.innerHTML = '<div class="tag-panel-header"><span class="tag-panel-title"><i class="bi bi-tags"></i> Tags</span><button id="addTagBtn" class="tag-add-btn" title="Add tag"><i class="bi bi-plus-lg"></i></button></div>';
 
@@ -366,7 +366,7 @@ async function renderNoteTagEditor(noteId) {
     if (!container) return;
 
     const allTags = await getTags();
-    const note = noteId ? await notesDB.getNote(noteId) : null;
+    const note = noteId ? await notesDB.getNote(noteId, { light: true }) : null;
     const noteTags = (note && note.tags) ? note.tags : [];
 
     container.innerHTML = '<div class="nte-label"><i class="bi bi-tags"></i> Tags</div><div class="nte-tags" id="nte-tags"></div>' +
@@ -449,7 +449,7 @@ async function renderNoteDueDate(noteId) {
     const container = document.getElementById('note-due-editor');
     if (!container) return;
 
-    const note = noteId ? await notesDB.getNote(noteId) : null;
+    const note = noteId ? await notesDB.getNote(noteId, { light: true }) : null;
     const dueDate = note ? note.dueDate : null;
     const color = note ? (note.color || '') : '';
     const pinned = note ? (note.pinned || false) : false;
@@ -530,7 +530,7 @@ async function openCalendar() {
 }
 
 async function renderCalendar(modal) {
-    const notes = await notesDB.getAllNotes();
+    const notes = await notesDB.getAllNotes({ light: true });
     const allTags = await getTags();
     const today = new Date();
     const _t = (key, fallback) => (window.t ? window.t(key) : fallback);
@@ -861,7 +861,7 @@ function openCalendarNotePreview(note, calModal) {
                 firstHeading.textContent = newTitle;
                 updContent = tmpDiv.innerHTML;
             }
-            await notesDB.saveNote({
+            await notesDB.saveNotePatch({
                 id: note.id,
                 content: updContent,
                 creationTime: note.creationTime,
@@ -1031,7 +1031,7 @@ function showTagsPanel() {
 
     // Fill content (reuse renderTagPanel logic)
     getTags().then(function(tags) {
-        notesDB.getAllNotes().then(function(notes) {
+        notesDB.getAllNotes({ light: true }).then(function(notes) {
             var html = '<div class="tfp-header"><span><i class="bi bi-tags"></i> Tags</span>';
             html += '<div class="tfp-actions"><button class="tfp-add" id="tfpAdd"><i class="bi bi-plus-lg"></i></button>';
             html += '<button class="tfp-close" id="tfpClose"><i class="bi bi-x-lg"></i></button></div></div>';

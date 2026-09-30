@@ -32,7 +32,7 @@ function initializeLocalNotesEditor() {
 async function searchNotesForWikiLink(query) {
     if (!window.notesDB || typeof window.notesDB.getAllNotes !== 'function') return [];
     try {
-        const all = await window.notesDB.getAllNotes();
+        const all = await window.notesDB.getAllNotes({ light: true });
         const q = (query || '').trim().toLowerCase();
         const excludeId = (typeof window.getCurrentNoteId === 'function') ? window.getCurrentNoteId() : null;
         let matches = all.filter(n => n.id !== excludeId && (!q || (n.title || '').toLowerCase().includes(q)));
@@ -52,7 +52,7 @@ async function searchNotesForWikiLink(query) {
 // while notesDB.getNote() (and, on encrypted vaults, decryption) runs.
 function openNoteFromWikiLink(noteId) {
     if (!window.notesDB || typeof window.notesDB.getNote !== 'function' || !noteId) return Promise.resolve();
-    return window.notesDB.getNote(noteId).then(note => {
+    return window.notesDB.getNote(noteId, { light: true }).then(note => {
         if (!note) return;
         if (typeof window.closeModal === 'function') window.closeModal();
         // One frame so the modal actually registers as closed before we

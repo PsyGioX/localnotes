@@ -1,5 +1,5 @@
 // Service Worker для Local Notes
-const CACHE_VERSION = 'v1.9.17';
+const CACHE_VERSION = 'v1.9.19';
 const STATIC_CACHE  = `static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `dynamic-${CACHE_VERSION}`;
 const CACHE_LIMIT   = 60;
@@ -28,6 +28,8 @@ const STATIC_FILES = [
     '/css/action-bar.css',
     '/css/onboarding-tour.css',
     '/css/sidebar.css',
+    '/css/modal-system.css',
+    '/css/scroll-top.css',
 
     // Шрифты — CSS
     '/fonts/local-fonts.css',
@@ -75,6 +77,10 @@ const STATIC_FILES = [
     '/js/action-bar.js',
     '/js/onboarding-tour.js',
     '/js/sidebar.js',
+    '/js/scroll-top.js',
+    '/js/task-board.js',
+    '/js/graph-view.js',
+    '/js/site-export.js',
     '/js/index.js',
     '/js/pwa.js',
     '/js/network-mode.js',
@@ -274,6 +280,15 @@ self.addEventListener('fetch', event => {
     // ── CSS, JS, JSON: Stale-While-Revalidate ────────────────────────────────
     // Отдаём из кэша мгновенно, фоном обновляем
     if (ext === '.css' || ext === '.js' || ext === '.json') {
+        // Versioned URLs (?v=1.9.x — bumped on every release, see index.html) are
+        // cached by their FULL url: a new release is a new url, so it is fetched
+        // from the network at once instead of being shadowed by the previous
+        // release's copy (the ?v= used to be stripped, which made every update
+        // take two reloads to show up).
+        if (url.searchParams.has('v')) {
+            event.respondWith(versionedAsset(cleanRequest, request));
+            return;
+        }
         event.respondWith(staleWhileRevalidate(cleanRequest, request));
         return;
     }
@@ -306,6 +321,26 @@ async function cacheFirst(cleanReq, origReq) {
         }
         return res;
     } catch (_) {
+        return new Response('', { status: 503, statusText: 'Offline' });
+    }
+}
+
+/** Versioned static assets — exact-url cache, network on a miss */
+async function versionedAsset(cleanReq, origReq) {
+    const exact = await caches.match(origReq);
+    if (exact) return exact;
+    try {
+        const res = await fetch(origReq, { cache: 'no-cache' });
+        if (res.ok) {
+            const cache = await caches.open(STATIC_CACHE);
+            cache.put(origReq, res.clone());
+        }
+        return res;
+    } catch (_) {
+        // Offline: fall back to the precached copy of the same file
+        const cached = await caches.match(cleanReq, { ignoreSearch: true })
+                    || await caches.match(origReq,  { ignoreSearch: true });
+        if (cached) return cached;
         return new Response('', { status: 503, statusText: 'Offline' });
     }
 }

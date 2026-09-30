@@ -152,7 +152,7 @@
     function fetchNotesCached() {
         if (notesCache) return Promise.resolve(notesCache);
         if (!window.notesDB || typeof window.notesDB.getAllNotes !== 'function') return Promise.resolve([]);
-        return window.notesDB.getAllNotes().then(function (notes) {
+        return window.notesDB.getAllNotes({ light: true }).then(function (notes) {
             notesCache = Array.isArray(notes) ? notes : [];
             return notesCache;
         }).catch(function () { return []; });

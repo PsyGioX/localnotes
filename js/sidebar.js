@@ -151,7 +151,7 @@
         emptyEl.style.display = 'none';
         listEl.innerHTML = '';
 
-        const title = notes.map(n => notesDB.extractTitle(n.content));
+        const title = notes.map(n => (n.title && String(n.title).trim()) || notesDB.extractTitle(n.content));
         notes.forEach((note, i) => {
             const item = document.createElement('button');
             item.type = 'button';

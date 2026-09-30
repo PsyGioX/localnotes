@@ -179,7 +179,7 @@
 
     async function rebuild() {
         if (!window.notesDB || typeof window.notesDB.getAllNotes !== 'function') return;
-        var all = await window.notesDB.getAllNotes();
+        var all = await window.notesDB.getAllNotes({ light: true });
         var scoped = currentWorkspaceNotes(all);
         var scopedIds = {};
         scoped.forEach(function (n) { scopedIds[n.id] = true; });
@@ -428,7 +428,7 @@
         // openModal(id) with content undefined, which openModal reads as
         // "no existing note" and opens a blank new-note editor instead.
         if (window.notesDB && typeof window.notesDB.getNote === 'function') {
-            window.notesDB.getNote(noteId).then(function (note) {
+            window.notesDB.getNote(noteId, { light: true }).then(function (note) {
                 if (note) window.openModal(note.id, note.content, note.creationTime);
             });
         }

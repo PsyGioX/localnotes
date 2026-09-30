@@ -63,7 +63,7 @@ class WorkspacesManager {
         }
         if (typeof window.notesDB !== 'undefined') {
             try {
-                const notes = await window.notesDB.getAllNotes();
+                const notes = await window.notesDB.getAllNotes({ light: true });
                 for (const note of notes.filter(n => n.workspaceId === workspaceId)) {
                     await window.notesDB.deleteNote(note.id);
                 }
