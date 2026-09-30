@@ -3347,6 +3347,147 @@ class LocalNotesEditor {
         var RATIOS = { '16:9': [1280, 720], '4:3': [1200, 900], '3:2': [1200, 800], '1:1': [1000, 1000], '3:4': [900, 1200] };
         var MAX_OBJS = 4000, MAX_JSON = 400000, HIST_LIMIT = 80;
         var SHAPES = { r: 1, o: 1, t: 1, l: 1, a: 1 };
+        var isShape = function(k) { return Object.prototype.hasOwnProperty.call(SHAPES, k); };
+        // ── Shape library ──
+        // r rectangle, o ellipse, t triangle, l line and a arrow are drawn inline in drawObj. Every shape below is
+        // a pure path builder: d(c, L, T, w, h) adds the outline to the current path of context `c`, fitted to the
+        // box (L, T, w, h). closed:false = open stroke (never filled). Order here = order of the buttons.
+        var TAU = Math.PI * 2;
+        var poly = function(c, L, T, w, h, p, open) {
+            c.moveTo(L + p[0] * w, T + p[1] * h);
+            for (var i = 2; i < p.length; i += 2) c.lineTo(L + p[i] * w, T + p[i + 1] * h);
+            if (!open) c.closePath();
+        };
+        var PL = function(pts, open) { return { closed: !open, d: function(c, L, T, w, h) { poly(c, L, T, w, h, pts, open); } }; };
+        // Regular n-gon (inner = 0) or n-pointed star as a flat [u,v,…] list, stretched to fill the whole unit box
+        var radial = function(n, inner, rot) {
+            var pts = [], cnt = inner ? n * 2 : n, i, a, r;
+            for (i = 0; i < cnt; i++) {
+                r = (inner && i % 2) ? inner : 1; a = rot + i * TAU / cnt;
+                pts.push(Math.cos(a) * r, Math.sin(a) * r);
+            }
+            var x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+            for (i = 0; i < pts.length; i += 2) {
+                x0 = Math.min(x0, pts[i]); x1 = Math.max(x1, pts[i]);
+                y0 = Math.min(y0, pts[i + 1]); y1 = Math.max(y1, pts[i + 1]);
+            }
+            for (i = 0; i < pts.length; i += 2) { pts[i] = (pts[i] - x0) / (x1 - x0); pts[i + 1] = (pts[i + 1] - y0) / (y1 - y0); }
+            return pts;
+        };
+        // Cubic curve in unit coordinates (control 1, control 2, end)
+        var cub = function(c, L, T, w, h, a) {
+            c.bezierCurveTo(L + a[0] * w, T + a[1] * h, L + a[2] * w, T + a[3] * h, L + a[4] * w, T + a[5] * h);
+        };
+        var CLOUD = [[.2, .88], [.1, .55], [.4, .17], [.78, .31], [.8, .88]];
+        var MOON = { r1: .5, r2: .42, d: .24 };
+        var SHAPE_DEFS = {
+            st: PL(radial(5, .4, -Math.PI / 2)),
+            hr: { closed: true, d: function(c, L, T, w, h) {
+                c.moveTo(L + .5 * w, T + .3 * h);
+                cub(c, L, T, w, h, [.5, .12, .38, 0, .25, 0]);
+                cub(c, L, T, w, h, [.1, 0, 0, .12, 0, .3]);
+                cub(c, L, T, w, h, [0, .6, .3, .75, .5, 1]);
+                cub(c, L, T, w, h, [.7, .75, 1, .6, 1, .3]);
+                cub(c, L, T, w, h, [1, .12, .9, 0, .75, 0]);
+                cub(c, L, T, w, h, [.62, 0, .5, .12, .5, .3]);
+                c.closePath();
+            } },
+            dm: PL([.5, 0, 1, .5, .5, 1, 0, .5]),
+            pg: PL(radial(5, 0, -Math.PI / 2)),
+            hx: PL(radial(6, 0, 0)),
+            oc: PL(radial(8, 0, Math.PI / 8)),
+            rt: PL([0, 0, 0, 1, 1, 1]),
+            tz: PL([.2, 0, .8, 0, 1, 1, 0, 1]),
+            pr: PL([.25, 0, 1, 0, .75, 1, 0, 1]),
+            rr: { closed: true, d: function(c, L, T, w, h) {
+                var r = Math.min(w, h) * .22;
+                c.moveTo(L + r, T);
+                c.arcTo(L + w, T, L + w, T + h, r); c.arcTo(L + w, T + h, L, T + h, r);
+                c.arcTo(L, T + h, L, T, r); c.arcTo(L, T, L + w, T, r);
+                c.closePath();
+            } },
+            s4: PL(radial(4, .32, -Math.PI / 2)),
+            s6: PL(radial(6, .577, -Math.PI / 2)),
+            pl: PL([1/3, 0, 2/3, 0, 2/3, 1/3, 1, 1/3, 1, 2/3, 2/3, 2/3, 2/3, 1, 1/3, 1, 1/3, 2/3, 0, 2/3, 0, 1/3, 1/3, 1/3]),
+            xm: { closed: false, d: function(c, L, T, w, h) {
+                c.moveTo(L + .12 * w, T + .12 * h); c.lineTo(L + .88 * w, T + .88 * h);
+                c.moveTo(L + .88 * w, T + .12 * h); c.lineTo(L + .12 * w, T + .88 * h);
+            } },
+            ck: PL([.08, .55, .36, .86, .92, .16], true),
+            ar: PL([0, .3, .6, .3, .6, 0, 1, .5, .6, 1, .6, .7, 0, .7]),
+            al: PL([1, .3, .4, .3, .4, 0, 0, .5, .4, 1, .4, .7, 1, .7]),
+            au: PL([.3, 1, .3, .4, 0, .4, .5, 0, 1, .4, .7, .4, .7, 1]),
+            ad: PL([.3, 0, .7, 0, .7, .6, 1, .6, .5, 1, 0, .6, .3, .6]),
+            ab: PL([0, .5, .25, 0, .25, .3, .75, .3, .75, 0, 1, .5, .75, 1, .75, .7, .25, .7, .25, 1]),
+            cl: { closed: true, d: function(c, L, T, w, h) {
+                // Round bulges along a clockwise outline; the raw curve overshoots the unit box, so rescale it to fill exactly
+                var X0 = -.02, XW = 1.09, Y0 = .04, YH = .85;
+                var mx = function(x) { return (x - X0) / XW; }, my = function(y) { return (y - Y0) / YH; };
+                c.moveTo(L + mx(CLOUD[0][0]) * w, T + my(CLOUD[0][1]) * h);
+                for (var i = 1; i < CLOUD.length; i++) {
+                    var x0 = CLOUD[i - 1][0], y0 = CLOUD[i - 1][1], x1 = CLOUD[i][0], y1 = CLOUD[i][1];
+                    var dx = x1 - x0, dy = y1 - y0, len = Math.hypot(dx, dy) || 1, k = len * .66, nx = dy / len * k, ny = -dx / len * k;
+                    cub(c, L, T, w, h, [mx(x0 + nx), my(y0 + ny), mx(x1 + nx), my(y1 + ny), mx(x1), my(y1)]);
+                }
+                c.closePath();
+            } },
+            mn: { closed: true, d: function(c, L, T, w, h) {
+                var r1 = MOON.r1, r2 = MOON.r2, d = MOON.d;
+                var xi = (d * d + r1 * r1 - r2 * r2) / (2 * d), yi = Math.sqrt(r1 * r1 - xi * xi);
+                var su = 1 / (r1 + xi), cy = T + h / 2;
+                var a1 = Math.atan2(-yi, xi), a2 = Math.atan2(-yi, xi - d);
+                c.ellipse(L + r1 * su * w, cy, r1 * su * w, r1 * h, 0, a1, -a1, true);
+                c.ellipse(L + (r1 + d) * su * w, cy, r2 * su * w, r2 * h, 0, -a2, a2, false);
+                c.closePath();
+            } },
+            bl: PL([.58, 0, .1, .56, .42, .56, .3, 1, .9, .4, .58, .4, .82, 0]),
+            bb: { closed: true, d: function(c, L, T, w, h) {
+                var bh = h * .8, r = Math.min(w, bh) * .18;
+                c.moveTo(L + r, T);
+                c.arcTo(L + w, T, L + w, T + bh, r); c.arcTo(L + w, T + bh, L, T + bh, r);
+                c.lineTo(L + w * .46, T + bh); c.lineTo(L + w * .2, T + h); c.lineTo(L + w * .26, T + bh);
+                c.arcTo(L, T + bh, L, T, r); c.arcTo(L, T, L + w, T, r);
+                c.closePath();
+            } },
+            sc: { closed: true, d: function(c, L, T, w, h) {
+                c.ellipse(L + w / 2, T + h, w / 2, h, 0, Math.PI, TAU, false); c.closePath();
+            } },
+            rg: { closed: true, d: function(c, L, T, w, h) {
+                var cx = L + w / 2, cy = T + h / 2, k = .55;
+                c.ellipse(cx, cy, w / 2, h / 2, 0, 0, TAU, false);
+                c.moveTo(cx + w / 2 * k, cy); c.ellipse(cx, cy, w / 2 * k, h / 2 * k, 0, 0, TAU, true);
+            } },
+            cv: PL([0, 0, .55, 0, 1, .5, .55, 1, 0, 1, .45, .5]),
+            hs: PL([.5, 0, 1, .45, .85, .45, .85, 1, .15, 1, .15, .45, 0, .45])
+        };
+        // [id, translation key, English fallback] — heart and star first, then the rest
+        var SHAPE_LIST = [
+            ['hr', 'drawHeart', 'Heart'], ['st', 'drawStar', 'Star'],
+            ['dm', 'drawDiamond', 'Diamond'], ['pg', 'drawPentagon', 'Pentagon'], ['hx', 'drawHexagon', 'Hexagon'], ['oc', 'drawOctagon', 'Octagon'],
+            ['rt', 'drawRightTriangle', 'Right triangle'], ['tz', 'drawTrapezoid', 'Trapezoid'], ['pr', 'drawParallelogram', 'Parallelogram'],
+            ['rr', 'drawRoundedRect', 'Rounded rectangle'], ['s4', 'drawStar4', '4-point star'], ['s6', 'drawStar6', '6-point star'],
+            ['pl', 'drawPlus', 'Plus'], ['xm', 'drawXMark', 'X mark'], ['ck', 'drawCheck', 'Check mark'],
+            ['ar', 'drawBlockArrowRight', 'Block arrow right'], ['al', 'drawBlockArrowLeft', 'Block arrow left'],
+            ['au', 'drawBlockArrowUp', 'Block arrow up'], ['ad', 'drawBlockArrowDown', 'Block arrow down'], ['ab', 'drawBlockArrowDouble', 'Double arrow'],
+            ['cl', 'drawCloud', 'Cloud'], ['mn', 'drawMoon', 'Crescent moon'], ['bl', 'drawBolt', 'Lightning bolt'],
+            ['bb', 'drawBubble', 'Speech bubble'], ['sc', 'drawSemicircle', 'Semicircle'], ['rg', 'drawRing', 'Ring'],
+            ['cv', 'drawChevron', 'Chevron'], ['hs', 'drawHouse', 'House']
+        ];
+        SHAPE_LIST.forEach(function(s) { SHAPES[s[0]] = 1; });
+        var defOf = function(k) { return Object.prototype.hasOwnProperty.call(SHAPE_DEFS, k) ? SHAPE_DEFS[k] : null; };
+        var isBoxShape = function(k) { return isShape(k) && k !== 'l' && k !== 'a'; };
+        var isFillable = function(k) { var d = defOf(k); return d ? d.closed : (k === 'r' || k === 'o' || k === 't'); };
+        // Button icons are drawn by the very same path builders (masked, so they follow the theme colour)
+        var iconFor = function(id) {
+            var cache = self._drawIcons || (self._drawIcons = {});
+            if (cache[id]) return cache[id];
+            var ic = document.createElement('canvas'); ic.width = ic.height = 48;
+            var g = ic.getContext('2d');
+            g.strokeStyle = '#000'; g.lineWidth = 3.4; g.lineJoin = 'round'; g.lineCap = 'round';
+            g.beginPath(); SHAPE_DEFS[id].d(g, 6, 6, 36, 36); g.stroke();
+            return (cache[id] = 'url(' + ic.toDataURL('image/png') + ')');
+        };
+        // ── end shape library ──
         // Brush types: p pen, m marker, n pencil, c calligraphy, s spray, d dotted
         var BRUSHES = { p: 1, m: 1, n: 1, c: 1, s: 1, d: 1 };
         var isColor = function(c) { return typeof c === 'string' && /^#[0-9a-f]{3,8}$/i.test(c); };
@@ -3357,7 +3498,7 @@ class LocalNotesEditor {
         // Remember the last used settings for the next time the pad is opened
         var pf = this._drawPrefs;
         if (pf) {
-            if (/^[berotla]$/.test(pf.tool)) st.tool = pf.tool;
+            if (pf.tool === 'b' || pf.tool === 'e' || isShape(pf.tool)) st.tool = pf.tool;
             if (BRUSHES[pf.brush]) st.brush = pf.brush;
             if (isColor(pf.color)) st.color = pf.color;
             if (num(pf.size)) st.size = Math.max(1, Math.min(48, pf.size));
@@ -3386,7 +3527,7 @@ class LocalNotesEditor {
                             if (num(o.r)) so.r = o.r >>> 0;
                         }
                         out.push(so);
-                    } else if (SHAPES[o.k]) {
+                    } else if (isShape(o.k)) {
                         if (!Array.isArray(o.a) || o.a.length !== 4 || !o.a.every(num)) continue;
                         out.push({ k: o.k, c: o.c, s: s, f: o.f ? 1 : 0, a: o.a });
                     }
@@ -3424,6 +3565,10 @@ class LocalNotesEditor {
             return '<button type="button" class="lne-draw-tool lne-draw-btype" data-brush="' + id + '" aria-pressed="false" title="' + label + '" aria-label="' + label + '">' +
                 '<i class="' + icon + '"></i><span class="lne-draw-lbl">' + label + '</span></button>';
         };
+        var stool = function(id, label) {
+            return '<button type="button" class="lne-draw-tool lne-draw-shp" data-tool="' + id + '" aria-pressed="false" title="' + label + '" aria-label="' + label + '">' +
+                '<span class="lne-draw-shpico" style="--shp:' + iconFor(id) + '"></span><span class="lne-draw-lbl">' + label + '</span></button>';
+        };
         var ibtn = function(cls, icon, label) {
             return '<button type="button" class="lne-draw-ibtn ' + cls + '" title="' + label + '" aria-label="' + label + '"><i class="' + icon + '"></i></button>';
         };
@@ -3445,12 +3590,13 @@ class LocalNotesEditor {
                     btype('d', 'bi bi-three-dots', _('drawBrushDotted', 'Dotted')) +
                   '</div></div>' +
                 '<div class="lne-draw-sec lne-draw-sec-shapes"><div class="lne-draw-h">' + _('drawShapeType', 'Shape type') + '</div>' +
-                  '<div class="lne-draw-tools">' +
+                  '<div class="lne-draw-tools lne-draw-shapegrid">' +
                     tool('r', 'bi bi-square', _('drawRectangle', 'Rectangle')) +
                     tool('o', 'bi bi-circle', _('drawCircle', 'Circle')) +
                     tool('t', 'bi bi-triangle', _('drawTriangle', 'Triangle')) +
                     tool('l', 'bi bi-slash-lg', _('drawLine', 'Line')) +
                     tool('a', 'bi bi-arrow-up-right', _('drawArrow', 'Arrow')) +
+                    SHAPE_LIST.map(function(s) { return stool(s[0], _(s[1], s[2])); }).join('') +
                   '</div>' +
                   '<label class="lne-chk lne-draw-chk"><input type="checkbox" class="lne-draw-fill"> <span>' + _('drawFill', 'Fill shapes with color') + '</span></label>' +
                   '<label class="lne-chk lne-draw-chk"><input type="checkbox" class="lne-draw-keep"> <span>' + _('drawKeepRatio', 'Keep proportions') + '</span></label>' +
@@ -3617,8 +3763,9 @@ class LocalNotesEditor {
             if (o.k === 'r') c.rect(L, T, Rr - L, B - T);
             else if (o.k === 'o') c.ellipse((L + Rr) / 2, (T + B) / 2, Math.max(0.5, (Rr - L) / 2), Math.max(0.5, (B - T) / 2), 0, 0, Math.PI * 2);
             else if (o.k === 't') { c.moveTo((L + Rr) / 2, T); c.lineTo(Rr, B); c.lineTo(L, B); c.closePath(); }
+            else if (defOf(o.k)) defOf(o.k).d(c, L, T, Math.max(1, Rr - L), Math.max(1, B - T));
             else if (o.k === 'l' || o.k === 'a') { c.moveTo(x1, y1); c.lineTo(x2, y2); }
-            if (o.f && (o.k === 'r' || o.k === 'o' || o.k === 't')) c.fill();
+            if (o.f && isFillable(o.k)) c.fill('evenodd');
             c.stroke();
             if (o.k === 'a') {
                 var ang = Math.atan2(y2 - y1, x2 - x1), hl = Math.max(12, o.s * 3.5), sp = Math.PI / 7;
@@ -3681,8 +3828,8 @@ class LocalNotesEditor {
             ov.querySelectorAll('.lne-draw-btype').forEach(function(b) { b.setAttribute('aria-pressed', b.dataset.brush === st.brush ? 'true' : 'false'); });
             ov.querySelector('.lne-draw-sec-brushes').classList.toggle('is-dim', st.tool !== 'b');
             var isEraser = st.tool === 'e';
-            var fillable = st.tool === 'r' || st.tool === 'o' || st.tool === 't';
-            fillChk.disabled = !fillable; keepChk.disabled = !(st.tool === 'r' || st.tool === 'o' || st.tool === 't');
+            var fillable = isBoxShape(st.tool) && isFillable(st.tool);
+            fillChk.disabled = !fillable; keepChk.disabled = !isBoxShape(st.tool);
             fillChk.closest('label').classList.toggle('is-off', !fillable);
             keepChk.closest('label').classList.toggle('is-off', keepChk.disabled);
             ov.querySelector('.lne-draw-sec-colors').classList.toggle('is-off', isEraser);
@@ -3744,7 +3891,7 @@ class LocalNotesEditor {
             return [Math.max(0, Math.min(st.W, Math.round(x * 10) / 10)), Math.max(0, Math.min(st.H, Math.round(y * 10) / 10))];
         };
         var constrain = function(o, force) {
-            if (!(force || st.keep) || !(o.k === 'r' || o.k === 'o' || o.k === 't')) return;
+            if (!(force || st.keep) || !isBoxShape(o.k)) return;
             var dx = o.a[2] - o.a[0], dy = o.a[3] - o.a[1], m = Math.max(Math.abs(dx), Math.abs(dy));
             o.a[2] = o.a[0] + (dx < 0 ? -m : m); o.a[3] = o.a[1] + (dy < 0 ? -m : m);
         };

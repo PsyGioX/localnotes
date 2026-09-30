@@ -2923,3 +2923,16 @@ textarea.lne-inp { resize: vertical; }
 .lne-draw-sec-colors { order: 3; }
 .lne-draw-sec-size { order: 4; }
 .lne-draw-sec-shapes { order: 5; }
+
+/* ── Shape grid: 28 extra shapes, icon-only tiles (name in tooltip / aria-label) ── */
+.lne-draw-tools.lne-draw-shapegrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.lne-draw-shapegrid .lne-draw-tool { justify-content: center; padding: 0; min-height: 40px; aspect-ratio: 1 / 1; }
+.lne-draw-shapegrid .lne-draw-lbl { display: none; }
+.lne-draw-shpico {
+    display: block; width: 22px; height: 22px; flex: 0 0 auto; background-color: currentColor;
+    -webkit-mask: var(--shp) center / contain no-repeat; mask: var(--shp) center / contain no-repeat;
+}
+@media (max-width: 720px) {
+    .lne-draw-tools.lne-draw-shapegrid { display: flex; flex-direction: row; flex-wrap: wrap; }
+    .lne-draw-shapegrid .lne-draw-tool { aspect-ratio: auto; }
+}
