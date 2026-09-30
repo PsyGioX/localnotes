@@ -3494,7 +3494,7 @@ class LocalNotesEditor {
         var num = function(n) { return typeof n === 'number' && isFinite(n); };
 
         // ── State ──
-        var st = { tool: 'b', brush: 'p', color: '#000000', size: 4, fill: false, keep: false, fc: null, op: 100, ds: 0, ah: 1, W: 1200, H: 800, objs: [], base: null };
+        var st = { tool: 'b', brush: 'p', color: '#000000', size: 4, fill: false, keep: false, fc: null, op: 100, ds: 0, ah: 1, sm: 35, W: 1200, H: 800, objs: [], base: null };
         // Remember the last used settings for the next time the pad is opened
         var pf = this._drawPrefs;
         if (pf) {
@@ -3507,6 +3507,7 @@ class LocalNotesEditor {
             if (num(pf.op)) st.op = Math.max(10, Math.min(100, Math.round(pf.op)));
             if (pf.ds === 1 || pf.ds === 2) st.ds = pf.ds;
             if (pf.ah === 2) st.ah = 2;
+            if (num(pf.sm)) st.sm = Math.max(0, Math.min(100, Math.round(pf.sm)));
         }
         var hist = [], hi = -1, cur = null, activeId = null, restored = false, done = false;
         var sel = null, drag = null; // select/move tool: index of the selected object, active drag {idx, o, sx, sy, g, moved, h?}
@@ -3569,6 +3570,11 @@ class LocalNotesEditor {
         var ratioKey = '';
         Object.keys(RATIOS).forEach(function(k) { if (RATIOS[k][0] === st.W && RATIOS[k][1] === st.H) ratioKey = k; });
 
+        // Working resolution: the canvas is kept at up to 2x the logical size (capped at ~4.2 Mpx) so strokes stay crisp
+        // on HiDPI screens and the exported image is sharper. All drawing code keeps using logical coordinates (see setTransform).
+        var calcQ = function() { return Math.max(1, Math.min(2, Math.sqrt(4.2e6 / (st.W * st.H)))); };
+        var Q = calcQ();
+
         // ── Markup ──
         var tool = function(id, icon, label) {
             return '<button type="button" class="lne-draw-tool" data-tool="' + id + '" aria-pressed="false" title="' + label + '" aria-label="' + label + '">' +
@@ -3588,12 +3594,17 @@ class LocalNotesEditor {
         var html =
             '<div class="lne-draw">' +
               '<div class="lne-draw-panel" role="toolbar">' +
-                '<div class="lne-draw-sec lne-draw-sec-opts"><div class="lne-draw-h">' + _('drawOptions', 'Options') + '</div>' +
+                // Panel order (DOM order = visual order in every layout):
+                // tool → brush type → colour → opacity → size → shape options → shapes
+                '<div class="lne-draw-sec lne-draw-sec-opts"><div class="lne-draw-h">' + _('drawTools', 'Tools') + '</div>' +
                   '<div class="lne-draw-tools lne-draw-cols2">' +
                     tool('b', 'bi bi-brush', _('drawBrush', 'Brush')) +
-                    tool('v', 'bi bi-arrows-move', _('drawSelect', 'Move')) +
                     tool('e', 'bi bi-eraser', _('drawEraser', 'Eraser')) +
-                  '</div></div>' +
+                    tool('v', 'bi bi-arrows-move', _('drawSelect', 'Move')) +
+                  '</div>' +
+                  '<div class="lne-draw-row lne-draw-smrow"><div class="lne-draw-smhead"><span>' + _('drawSmooth', 'Smoothing') + '</span><span class="lne-draw-smval">35%</span></div>' +
+                    '<input type="range" class="lne-draw-smooth" min="0" max="100" step="5" value="35" aria-label="' + _('drawSmooth', 'Smoothing') + '"></div>' +
+                '</div>' +
                 '<div class="lne-draw-sec lne-draw-sec-brushes"><div class="lne-draw-h">' + _('drawBrushType', 'Brush type') + '</div>' +
                   '<div class="lne-draw-tools lne-draw-cols2">' +
                     btype('p', 'bi bi-pen', _('drawBrushPen', 'Pen')) +
@@ -3603,6 +3614,32 @@ class LocalNotesEditor {
                     btype('s', 'bi bi-droplet', _('drawBrushSpray', 'Spray')) +
                     btype('d', 'bi bi-three-dots', _('drawBrushDotted', 'Dotted')) +
                   '</div></div>' +
+                '<div class="lne-draw-sec lne-draw-sec-colors"><div class="lne-draw-h">' + _('drawColor', 'Choose color') + '</div>' +
+                  '<div class="lne-draw-colors">' +
+                    COLORS.map(function(c) {
+                        return '<button type="button" class="lne-draw-sw" data-color="' + c + '" style="background:' + c + '" title="' + c + '" aria-label="' + c + '" aria-pressed="false"></button>';
+                    }).join('') +
+                    '<label class="lne-draw-sw lne-draw-sw-custom" title="' + _('drawCustomColor', 'Custom color') + '"><i class="bi bi-palette"></i>' +
+                    '<input type="color" class="lne-draw-colorinp" value="#000000" aria-label="' + _('drawCustomColor', 'Custom color') + '"></label>' +
+                  '</div></div>' +
+                '<div class="lne-draw-sec lne-draw-sec-opacity"><div class="lne-draw-h">' + _('drawOpacity', 'Opacity') + ' <span class="lne-draw-opval">100%</span></div>' +
+                  '<div class="lne-draw-oprow"><input type="range" class="lne-draw-op" min="10" max="100" step="5" value="100" aria-label="' + _('drawOpacity', 'Opacity') + '"><span class="lne-draw-opval2">100%</span></div></div>' +
+                '<div class="lne-draw-sec lne-draw-sec-size"><div class="lne-draw-h">' + _('drawBrushSize', 'Brush size') + '</div>' +
+                  '<div class="lne-draw-sizerow"><input type="range" class="lne-draw-size" min="1" max="48" step="1" value="4" aria-label="' + _('drawBrushSize', 'Brush size') + '">' +
+                  '<canvas class="lne-draw-prevcv" width="240" height="56" aria-hidden="true"></canvas></div></div>' +
+                '<div class="lne-draw-sec lne-draw-sec-shopts"><div class="lne-draw-h">' + _('drawShapeOptions', 'Shape options') + '</div>' +
+                  '<div class="lne-draw-row"><span class="lne-draw-rlbl">' + _('drawLineStyle', 'Line style') + '</span>' +
+                    '<select class="lne-inp lne-draw-dash" aria-label="' + _('drawLineStyle', 'Line style') + '">' +
+                      '<option value="0">' + _('drawLineSolid', 'Solid') + '</option><option value="1">' + _('drawLineDashed', 'Dashed') + '</option><option value="2">' + _('drawLineDotted', 'Dotted') + '</option></select></div>' +
+                  '<div class="lne-draw-row lne-draw-row-ah"><span class="lne-draw-rlbl">' + _('drawArrowHeads', 'Arrow heads') + '</span>' +
+                    '<select class="lne-inp lne-draw-ah" aria-label="' + _('drawArrowHeads', 'Arrow heads') + '">' +
+                      '<option value="1">' + _('drawArrowEnd', 'At the end') + '</option><option value="2">' + _('drawArrowBoth', 'Both ends') + '</option></select></div>' +
+                  '<label class="lne-chk lne-draw-chk"><input type="checkbox" class="lne-draw-fill"> <span>' + _('drawFill', 'Fill shapes with color') + '</span></label>' +
+                  '<div class="lne-draw-row"><span class="lne-draw-rlbl">' + _('drawFillColor', 'Fill color') + '</span>' +
+                    '<span class="lne-draw-rctl"><input type="color" class="lne-draw-fillcolor" value="#000000" aria-label="' + _('drawFillColor', 'Fill color') + '">' +
+                    '<button type="button" class="lne-draw-mini lne-draw-fcsame" title="' + _('drawFillSame', 'Same as line color') + '" aria-label="' + _('drawFillSame', 'Same as line color') + '"><i class="bi bi-link-45deg"></i></button></span></div>' +
+                  '<label class="lne-chk lne-draw-chk"><input type="checkbox" class="lne-draw-keep"> <span>' + _('drawKeepRatio', 'Keep proportions') + '</span></label>' +
+                '</div>' +
                 '<div class="lne-draw-sec lne-draw-sec-shapes"><div class="lne-draw-h">' + _('drawShapeType', 'Shape type') + '</div>' +
                   '<div class="lne-draw-tools lne-draw-shapegrid">' +
                     tool('r', 'bi bi-square', _('drawRectangle', 'Rectangle')) +
@@ -3611,31 +3648,6 @@ class LocalNotesEditor {
                     tool('l', 'bi bi-slash-lg', _('drawLine', 'Line')) +
                     tool('a', 'bi bi-arrow-up-right', _('drawArrow', 'Arrow')) +
                     SHAPE_LIST.map(function(s) { return stool(s[0], _(s[1], s[2])); }).join('') +
-                  '</div>' +
-                  '<label class="lne-chk lne-draw-chk"><input type="checkbox" class="lne-draw-fill"> <span>' + _('drawFill', 'Fill shapes with color') + '</span></label>' +
-                  '<label class="lne-chk lne-draw-chk"><input type="checkbox" class="lne-draw-keep"> <span>' + _('drawKeepRatio', 'Keep proportions') + '</span></label>' +
-                  '<div class="lne-draw-row"><span class="lne-draw-rlbl">' + _('drawFillColor', 'Fill color') + '</span>' +
-                    '<span class="lne-draw-rctl"><input type="color" class="lne-draw-fillcolor" value="#000000" aria-label="' + _('drawFillColor', 'Fill color') + '">' +
-                    '<button type="button" class="lne-draw-mini lne-draw-fcsame" title="' + _('drawFillSame', 'Same as line color') + '" aria-label="' + _('drawFillSame', 'Same as line color') + '"><i class="bi bi-link-45deg"></i></button></span></div>' +
-                  '<div class="lne-draw-row"><span class="lne-draw-rlbl">' + _('drawLineStyle', 'Line style') + '</span>' +
-                    '<select class="lne-inp lne-draw-dash" aria-label="' + _('drawLineStyle', 'Line style') + '">' +
-                      '<option value="0">' + _('drawLineSolid', 'Solid') + '</option><option value="1">' + _('drawLineDashed', 'Dashed') + '</option><option value="2">' + _('drawLineDotted', 'Dotted') + '</option></select></div>' +
-                  '<div class="lne-draw-row lne-draw-row-ah"><span class="lne-draw-rlbl">' + _('drawArrowHeads', 'Arrow heads') + '</span>' +
-                    '<select class="lne-inp lne-draw-ah" aria-label="' + _('drawArrowHeads', 'Arrow heads') + '">' +
-                      '<option value="1">' + _('drawArrowEnd', 'At the end') + '</option><option value="2">' + _('drawArrowBoth', 'Both ends') + '</option></select></div>' +
-                '</div>' +
-                '<div class="lne-draw-sec lne-draw-sec-size"><div class="lne-draw-h">' + _('drawBrushSize', 'Brush size') + '</div>' +
-                  '<div class="lne-draw-sizerow"><input type="range" class="lne-draw-size" min="1" max="48" step="1" value="4" aria-label="' + _('drawBrushSize', 'Brush size') + '">' +
-                  '<canvas class="lne-draw-prevcv" width="240" height="56" aria-hidden="true"></canvas></div></div>' +
-                '<div class="lne-draw-sec lne-draw-sec-opacity"><div class="lne-draw-h">' + _('drawOpacity', 'Opacity') + ' <span class="lne-draw-opval">100%</span></div>' +
-                  '<div class="lne-draw-oprow"><input type="range" class="lne-draw-op" min="10" max="100" step="5" value="100" aria-label="' + _('drawOpacity', 'Opacity') + '"><span class="lne-draw-opval2">100%</span></div></div>' +
-                '<div class="lne-draw-sec lne-draw-sec-colors"><div class="lne-draw-h">' + _('drawColor', 'Choose color') + '</div>' +
-                  '<div class="lne-draw-colors">' +
-                    COLORS.map(function(c) {
-                        return '<button type="button" class="lne-draw-sw" data-color="' + c + '" style="background:' + c + '" title="' + c + '" aria-label="' + c + '" aria-pressed="false"></button>';
-                    }).join('') +
-                    '<label class="lne-draw-sw lne-draw-sw-custom" title="' + _('drawCustomColor', 'Custom color') + '"><i class="bi bi-palette"></i>' +
-                    '<input type="color" class="lne-draw-colorinp" value="#000000" aria-label="' + _('drawCustomColor', 'Custom color') + '"></label>' +
                   '</div></div>' +
               '</div>' +
               '<div class="lne-draw-stage">' +
@@ -3651,7 +3663,7 @@ class LocalNotesEditor {
                     }).join('') +
                   '</select>' +
                 '</div>' +
-                '<div class="lne-draw-wrap"><canvas class="lne-draw-cv" width="' + st.W + '" height="' + st.H + '"></canvas></div>' +
+                '<div class="lne-draw-wrap"><canvas class="lne-draw-cv" width="' + Math.round(st.W * Q) + '" height="' + Math.round(st.H * Q) + '"></canvas></div>' +
               '</div>' +
             '</div>';
 
@@ -3663,7 +3675,7 @@ class LocalNotesEditor {
                 noBackdropClose: true,
                 onClose: function() {
                     cleanup();
-                    self._drawPrefs = { tool: st.tool, brush: st.brush, color: st.color, size: st.size, fill: st.fill, keep: st.keep, fc: st.fc, op: st.op, ds: st.ds, ah: st.ah };
+                    self._drawPrefs = { tool: st.tool, brush: st.brush, color: st.color, size: st.size, fill: st.fill, keep: st.keep, fc: st.fc, op: st.op, ds: st.ds, ah: st.ah, sm: st.sm };
                     if (!editing) {
                         // Keep an unfinished sketch so an accidental close is harmless
                         self._drawDraft = (!done && st.objs.length) ? { W: st.W, H: st.H, o: st.objs.slice() } : null;
@@ -3687,7 +3699,8 @@ class LocalNotesEditor {
         var opInp = ov.querySelector('.lne-draw-op'), opVal = ov.querySelector('.lne-draw-opval'), opVal2 = ov.querySelector('.lne-draw-opval2');
         var pvCv = ov.querySelector('.lne-draw-prevcv'), pvCtx = pvCv.getContext('2d');
         var colorInp = ov.querySelector('.lne-draw-colorinp');
-        base.width = st.W; base.height = st.H;
+        var smInp = ov.querySelector('.lne-draw-smooth'), smVal = ov.querySelector('.lne-draw-smval'), smRow = ov.querySelector('.lne-draw-smrow');
+        base.width = Math.round(st.W * Q); base.height = Math.round(st.H * Q);
 
         var setStatus = function(msg, warn) {
             statusEl.textContent = msg || '';
@@ -3729,6 +3742,19 @@ class LocalNotesEditor {
                 carry = len - (d - step);
             }
         };
+        // Chaikin corner cutting: each pass replaces every segment by its 1/4 and 3/4 points (ends are kept)
+        var chaikin = function(p, passes) {
+            for (var n = 0; n < passes && p.length > 4; n++) {
+                var out = [p[0], p[1]];
+                for (var i = 0; i < p.length - 2; i += 2) {
+                    var ax = p[i], ay = p[i + 1], bx = p[i + 2], by = p[i + 3];
+                    out.push(ax * 0.75 + bx * 0.25, ay * 0.75 + by * 0.25, ax * 0.25 + bx * 0.75, ay * 0.25 + by * 0.75);
+                }
+                out.push(p[p.length - 2], p[p.length - 1]);
+                p = out;
+            }
+            return p;
+        };
         var brushStroke = function(c, o) {
             var t = o.t || 'p', p = o.p, s = o.s, i;
             if (t === 'm') {
@@ -3740,12 +3766,14 @@ class LocalNotesEditor {
                 if (p.length === 2) { c.beginPath(); c.arc(p[0], p[1], s / 2, 0, Math.PI * 2); c.fill(); }
                 else strokePath(c, p, s);
             } else if (t === 'c') {
-                // Broad-nib pen held at 45°: thick on one diagonal, hairline on the other
+                // Broad-nib pen held at 45°: thick on one diagonal, hairline on the other.
+                // The path is corner-cut first, so the edges of the ribbon are smooth instead of following every pointer jitter.
+                var pc = chaikin(p, p.length < 6000 ? 2 : 1);
                 var nl = s * 1.3 + 2, nx = nl * Math.SQRT1_2, ny = -nl * Math.SQRT1_2;
                 c.beginPath();
-                if (p.length === 2) { c.moveTo(p[0] + nx, p[1] + ny); c.lineTo(p[0] - nx, p[1] - ny); c.lineWidth = Math.max(1, s * 0.25); c.stroke(); }
-                for (i = 2; i < p.length; i += 2) {
-                    var ax = p[i - 2], ay = p[i - 1], bx = p[i], by = p[i + 1];
+                if (pc.length === 2) { c.moveTo(pc[0] + nx, pc[1] + ny); c.lineTo(pc[0] - nx, pc[1] - ny); c.lineWidth = Math.max(1, s * 0.25); c.stroke(); }
+                for (i = 2; i < pc.length; i += 2) {
+                    var ax = pc[i - 2], ay = pc[i - 1], bx = pc[i], by = pc[i + 1];
                     c.moveTo(ax + nx, ay + ny); c.lineTo(bx + nx, by + ny);
                     c.lineTo(bx - nx, by - ny); c.lineTo(ax - nx, ay - ny); c.closePath();
                 }
@@ -3802,17 +3830,21 @@ class LocalNotesEditor {
             one(x2, y2, ang);
             if (o.ah === 2) one(x1, y1, ang + Math.PI);
         };
-        var opCv = null; // scratch layer: a translucent object is drawn opaque first, then composited once (no dark overlaps)
+        // A translucent object is drawn opaque on a scratch layer first, then composited once (no dark overlaps).
+        // The scratch canvas is cached per target canvas and follows the target's transform (working resolution Q).
         var drawObj = function(c, o) {
             if (o.op && o.op < 1 && o.k !== 'e') {
                 var cw = c.canvas.width, ch = c.canvas.height;
-                if (!opCv) opCv = document.createElement('canvas');
-                if (opCv.width !== cw || opCv.height !== ch) { opCv.width = cw; opCv.height = ch; }
-                var oc2 = opCv.getContext('2d'); oc2.clearRect(0, 0, cw, ch);
+                var sc = c.canvas._lneScr || (c.canvas._lneScr = document.createElement('canvas'));
+                if (sc.width !== cw || sc.height !== ch) { sc.width = cw; sc.height = ch; }
+                var oc2 = sc.getContext('2d');
+                var tf = c.getTransform ? c.getTransform() : null;
+                oc2.setTransform(1, 0, 0, 1, 0, 0); oc2.clearRect(0, 0, cw, ch);
+                if (tf) oc2.setTransform(tf);
                 var plain = {}, pk;
                 for (pk in o) if (Object.prototype.hasOwnProperty.call(o, pk) && pk !== 'op') plain[pk] = o[pk];
                 drawObj(oc2, plain);
-                c.save(); c.globalAlpha = Math.max(0.05, Math.min(1, o.op)); c.drawImage(opCv, 0, 0); c.restore();
+                c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = Math.max(0.05, Math.min(1, o.op)); c.drawImage(sc, 0, 0); c.restore();
                 return;
             }
             c.save();
@@ -3834,7 +3866,10 @@ class LocalNotesEditor {
             c.restore();
         };
         var rebuild = function(skip) {
+            bctx.setTransform(1, 0, 0, 1, 0, 0);
             bctx.clearRect(0, 0, base.width, base.height);
+            bctx.setTransform(Q, 0, 0, Q, 0, 0);
+            bctx.imageSmoothingQuality = 'high';
             if (st.base && st.base.complete && st.base.naturalWidth) bctx.drawImage(st.base, 0, 0, st.W, st.H);
             for (var i = 0; i < st.objs.length; i++) { if (i !== skip) drawObj(bctx, st.objs[i]); }
             render();
@@ -3991,8 +4026,10 @@ class LocalNotesEditor {
             ctx.restore();
         };
         var render = function() {
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
             ctx.clearRect(0, 0, cv.width, cv.height);
             ctx.drawImage(base, 0, 0);
+            ctx.setTransform(Q, 0, 0, Q, 0, 0); // overlays (live stroke, selection) use logical coordinates
             if (drag) drawObj(ctx, drag.g);
             if (cur) drawObj(ctx, cur);
             if (st.tool === 'v') drawSelection();
@@ -4053,6 +4090,8 @@ class LocalNotesEditor {
             var opPct = Math.round((so ? (so.op || 1) * 100 : st.op));
             opInp.disabled = opOff; opInp.value = opPct; opVal.textContent = opVal2.textContent = opPct + '%';
             ov.querySelector('.lne-draw-sec-opacity').classList.toggle('is-off', opOff);
+            smInp.value = st.sm; smVal.textContent = st.sm + '%';
+            smRow.classList.toggle('is-off', !(st.tool === 'b' || st.tool === 'e'));
             [fillChk, dashSel, ahSel, keepChk].forEach(function(el) {
                 var row = el.closest('label, .lne-draw-row'); if (row) row.classList.toggle('is-off', el.disabled);
             });
@@ -4138,6 +4177,7 @@ class LocalNotesEditor {
         });
         [colorInp, sizeInp, fillColInp, opInp].forEach(function(el) { el.addEventListener('change', function() { liveEdit = false; }); });
         keepChk.addEventListener('change', function() { st.keep = keepChk.checked; });
+        smInp.addEventListener('input', function() { st.sm = Math.max(0, Math.min(100, parseInt(smInp.value, 10) || 0)); smVal.textContent = st.sm + '%'; });
         undoBtn.addEventListener('click', function() { goHist(hi - 1); });
         redoBtn.addEventListener('click', function() { goHist(hi + 1); });
         ov.querySelector('.lne-draw-clear').addEventListener('click', function() {
@@ -4146,8 +4186,8 @@ class LocalNotesEditor {
         });
         ov.querySelector('.lne-draw-ratio').addEventListener('change', function(e) {
             var d = RATIOS[e.target.value]; if (!d) return;
-            st.W = d[0]; st.H = d[1];
-            cv.width = base.width = st.W; cv.height = base.height = st.H;
+            st.W = d[0]; st.H = d[1]; Q = calcQ();
+            cv.width = base.width = Math.round(st.W * Q); cv.height = base.height = Math.round(st.H * Q);
             fit(); rebuild(); defaultStatus();
         });
 
@@ -4166,6 +4206,17 @@ class LocalNotesEditor {
                 return;
             }
             o.a[2] = o.a[0] + (dx < 0 ? -m : m); o.a[3] = o.a[1] + (dy < 0 ? -m : m);
+        };
+        // Stroke stabiliser ("lazy string"): the stored point trails the pointer and only moves once the pointer is further than
+        // `r` away. Integer pointer coordinates scaled to the canvas produce a staircase on slow strokes; this removes it.
+        // r is constant in screen pixels (0…12 px at 100 %), so the feel doesn't change with the canvas zoom.
+        var flt = null;
+        var stab = function(q) {
+            var r = st.sm / 100 * 12 * (st.W / (cv.clientWidth || st.W));
+            if (!flt || r < 0.4) { flt = [q[0], q[1]]; return flt; }
+            var dx = q[0] - flt[0], dy = q[1] - flt[1], d = Math.hypot(dx, dy);
+            if (d > r) { var f = (d - r) / d; flt = [Math.round((flt[0] + dx * f) * 10) / 10, Math.round((flt[1] + dy * f) * 10) / 10]; }
+            return flt;
         };
         cv.addEventListener('pointerdown', function(e) {
             if (activeId !== null) return;
@@ -4192,6 +4243,7 @@ class LocalNotesEditor {
                 rebuild(hit); // base without the dragged object; it is drawn on top as a ghost while moving
                 return;
             }
+            flt = [p[0], p[1]];
             if (st.tool === 'b') cur = { k: 'b', c: st.color, s: st.size, t: st.brush, r: (Math.random() * 4294967295) >>> 0, p: [p[0], p[1]] };
             else if (st.tool === 'e') cur = { k: 'e', c: st.color, s: st.size, p: [p[0], p[1]] };
             else {
@@ -4233,7 +4285,7 @@ class LocalNotesEditor {
                 var evs = (typeof e.getCoalescedEvents === 'function' && e.getCoalescedEvents()) || [];
                 if (!evs.length) evs = [e];
                 for (var i = 0; i < evs.length; i++) {
-                    var q = toPt(evs[i]), n = cur.p.length;
+                    var q = stab(toPt(evs[i])), n = cur.p.length;
                     var dx = q[0] - cur.p[n - 2], dy = q[1] - cur.p[n - 1];
                     if (dx * dx + dy * dy >= 0.64) cur.p.push(q[0], q[1]);
                 }
@@ -4257,6 +4309,11 @@ class LocalNotesEditor {
                 return;
             }
             var o = cur; cur = null;
+            if (!cancel && o && o.p && o.p.length > 2) { // the stabiliser lags behind the pointer: finish the line where the pointer was lifted
+                var fq = toPt(e), ln = o.p.length;
+                if (Math.hypot(fq[0] - o.p[ln - 2], fq[1] - o.p[ln - 1]) >= 0.8) o.p.push(fq[0], fq[1]);
+            }
+            flt = null;
             if (!cancel && o) {
                 var keep = true;
                 if (o.a && Math.abs(o.a[2] - o.a[0]) < 2 && Math.abs(o.a[3] - o.a[1]) < 2) keep = false; // accidental tap with a shape tool
@@ -4327,17 +4384,27 @@ class LocalNotesEditor {
             if (!st.objs.length && !hasBase) { setStatus(_('drawEmpty', 'Draw something first'), true); return; }
             var url;
             try {
-                var out = document.createElement('canvas'); out.width = st.W; out.height = st.H;
+                // `base` already holds the drawing at the working resolution Q (up to 2x), so the export is sharp on HiDPI screens;
+                // the <img> keeps the logical width/height below.
+                var out = document.createElement('canvas'); out.width = base.width; out.height = base.height;
                 var oc = out.getContext('2d');
-                oc.fillStyle = '#ffffff'; oc.fillRect(0, 0, st.W, st.H);
+                oc.fillStyle = '#ffffff'; oc.fillRect(0, 0, out.width, out.height);
                 oc.drawImage(base, 0, 0);
                 url = out.toDataURL('image/png');
-                // Lossless WebP is ~25% smaller than PNG for typical sketches; keep PNG where the
+                // Lossless WebP is far smaller than PNG for sketches; keep PNG where the
                 // browser can't encode WebP (it silently falls back to PNG) or the result isn't smaller.
                 try {
                     var wp = out.toDataURL('image/webp', 1);
                     if (wp.indexOf('data:image/webp') === 0 && wp.length < url.length) url = wp;
                 } catch (e2) { /* keep PNG */ }
+                // No WebP and a heavy PNG: fall back to the logical size so the note doesn't balloon
+                if (url.indexOf('data:image/webp') !== 0 && url.length > 3500000 && base.width > st.W) {
+                    out.width = st.W; out.height = st.H; oc = out.getContext('2d');
+                    oc.imageSmoothingQuality = 'high';
+                    oc.fillStyle = '#ffffff'; oc.fillRect(0, 0, st.W, st.H);
+                    oc.drawImage(base, 0, 0, st.W, st.H);
+                    url = out.toDataURL('image/png');
+                }
             } catch (err) { console.error('Drawing export failed', err); setStatus(_('drawFailed', 'Could not create the drawing'), true); return; }
             var json = '';
             if (!hasBase) {

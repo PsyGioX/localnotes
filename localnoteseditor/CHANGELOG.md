@@ -2,6 +2,14 @@
 
 ## v1.2.3 (current)
 
+### Drawing pad — panel order and stroke quality
+- **Panel order fixed**: sections were reordered by CSS `order:` so the visual order differed from the markup (Opacity floated to the top on desktop). The order now comes from the markup only: Tools → Brush type → Colour → Opacity → Size → Shape options → Shapes. Brush/Eraser/Move are grouped as "Tools"; shape-only settings (line style, arrow heads, fill, fill colour, keep proportions) moved into their own "Shape options" section above the shape grid
+- New: **Smoothing** slider (brush and eraser), default 35 % — a stroke stabiliser removes the staircase that integer pointer coordinates produce on slow strokes; the line is finished where the pointer is lifted
+- Calligraphy brush: path is corner-cut (Chaikin) before the ribbon is built, so its edges are smooth instead of ragged
+- The drawing canvas now works at up to 2x the logical size (capped at ~4.2 Mpx), so strokes are crisp on HiDPI screens and the inserted image is sharper (`width`/`height` of the `<img>` stay logical; PNG fallback drops back to 1x if it would exceed ~3.5 MB)
+- Translucent objects use a per-canvas scratch layer that follows the canvas transform
+- New locale keys in all 12 languages: `drawTools`, `drawShapeOptions`, `drawSmooth`
+
 ### Drawing pad
 - Shape parameters now apply to an **already drawn** object: with the Move tool selected, the panel shows that object's fill, fill colour, line style, arrow heads, opacity, colour and size, and changing any of them edits the object (one undo step per edit)
 - New: separate **fill colour** (or "same as line colour"), **line style** (solid / dashed / dotted), **arrow heads** (end / both ends), **opacity** (10–100 %, translucent strokes don't darken where they overlap)

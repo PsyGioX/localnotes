@@ -2887,16 +2887,12 @@ textarea.lne-inp { resize: vertical; }
     .lne-draw-h { display: none; }
     .lne-draw-sec { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; }
     .lne-draw-tools, .lne-draw-tools.lne-draw-cols2 { display: flex; flex-direction: row; flex-wrap: wrap; gap: 6px; }
-    /* Most-used controls first: brush, brush type, colour, size — shapes scroll below */
-    .lne-draw-sec-opts { order: 1; }
-    .lne-draw-sec-brushes { order: 2; }
-    .lne-draw-sec-colors { order: 3; }
-    .lne-draw-sec-size { order: 4; }
-    .lne-draw-sec-opacity { order: 4; }
+    /* Section order comes from the markup (tool → brush type → colour → opacity → size → shape options → shapes):
+       the most-used controls are first, shapes scroll below */
     .lne-draw-oprow { flex: 1 1 100%; }
     .lne-draw-opval2 { display: inline; }
     .lne-draw-row { flex: 1 1 200px; }
-    .lne-draw-sec-shapes { order: 5; }
+    .lne-draw-smrow { flex: 1 1 200px; }
     .lne-draw-colors { padding: 2px 4px; gap: 8px; }
     .lne-draw-tool { width: 44px; height: 44px; min-height: 0; padding: 0; justify-content: center; }
     .lne-draw-sw { width: 34px; height: 34px; }
@@ -2941,12 +2937,23 @@ textarea.lne-inp { resize: vertical; }
     .lne-draw-ratio { padding: 0 8px; }
 }
 
-/* Panel order (all layouts): brush → brush type → colour → size → shapes */
-.lne-draw-sec-opts { order: 1; }
-.lne-draw-sec-brushes { order: 2; }
-.lne-draw-sec-colors { order: 3; }
-.lne-draw-sec-size { order: 4; }
-.lne-draw-sec-shapes { order: 5; }
+/* Panel order (all layouts) = DOM order: tool → brush type → colour → opacity → size → shape options → shapes.
+   Do not add `order:` to the sections — it made the visual order differ from the markup (opacity used to float to the top). */
+
+/* Smoothing slider (brush / eraser stabiliser) */
+.lne-draw-row.lne-draw-smrow { flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 2px; }
+.lne-draw-smhead { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; }
+.lne-draw-smval { font-size: 12px; color: var(--text-secondary, #999); }
+.lne-draw-smooth { width: 100%; min-width: 0; height: 28px; accent-color: var(--primary-color, #28a745); }
+/* Shape options: label above its control (full width), so nothing is pushed to the right and the left side never looks empty.
+   Disabled rows are dimmed once (.55) — they used to be dimmed twice, which made the labels almost invisible. */
+.lne-draw-sec-shopts { gap: 10px; }
+.lne-draw-sec-shopts .lne-draw-row { flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 4px; }
+.lne-draw-sec-shopts .lne-draw-rlbl { font-size: 12px; color: var(--text-secondary, #999); }
+.lne-draw-sec-shopts .lne-draw-row select.lne-inp { flex: none; width: 100%; max-width: 100%; }
+.lne-draw-sec-shopts .lne-draw-rctl { justify-content: flex-start; }
+.lne-draw-sec-shopts .lne-draw-fillcolor { flex: 1 1 auto; width: auto; min-width: 0; }
+.lne-draw-sec-shopts .lne-draw-row.is-off, .lne-draw-sec-shopts .lne-draw-chk.is-off { opacity: .55; }
 
 /* ── Shape grid: 28 extra shapes, icon-only tiles (name in tooltip / aria-label) ── */
 .lne-draw-tools.lne-draw-shapegrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
