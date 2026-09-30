@@ -2783,6 +2783,26 @@ textarea.lne-inp { resize: vertical; }
     display: block; width: 100%; height: auto; aspect-ratio: 240 / 56;
     border-radius: 8px; background: #d9dde3; border: 1px solid var(--border-color, #272727);
 }
+/* Shape parameters: fill colour, line style, arrow heads, opacity */
+.lne-draw-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--text-color, #e0e0e0); }
+.lne-draw-row.is-off { opacity: .45; pointer-events: none; }
+.lne-draw-rlbl { min-width: 0; line-height: 1.3; }
+.lne-draw-rctl { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+.lne-draw-row select.lne-inp { flex: 0 1 120px; min-width: 0; max-width: 60%; padding: 4px 6px; font-size: 13px; }
+.lne-draw-fillcolor { width: 34px; height: 28px; padding: 0; border: 1px solid var(--border-color, #272727); border-radius: 6px; background: none; cursor: pointer; }
+.lne-draw-fillcolor:disabled { cursor: default; }
+.lne-draw-mini {
+    width: 28px; height: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+    border-radius: 6px; border: 1px solid var(--border-color, #272727);
+    background: var(--bg-secondary, #111); color: var(--text-color, #e0e0e0);
+}
+.lne-draw-mini:hover:not(:disabled) { background: var(--button-hover, #2d2d2d); border-color: var(--primary-color, #28a745); }
+.lne-draw-mini:disabled { opacity: .35; cursor: default; }
+[data-theme="light"] .lne-draw-mini { background: #f8f9fa; color: #212529; border-color: #dee2e6; }
+.lne-draw-oprow { display: flex; align-items: center; gap: 8px; }
+.lne-draw-op { flex: 1; width: 100%; min-width: 0; accent-color: var(--primary-color, #28a745); height: 28px; }
+.lne-draw-opval { text-transform: none; letter-spacing: 0; font-weight: 400; margin-left: 4px; }
+.lne-draw-opval2 { display: none; font-size: 12px; min-width: 36px; text-align: right; color: var(--text-secondary, #999); }
 .lne-draw-sec.is-dim { opacity: .55; }
 .lne-draw-btype { font-size: 12px; padding: 6px 8px; gap: 6px; }
 .lne-draw-btype i { font-size: 15px; }
@@ -2872,6 +2892,10 @@ textarea.lne-inp { resize: vertical; }
     .lne-draw-sec-brushes { order: 2; }
     .lne-draw-sec-colors { order: 3; }
     .lne-draw-sec-size { order: 4; }
+    .lne-draw-sec-opacity { order: 4; }
+    .lne-draw-oprow { flex: 1 1 100%; }
+    .lne-draw-opval2 { display: inline; }
+    .lne-draw-row { flex: 1 1 200px; }
     .lne-draw-sec-shapes { order: 5; }
     .lne-draw-colors { padding: 2px 4px; gap: 8px; }
     .lne-draw-tool { width: 44px; height: 44px; min-height: 0; padding: 0; justify-content: center; }

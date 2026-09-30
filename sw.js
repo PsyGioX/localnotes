@@ -11,7 +11,7 @@
  * Исходники: https://github.com/PsyGioX/localnotes — Сайт: https://localnotes-three.vercel.app
  */
 // Service Worker для Local Notes
-const CACHE_VERSION = 'v1.9.20';
+const CACHE_VERSION = 'v1.9.21';
 const STATIC_CACHE  = `static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `dynamic-${CACHE_VERSION}`;
 const CACHE_LIMIT   = 60;

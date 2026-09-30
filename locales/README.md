@@ -27,7 +27,11 @@ locales/
 Every file is a **flat** `{ "key": "value" }` map — no nesting, no
 generated boilerplate. Every language file in a given folder has
 **exactly the same set of keys** (enforced — see `verify-locales.js`
-below): 652 keys in `locales/`, 223 keys in `locales/site/`.
+below): 864 keys in `locales/`, 223 keys in `locales/site/`.
+
+The in-app files also carry the strings of the editor (toolbar, dialogs,
+templates, the drawing pad), the vault / App Lock screens, Task Board, Graph
+View, Command Palette and site export — everything read through `t()`.
 
 ## How the app loads them now
 
@@ -37,7 +41,7 @@ below): 652 keys in `locales/`, 223 keys in `locales/site/`.
   `script-loader.js` runs scripts in a fixed order, and the rest of the
   app (`index.js` and friends) reads `window.translations` / calls `t()`
   immediately after this script runs, with no promise to await. This cuts
-  what a page loads from one 424 KB file to two files of roughly 25-40 KB
+  what a page loads from one 424 KB file to two files of roughly 35-55 KB
   each.
 - **`js/translate.js`** (the static-page / language-switcher logic) now
   fetches `/locales/site/<lang>.json` + `/locales/<lang>.json` for
@@ -70,9 +74,18 @@ below): 652 keys in `locales/`, 223 keys in `locales/site/`.
 
 ## Note on cache-busting
 
-The `?v=1.9.13` query-string versioning in HTML/`script-loader.js` was
-**not** bumped as part of this change — that's a release-process decision
-(see `release-checklist.md`). Bump it before shipping so returning users'
-service worker picks up `js/i18n.js` and the new `/locales` files instead
-of trying to fetch the now-deleted `js/translations.js` /
-`json/lang.json` from its old cache.
+Locale files are fetched without a `?v=` query string, so returning users
+get new strings through the **Service Worker**: bump `CACHE_VERSION` in
+`sw.js` whenever a file in `/locales` changes (the SW precaches all 24 locale
+files and drops old caches on activate). The `?v=x.y.z` query strings in the
+HTML files and in `js/script-loader.js` are for scripts and stylesheets; bump
+those for any asset you changed (see `release-checklist.md`).
+
+## Adding strings for a new feature
+
+1. Add the key to **every** `locales/<lang>.json` (English text as a
+   placeholder is fine for a first commit, but translate before release).
+2. Use `t('key')` in app code, or `this._('key', 'English fallback')` inside
+   the editor — the editor falls back to the English text if a key is missing.
+3. Run `node scripts/verify-locales.js`; it fails on missing keys and empty
+   values.

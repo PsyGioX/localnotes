@@ -3,22 +3,32 @@
 ## For End Users
 
 1. Click any note to open the editor
-2. Use toolbar buttons or keyboard shortcuts to format text
+2. Use toolbar buttons, the `/` Quick Insert menu or keyboard shortcuts to format and insert
 3. Drag images directly into the editor
 4. Click the checklist button to add interactive tasks
-5. Click Save when done
+5. Click the brush button to sketch (double-click a drawing later to edit it)
+6. Click Save when done
 
 ### Keyboard Shortcuts
+
+Press **Ctrl+/** in the editor to see the full list. The main ones:
 
 | Shortcut | Action |
 |----------|--------|
 | Ctrl+Z | Undo |
-| Ctrl+Y | Redo |
-| Ctrl+B | Bold |
-| Ctrl+I | Italic |
-| Ctrl+U | Underline |
+| Ctrl+Y / Ctrl+Shift+Z | Redo |
+| Ctrl+B / Ctrl+I / Ctrl+U | Bold / Italic / Underline |
+| Tab / Shift+Tab | Indent / Outdent |
 | Ctrl+K | Insert link |
+| `[[` | Link to another note (autocomplete) |
+| `/` or Ctrl+Space | Quick Insert menu |
 | Ctrl+H | Find & Replace |
+| Ctrl+Shift+Space | Non-breaking space |
+| F11 | Fullscreen |
+| F12 | Focus mode |
+| Ctrl+/ | Keyboard shortcuts reference |
+
+While the drawing pad is open: Ctrl+Z / Ctrl+Y undo/redo, and with the Move tool, arrow keys nudge the selected object (Shift = 10 px), Delete removes it. Hold Shift while drawing or resizing to keep proportions.
 
 ---
 
@@ -30,8 +40,11 @@
 const editor = new LocalNotesEditor('containerId', {
     height: '500px',
     placeholder: 'Start typing...',
-    toolbar: true,
-    statusbar: true
+    toolbar: true,      // false hides the toolbar
+    statusbar: true,    // false hides the status bar
+    // optional: enables the [[ wiki-link popup and toolbar button
+    onWikiLinkSearch: async (query) => [{ id: 'n1', title: 'Some note' }],
+    onWikiLinkOpen:   (id) => { /* open note `id` */ }
 });
 ```
 
@@ -39,16 +52,17 @@ const editor = new LocalNotesEditor('containerId', {
 
 ```javascript
 const html = editor.getContent();
-editor.setContent('<p>Hello <strong>World</strong></p>');
-// setContent() resets undo history
+const text = editor.getText();
+editor.setContent('<p>Hello <strong>World</strong></p>');  // resets undo history
+editor.clear();
 ```
 
 ### Insert Elements
 
 ```javascript
-editor.insertImage();
-editor.insertVideo();
-editor.insertChecklistItem();
+editor.insertImage();          // opens the image dialog
+editor.insertVideo();          // opens the video dialog
+editor.insertChecklistItem();  // inserts a checklist item
 ```
 
 ### Listen for Changes
@@ -59,7 +73,9 @@ editor.ed.addEventListener('input', () => {
 });
 ```
 
-### Add Custom Toolbar Button
+`editor.ed` is the `contenteditable` element; `editor.toolbar`, `editor.statusbar` and `editor.wrapper` are the other main parts.
+
+### Add a Custom Toolbar Button
 
 ```javascript
 const btn = document.createElement('button');
@@ -81,20 +97,27 @@ localnoteseditor/
 └── bootstrap-icons/ # Icons (bundled)
 
 css/
-└── editor-modal.css # Modal layout styles
+└── editor-modal.css # Modal layout styles (app only)
 
 js/
-└── editor-integration.js # App integration
+└── editor-integration.js # App integration (app only)
+
+locales/
+└── <lang>.json      # Editor labels are read with window.t(key); English fallbacks are built in
 ```
 
 ---
 
 ## Troubleshooting
 
-**Editor not appearing** — check container ID exists, CSS loaded, no console errors.
+**Editor not appearing** — check the container ID exists, CSS loaded, no console errors.
 
 **Content not saving** — use `editor.getContent()` to retrieve HTML before saving.
 
+**Labels show in English** — `window.t` is not defined or the key is missing from `/locales/<lang>.json`; the editor falls back to its built-in English text.
+
 **Styling conflicts** — check that `styles.css` loads before your overrides.
 
-**Color bar not updating** — cursor must be inside a colored `<span>` or `<font>` element.
+**Color bar not updating** — the cursor must be inside a coloured `<span>` or `<font>` element.
+
+**Drawing opens as a flat picture** — the drawing was made before vector data was stored, or it was too large to store (see README → "Drawing pad"); it is edited as a base layer instead.

@@ -1,101 +1,90 @@
-# Release Checklist — Local Notes v1.9.9
+# Release Checklist — Local Notes v1.11.1
 
-## ✅ Security / CSP
-- [x] `unsafe-inline` removed from `script-src` and `script-src-elem`
-- [x] Inline GA scripts moved to `js/ga-init.js`
-- [x] Inline `loadScriptsSequentially` moved to `js/script-loader.js`
-- [x] Inline lang-redirect script moved to `js/lang-redirect.js`
-- [x] Inline styles-loading + cache cleanup moved to `js/page-init.js`
-- [x] `onload=` event handlers on `<link>` tags replaced with JS loader
-- [x] `ga-init.js` uses `addEventListener('load')` instead of `s.onload =`
-- [x] `onclick=` in JS template strings replaced with `addEventListener`
-- [x] `ga-init.js` placed after CSP meta tag in all HTML files
-- [x] DOMPurify hard-fail guard added to `index.js`
-- [x] All `typeof DOMPurify !== 'undefined' ? ... : content` fallbacks removed
-- [x] Applied to all 11 language index.html files
+Copy this file's unchecked items into the release PR. Items under **Baseline** describe guarantees that earlier releases established and every release must keep.
 
-## ✅ Checklist — New Design
-- [x] Flat `div.cl-item` with `input.cl-text` + `input[type=checkbox].cl-cb`
-- [x] `contenteditable=false` on item — no nested contenteditable issues
-- [x] Enter creates new item, Backspace on empty removes item
-- [x] Customization panel: color (7 swatches), priority (none/low/mid/high), label tag
-- [x] Color accent applied to border-left + background tint + checkbox border
-- [x] Priority: high=red, mid=yellow, low=blue border
-- [x] Tag badge rendered via `::after` with accent color
-- [x] `cl-opts-btn` always visible on touch devices (`@media (hover: none)`)
-- [x] Panel positions within viewport (flips up if no space below)
-- [x] `_snapEncode` syncs `input.value` → `setAttribute('value')`
-- [x] `getContent()` calls `_cleanForSave()` — strips `data-cl-bound` and `cl-opts-btn`
-- [x] `_snapDecode` clears `data-cl-bound` for re-init on undo/redo
-- [x] `_initChecklists` adds missing `cl-opts-btn` and restores `inp.value`
-- [x] Legacy `.checklist-item-wrapper` migrated to `.cl-item` on load
-- [x] `cl-opts-btn` removed from note cards in `loadNotes`
-- [x] `syncClInputs()` called before every `innerHTML` read for saving
-- [x] `blur` handler on `cl-text` in note cards saves to DB
+## 1. Version bump (do all of these together)
 
-## ✅ Editor Templates
-- [x] 11 templates: meeting, project, report, brainstorm, lecture, flashcard, research, daily, weekly, goals, habit
-- [x] Template row in toolbar: horizontal scroll, no wrap
-- [x] Mobile: icon-only buttons (text hidden), larger tap targets
-- [x] All template content strings use `this._('key', 'fallback')`
-- [x] All 12 languages have full template content translations
-- [x] Date formatted in current app locale
+- [ ] `sw.js` → `CACHE_VERSION` (new value invalidates the static cache, including `/locales/*.json`)
+- [ ] `?v=x.y.z` on every changed asset in `index.html`, `beta.html` and every `[lang]/index.html` (`../localnoteseditor/core.js`, `styles.css`, `css/*.css`, …)
+- [ ] `?v=x.y.z` entries in `js/script-loader.js` for changed scripts
+- [ ] `README.md` version badge + changelog entry (`README_RU.md` mirrors it)
+- [ ] `localnoteseditor/package.json` version + `localnoteseditor/CHANGELOG.md` if the editor changed
+- [ ] `name` in `manifest.json`, `ua/manifest.json`, `pl/manifest.json` (optional, see note)
+- [ ] `sitemap*.xml` / `indexnow.txt` if pages were added
 
-## ✅ i18n
-- [x] Checklist customization: color, priority, label, delete — all 12 languages
-- [x] Template button labels — all 12 languages
-- [x] Template content strings — all 12 languages
-- [x] PWA update toast text — all 12 languages
+> The manifests carry the version only inside their `name` string (currently "… v1.9.19"); update it if you want the installed-app name to show the release.
 
-## ✅ Note Priority Styles
-- [x] `note[data-color]` — gradient background tint + top accent bar (`::before`)
-- [x] Hover glow in accent color
-- [x] Overdue/today/soon use `!important` to override user color
-- [x] `::before` top bar overridden for priority states
-- [x] `note-due-badge` — larger font, bolder weight, glow on overdue/today
-- [x] Color swatches in Note Settings — 30px, active state with inner dot
+## 2. Automated / scripted checks
 
-## ✅ PWA Update Notification
-- [x] `registration.waiting` check — shows toast if SW already waiting
-- [x] `controllerchange` listener — auto-reload after SW activation
-- [x] Toast text via `t()` with fallback
-- [x] SW registered without version query string (`/sw.js`)
+- [ ] `node scripts/verify-locales.js` — 12 languages, 864 in-app keys and 223 site keys each, no gaps, no empty values
+- [ ] `core.js` parses without errors (`node -e "new Function(require('fs').readFileSync('localnoteseditor/core.js','utf8'))"`)
+- [ ] No references to deleted files: `js/translations.js`, `js/workspaces-translations.js`, `json/lang.json`, `js/magicurl.js`, `js/lan-sync.js`, `js/qrcode.js`
+- [ ] Documentation matches the code (README, `localnoteseditor/*.md`, `locales/README.md`, `WORKSPACES_README.md`, `cookies_banner_universal/README.md`)
 
-## ✅ Bug Fixes
-- [x] Infinite redirect loop on language pages fixed (lang-redirect removed from lang pages)
-- [x] English version infinite reload fixed (localStorage cleared on English)
-- [x] Checklist cursor visible on empty input (`min-height`, `caret-color`)
-- [x] `script-loader.js` uses `readyState` check — no DOMContentLoaded race
-- [x] `page-init.js` removes `styles-loading` via DOMContentLoaded
+## 3. Manual testing
 
-## 🔄 Pre-Release
-- [ ] Test on Chrome, Firefox, Safari, Edge
-- [ ] Test on iOS Safari and Android Chrome
-- [ ] Test PWA install and update flow
-- [ ] Test import/export encrypted notes
-- [ ] Test all 12 language versions
-- [ ] Test checklist: create, customize, save, reopen, edit
-- [ ] Test templates in all languages
-- [ ] Verify note color + priority display
-- [ ] Check offline mode after SW install
-- [ ] Update version in `manifest.json` and `sw.js`
+**Browsers / devices**
+- [ ] Chrome, Firefox, Safari, Edge
+- [ ] iOS Safari and Android Chrome (virtual keyboard, safe areas)
+- [ ] PWA install, update toast, auto-reload after `SKIP_WAITING`
+- [ ] Offline after the Service Worker installed; Online / Auto / Offline network modes
 
-## 📊 Performance Targets
-- LCP < 2.5s
-- FID < 100ms
+**Vault / App Lock**
+- [ ] First run: master password setup is non-dismissable, ≥ 8 characters, acknowledgement checkbox required
+- [ ] Unlock with password, with access file, with recovery phrase; regenerating the phrase invalidates the old one
+- [ ] 5 wrong attempts → 60 s lock that survives a reload
+- [ ] Idle lock after 10 minutes; last remaining credential cannot be removed
+- [ ] Existing pre-vault (plaintext) notes are migrated after the first credential is created
+
+**Notes / editor**
+- [ ] Create / edit / delete, version history restore, tags, due dates, pinning, workspaces
+- [ ] Checklist: create, customise (colour, priority, label), save, reopen, edit
+- [ ] Templates (built-in and custom) in several languages
+- [ ] Formulas, callouts, code blocks, tables, videos, `[[wiki-links]]` and backlinks
+- [ ] Markdown mode round trip (formulas, callouts, drawings pass through unchanged)
+
+**Drawing pad**
+- [ ] Draw every tool: brush types, eraser, rectangle/ellipse/triangle/line/arrow and a few library shapes
+- [ ] Fill on/off, separate fill colour, "same as line colour" button
+- [ ] Line style solid / dashed / dotted; arrow heads end / both ends
+- [ ] Opacity < 100 %: strokes that cross do not get darker; eraser unaffected
+- [ ] Move tool: select an object → panel shows its values; changing colour / size / fill / style / opacity edits that object; a slider drag is one undo step
+- [ ] Resize handles (corners, edges, line end points); Keep proportions and Shift preserve the aspect ratio
+- [ ] Insert, save the note, reopen, double-click the drawing → objects and parameters are restored
+- [ ] Old drawings (made before these parameters existed) open unchanged
+- [ ] Touch: draw, select, resize with a finger; narrow layout panel scrolls
+
+**Import / export**
+- [ ] Encrypted `.note` export → import (same browser and another browser), wrong password and wrong-domain messages
+- [ ] HTML / Markdown export and import; Notion, Evernote, Google Keep imports
+- [ ] Publish as static site: the `.zip` opens and search works
+- [ ] Share button and Web Share Target / Home Screen shortcuts
+
+**Languages**
+- [ ] All 12 language versions load and switch (UI, policy pages, calendar names)
+
+## 4. Baseline (must stay true)
+
+**Security / CSP**
+- [x] `script-src` / `script-src-elem` allow only `'self'` and Google Analytics hosts (no `unsafe-inline`, no `unsafe-eval`); inline scripts live in `ga-init.js`, `script-loader.js`, `lang-redirect.js`, `page-init.js`
+- [x] DOMPurify (local copy) hard-fails if missing; no unsanitised fallbacks; all imported HTML is sanitised
+- [x] No inline event handlers (`onclick=` etc.) in HTML or JS templates
+- [x] Notes encrypted at rest (AES-256-GCM data key wrapped per unlock credential); `.note` format v5: PBKDF2-SHA-512 (600k) → HKDF-SHA-512 → AES-256-GCM + HMAC-SHA-512, domain-bound
+- [x] CSPRNG for all IDs; Service Worker validates message origins
+- [x] Analytics stay disabled (Consent Mode v2 `denied`) until consent
+
+**i18n**
+- [x] Every new UI string exists in all 12 languages (`locales/*.json`)
+
+**PWA**
+- [x] SW registered as `/sw.js` (no query string); waiting-worker toast; `controllerchange` reload
+
+## 5. Performance targets
+
+- LCP < 2.5 s
+- INP < 200 ms (FID < 100 ms)
 - CLS < 0.1
 
-## 🔒 Security
-- [x] CSP: no `unsafe-inline` in script-src
-- [x] DOMPurify hard-fail (throws if not loaded)
-- [x] AES-256-GCM + HMAC-SHA-512 + PBKDF2-SHA-512 (600k iter)
-- [x] Domain binding via HKDF
-- [x] CSPRNG for all IDs
+## 6. Languages
 
-## 🌐 Languages
-- [x] EN, RU, UA, PL, CS, SK, BG, HR, SR, BS, MK, SL
-- [x] All new UI strings translated in all 12 languages
-
----
-
-**Status**: Ready for testing ✅
+EN, RU, UA, PL, CS, SK, BG, HR, SR, BS, MK, SL

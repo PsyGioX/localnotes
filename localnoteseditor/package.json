@@ -1,7 +1,7 @@
 {
   "name": "localnoteseditor",
-  "version": "1.0.0",
-  "description": "A lightweight, feature-rich rich text editor for the Local Notes application",
+  "version": "1.2.3",
+  "description": "A dependency-free, feature-rich rich text editor for the Local Notes application",
   "main": "core.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -14,20 +14,21 @@
     "notes",
     "lightweight"
   ],
-  "author": "Local Notes Project",
+  "author": "PsyGioX",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/local-notes"
+    "url": "https://github.com/PsyGioX/localnotes"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/local-notes/issues"
+    "url": "https://github.com/PsyGioX/localnotes/issues"
   },
-  "homepage": "https://github.com/yourusername/local-notes#readme",
+  "homepage": "https://github.com/PsyGioX/localnotes#readme",
   "files": [
     "core.js",
     "styles.css",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "browser": "core.js",

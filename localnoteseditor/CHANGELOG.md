@@ -1,5 +1,15 @@
 # LocalNotesEditor — Changelog
 
+## v1.2.3 (current)
+
+### Drawing pad
+- Shape parameters now apply to an **already drawn** object: with the Move tool selected, the panel shows that object's fill, fill colour, line style, arrow heads, opacity, colour and size, and changing any of them edits the object (one undo step per edit)
+- New: separate **fill colour** (or "same as line colour"), **line style** (solid / dashed / dotted), **arrow heads** (end / both ends), **opacity** (10–100 %, translucent strokes don't darken where they overlap)
+- New: **resize handles** on the selected object; "Keep proportions" (or Shift) preserves the aspect ratio while resizing; lines/arrows snap to 45° steps
+- "Keep proportions" now also works for lines and arrows when drawing
+- New settings are remembered between sessions; old drawings open unchanged
+
+
 ## v1.2.2
 
 ### Fixes
@@ -12,7 +22,7 @@
 - `Ctrl+Shift+Space` (non-breaking space) was being swallowed by the existing `Ctrl+Space` "Quick Insert" slash-menu shortcut, which didn't check for the Shift modifier — pressing Ctrl+Shift+Space opened the quick-insert menu instead of inserting a non-breaking space
 - Formulas rendered too small in the editor (sub/superscripts especially) — bumped the base MathML font-size
 
-## v1.2.0 (current)
+## v1.2.0
 
 ### Fixes
 - **Cursor trapped in blocks** — reopening a note whose last block was a video embed, code block, table, callout or blockquote (or inserting a video mid-session) left no line to click/arrow into below it, because these are `contenteditable="false"` atoms or nested contenteditable "islands" that a plain Enter/click can't escape. `_ensureBlockSpacing()` now guarantees a trailing empty paragraph after any such block, run on every content load/insert (`_initAll()`), so existing notes are healed the moment they're reopened.

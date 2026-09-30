@@ -54,10 +54,12 @@ editor.clear();
 // Ctrl+Z - Undo
 // Ctrl+Y - Redo
 
-// Programmatically apply formatting
-editor.execCommand('bold');
-editor.execCommand('italic');
-editor.execCommand('underline');
+// Programmatically apply formatting to the current selection
+// (the editor is built on document.execCommand)
+editor.focus();
+document.execCommand('bold');
+document.execCommand('italic');
+document.execCommand('underline');
 ```
 
 ## Inserting Media
@@ -76,6 +78,21 @@ editor.insertChecklistItem();
 // Adds interactive checklist item with checkbox
 ```
 
+## Drawings
+
+```javascript
+// Drawings are ordinary <img class="lne-drawing"> elements in the content.
+// The rendered picture is in `src`; the vector data (used for re-editing) is in `data-lne-draw`.
+const drawings = editor.ed.querySelectorAll('img.lne-drawing');
+drawings.forEach(img => console.log(img.alt, img.width + '×' + img.height));
+
+// Open the drawing pad programmatically (same as the toolbar button)
+editor._modalDrawing();            // new drawing
+editor._modalDrawing(drawings[0]); // edit an existing one (double-click does this too)
+```
+
+`_modalDrawing` is an internal method; it is stable enough for the app but is not part of the public API.
+
 ## Undo/Redo Operations
 
 ```javascript
@@ -90,7 +107,7 @@ console.log(editor.undoStack.length);
 console.log(editor.redoStack.length);
 
 // Configure max undo levels
-editor.maxUndoLevels = 100; // Default is 200
+editor.maxUndo = 100; // Default is 300
 ```
 
 ## Working with Selections
@@ -124,7 +141,7 @@ customBtn.addEventListener('click', () => {
         span.textContent = '⭐ ';
         range.insertNode(span);
     }
-    editor.editorElement.focus();
+    editor.ed.focus();
 });
 
 editor.toolbar.appendChild(customBtn);
@@ -134,18 +151,18 @@ editor.toolbar.appendChild(customBtn);
 
 ```javascript
 // Listen for input changes
-editor.editorElement.addEventListener('input', () => {
+editor.ed.addEventListener('input', () => {
     console.log('Content changed');
     console.log(editor.getContent());
 });
 
 // Listen for paste events
-editor.editorElement.addEventListener('paste', (e) => {
+editor.ed.addEventListener('paste', (e) => {
     console.log('Content pasted');
 });
 
 // Listen for key events
-editor.editorElement.addEventListener('keydown', (e) => {
+editor.ed.addEventListener('keydown', (e) => {
     if (e.ctrlKey && e.key === 's') {
         e.preventDefault();
         console.log('Save shortcut pressed');
@@ -156,33 +173,23 @@ editor.editorElement.addEventListener('keydown', (e) => {
 ## Styling Content
 
 ```javascript
-// Set font size
-editor.setFontSize('18px');
+// Format the current selection through the browser's command API
+editor.focus();
+document.execCommand('fontName', false, 'Georgia, serif');
+document.execCommand('formatBlock', false, 'blockquote');
+document.execCommand('foreColor', false, '#e74c3c');
 
-// Set font family
-editor.setFontFamily('Georgia, serif');
-
-// Apply formatting
-editor.execCommand('bold');
-editor.execCommand('italic');
-editor.execCommand('underline');
-
-// Create link
-editor.createLink();
-// Prompts for URL
-
-// Format as blockquote
-editor.formatBlock('blockquote');
-
-// Format as code block
-editor.formatBlock('pre');
+// Insert raw HTML at the caret
+document.execCommand('insertHTML', false, '<strong>Hello</strong>');
 ```
+
+Direct `execCommand` calls bypass the editor's own undo snapshot. For user-facing actions prefer the toolbar, or call `editor.setContent()` / the `insert*()` helpers.
 
 ## Cleanup and Destruction
 
 ```javascript
 // Focus editor
-editor.editorElement.focus();
+editor.ed.focus();
 
 // Check if editor is destroyed
 if (editor.isDestroyed) {
@@ -237,7 +244,7 @@ const editor = new LocalNotesEditor('editor', {
 // Update on resize
 window.addEventListener('resize', () => {
     const newHeight = window.innerWidth < 768 ? '300px' : '500px';
-    editor.editorElement.style.minHeight = newHeight;
+    editor.ed.style.minHeight = newHeight;
 });
 ```
 
@@ -266,7 +273,7 @@ window.addEventListener('resize', () => {
 // Removes excessive styles and formatting
 
 // Custom paste handler
-editor.editorElement.addEventListener('paste', (e) => {
+editor.ed.addEventListener('paste', (e) => {
     e.preventDefault();
     
     const text = e.clipboardData.getData('text/plain');
@@ -284,7 +291,7 @@ editor.editorElement.addEventListener('paste', (e) => {
 
 ```javascript
 // Editor supports drag and drop for images
-editor.editorElement.addEventListener('drop', (e) => {
+editor.ed.addEventListener('drop', (e) => {
     e.preventDefault();
     
     const files = e.dataTransfer.files;
@@ -318,11 +325,10 @@ editor.editorElement.addEventListener('drop', (e) => {
 // Access status bar
 const statusbar = editor.statusbar;
 
-// Update status bar manually
-editor.updateStatusbar();
+// The status bar refreshes automatically on every input event
 ```
 
-## Advanced: Custom Editor Instance
+## Advanced: Extending the Editor
 
 ```javascript
 class CustomNotesEditor extends LocalNotesEditor {
@@ -330,24 +336,25 @@ class CustomNotesEditor extends LocalNotesEditor {
         super(containerId, options);
         this.setupCustomFeatures();
     }
-    
+
     setupCustomFeatures() {
-        // Add custom features
-        this.addCustomButton('highlight', () => {
-            this.execCommand('backColor', false, 'yellow');
+        this.addCustomButton('bi-brightness-high', 'Highlight', () => {
+            this.focus();
+            document.execCommand('hiliteColor', false, 'yellow');
         });
     }
-    
-    addCustomButton(name, callback) {
+
+    addCustomButton(icon, title, callback) {
         const btn = document.createElement('button');
         btn.className = 'lne-btn';
-        btn.textContent = name;
+        btn.title = title;
+        btn.innerHTML = '<i class="bi ' + icon + '"></i>';
+        btn.addEventListener('mousedown', (e) => e.preventDefault()); // keep the selection
         btn.addEventListener('click', callback);
-        this.toolbar.appendChild(btn);
+        this.toolbar.querySelector('.lne-toolbar-row').appendChild(btn);
     }
 }
 
-// Use custom editor
 const customEditor = new CustomNotesEditor('editor');
 ```
 
@@ -355,13 +362,13 @@ const customEditor = new CustomNotesEditor('editor');
 
 1. **Limit undo levels** for large documents:
    ```javascript
-   editor.maxUndoLevels = 50;
+   editor.maxUndo = 50;
    ```
 
 2. **Debounce save operations**:
    ```javascript
    let saveTimeout;
-   editor.editorElement.addEventListener('input', () => {
+   editor.ed.addEventListener('input', () => {
        clearTimeout(saveTimeout);
        saveTimeout = setTimeout(() => {
            saveContent(editor.getContent());
@@ -376,7 +383,7 @@ const customEditor = new CustomNotesEditor('editor');
 
 4. **Lazy load images**:
    ```javascript
-   const images = editor.editorElement.querySelectorAll('img');
+   const images = editor.ed.querySelectorAll('img');
    images.forEach(img => {
        img.loading = 'lazy';
    });

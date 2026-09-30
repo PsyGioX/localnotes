@@ -60,53 +60,68 @@ if (CookiesBanner.hasConsent()) {
     // User has consented, load analytics, etc.
 }
 
-// Get consent details
+// Get consent details (null if nothing has been saved yet)
 const consent = CookiesBanner.getConsent();
 console.log(consent.analytics); // true/false
-console.log(consent.marketing); // true/false
+console.log(consent.marketing); // true/false (always false in Local Notes)
 
 // Show/hide banner manually
 CookiesBanner.show();
 CookiesBanner.hide();
 ```
 
+Full public API (`window.CookiesBanner`):
+
+| Method | Description |
+|--------|-------------|
+| `init()` | Build and (if no consent yet) show the banner; called automatically on DOM ready |
+| `hasConsent()` | `true` if a consent record exists |
+| `getConsent()` | The stored record `{ necessary, analytics, marketing, timestamp, version }` or `null` |
+| `saveConsent({ analytics, marketing })` | Store a choice and update Google Analytics consent |
+| `show()` / `hide()` | Show or hide the banner |
+| `manageAnalytics(bool)` | Send `gtag('consent', 'update', { analytics_storage: 'granted' \| 'denied' })` |
+| `getCookiesInfo()` | The cookie lists shown in the "View cookies" panel |
+| `updateLanguage(lang)` | Re-render the banner in another language |
+
 ## Language Detection
 
-The banner automatically detects the current language using this priority:
+The banner picks the language in this order (first match wins):
 
-1. **URL Parameter** - `?lang=ru`
-2. **localStorage** - `preferredLanguage` key
-3. **Browser Language** - `navigator.language`
-4. **URL Path** - `/ru/`, `/ua/`, etc.
-5. **Default** - English (en)
+1. **`window.currentLang`** — already set by the main app (`lang-redirect.js` / `translate.js`)
+2. **URL path** — `/ru/`, `/ua/`, etc.
+3. **URL parameter** — `?lang=ru`
+4. **localStorage** — `preferredLanguage` key
+5. **Browser language** — `navigator.language` (plus special cases: `*-UA` → `ua`; `*-BY`, `*-KZ`, `*-MD` → `ru`)
+6. **Default** — English (`en`)
 
 ## Cookie Types
 
-The banner manages three types of cookies specific to Local Notes:
+The banner's "View cookies" panel lists three groups of cookies. The lists live in `config.cookiesInfo` inside `cookies-banner.js` (readable through `CookiesBanner.getCookiesInfo()`).
 
 ### Necessary Cookies
-- **Always enabled** - Required for Local Notes functionality
-- `localnotes_notes_data` - Encrypted notes storage
-- `localnotes_encryption_key` - AES-256 encryption keys
-- `localnotes_theme` - Dark/light theme preference
-- `preferredLanguage` - User language preference
-- `localnotes_view_mode` - Grid/list view preference
-- `localnotes_pwa_install` - PWA installation status
-- `localnotes_session` - Session management
+- **Always enabled** — the user cannot switch them off
+- Names shown in the panel: `localnotes_notes_data`, `localnotes_encryption_key`, `localnotes_theme`, `preferredLanguage`, `localnotes_view_mode`, `localnotes_pwa_install`, `localnotes_session`, `localnotes_cookie_consent`
+
+> **What the app really stores.** Most of the names above are descriptive labels only — Local Notes itself does not write cookies with those names. Notes live in **IndexedDB** (encrypted at rest), and preferences live in **localStorage** (for example `theme`, `preferredLanguage`, `ln_network_mode`, `ln_workspaces`, `ln_lock_*`). The only cookie the banner itself sets is `localnotes_cookie_consent` (a copy of the choice is also kept in localStorage under the same name). If you change how the app stores data, update `config.cookiesInfo`, the per-language descriptions and `cookie_policy.html` together so the panel stays truthful.
 
 ### Analytics Cookies
-- **Optional** - Help understand Local Notes usage
-- `_ga` - Google Analytics user identification
-- `_ga_*` - Google Analytics 4 measurement
-- `_gid` - Google Analytics session data
-- `_gat` - Google Analytics throttling
-- `G-HR9HLBQFCR` - Local Notes tracking ID
-- Used for improving user experience and app performance
+- **Optional** — off until the user accepts
+- `_ga`, `_ga_*`, `_gid`, `_gat` — Google Analytics
+- `G-HR9HLBQFCR` — Local Notes GA4 measurement ID (shown for transparency; it is an ID, not a cookie)
+- Consent Mode v2: `js/ga-init.js` sets `analytics_storage: 'denied'` by default; the banner sends `gtag('consent', 'update', …)` with `granted` or `denied` when the user chooses
 
 ### Marketing Cookies
-- **Currently not used** - Reserved for future features
-- Will include social sharing, promotional content
-- Currently disabled in Local Notes
+- **Currently not used** — the list is empty and `marketing` is always `false`
+- Reserved for possible future features
+
+### Stored consent record
+
+```json
+{ "necessary": true, "analytics": false, "marketing": false,
+  "timestamp": "2026-01-01T12:00:00.000Z", "version": "1.0.0" }
+```
+
+Kept in `localStorage['localnotes_cookie_consent']` and in a cookie of the same name (365 days, `path=/`, `SameSite=Lax`).
 
 ## GDPR Compliance
 
@@ -114,20 +129,33 @@ This banner meets GDPR requirements by:
 
 - ✅ **Clear Information** - Explains what cookies are used for
 - ✅ **Granular Control** - Users can choose specific cookie types
-- ✅ **Easy Withdrawal** - Users can change preferences anytime
+- ⚠️ **Withdrawal** - there is no built-in settings link yet: a choice can be changed by calling `CookiesBanner.show()` (e.g. from a "Cookie settings" link you add) or by clearing site data
 - ✅ **No Pre-ticked Boxes** - All optional cookies are opt-in
 - ✅ **Consent Storage** - Remembers user choices securely
 - ✅ **Transparent Purpose** - Clear explanation of each cookie type
 
 ## Customization
 
-### Theme Colors
+The banner is a single self-contained file. Its settings are plain constants inside an IIFE, so they are **not** changeable at runtime — edit `cookies-banner.js` (the `config` object near the top) and redeploy.
 
-The banner uses Local Notes color scheme:
+### Configuration constants
 
 ```javascript
-// Default theme (matches Local Notes)
-const theme = {
+const config = {
+    cookieName: 'localnotes_cookie_consent',
+    cookieExpiry: 365,        // days
+    showDelay: 1000,          // milliseconds
+    animationDuration: 300,   // milliseconds
+    zIndex: 10000,            // CSS z-index
+    cookiesInfo: { necessary: [...], analytics: [...], marketing: [] },
+    theme: { ... }            // colours, radius, font — see below
+};
+```
+
+### Theme
+
+```javascript
+theme: {
     primary: '#4CAF50',      // Green buttons
     secondary: '#2196F3',    // Blue links
     background: '#ffffff',   // White background
@@ -136,20 +164,10 @@ const theme = {
     shadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
     borderRadius: '12px',
     fontFamily: '"Golos Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-};
+}
 ```
 
-### Configuration Options
-
-```javascript
-const config = {
-    cookieName: 'localnotes_cookie_consent',
-    cookieExpiry: 365,        // days
-    showDelay: 1000,          // milliseconds
-    animationDuration: 300,   // milliseconds
-    zIndex: 10000            // CSS z-index
-};
-```
+Translations for the 12 languages (title, message, buttons and the three group descriptions) are in the `translations` object in the same file.
 
 ## Browser Support
 
@@ -216,7 +234,13 @@ console.log('Analytics cookies:', cookiesInfo.analytics);
 
 ### Language-Specific Pages
 
-For language-specific pages (like `/ru/`, `/ua/`), the banner will automatically detect the language from the URL path.
+For language-specific pages (like `/ru/`, `/ua/`), the banner detects the language from `window.currentLang` or the URL path (see *Language Detection*).
+
+### How it is wired into Local Notes
+
+- `index.html` loads `cookies_banner_universal/cookies-banner.js` with `defer`; the `[lang]/index.html` pages load it with a relative path (`../cookies_banner_universal/…`).  The policy pages (`privacy_policy.html`, `cookie_policy.html`, `usage_policy.html`) do not include it.
+- `js/ga-init.js` runs first and declares Consent Mode v2 defaults (`analytics_storage: 'denied'`), so nothing is collected before the user answers.
+- The banner only appears when no consent record exists.
 
 ## Privacy Policy Integration
 
@@ -231,14 +255,16 @@ The banner includes links to your privacy policy. Make sure you have these pages
 ### Banner Not Showing
 
 1. Check if consent already exists: `CookiesBanner.hasConsent()`
-2. Clear consent: `localStorage.removeItem('localnotes_cookie_consent')`
-3. Refresh the page
+2. Clear consent: `localStorage.removeItem('localnotes_cookie_consent')` **and** delete the `localnotes_cookie_consent` cookie (DevTools → Application → Cookies)
+3. Refresh the page (the banner appears after ~1 s)
 
 ### Wrong Language
 
-1. Check URL parameter: `?lang=ru`
-2. Check localStorage: `localStorage.getItem('preferredLanguage')`
-3. Check browser language settings
+1. Check `window.currentLang` (set by the app — it wins over everything else)
+2. Check the URL path (`/ru/`) and the `?lang=ru` parameter
+3. Check localStorage: `localStorage.getItem('preferredLanguage')`
+4. Check browser language settings
+5. Force a language: `CookiesBanner.updateLanguage('ru')`
 
 ### Styling Issues
 

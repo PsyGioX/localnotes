@@ -2,7 +2,7 @@
 
 ![Local Notes Screenshot](https://github.com/PsyGioX/localnotes/blob/main/sccc.png?raw=true)
 
-[![Version](https://img.shields.io/badge/Version-1.10.1-brightgreen.svg)](https://github.com/PsyGioX/localnotes/releases)
+[![Version](https://img.shields.io/badge/Version-1.11.1-brightgreen.svg)](https://github.com/PsyGioX/localnotes/releases)
 [![Security](https://img.shields.io/badge/Security-AES--256--GCM%20%2B%20HMAC--SHA--512-blue.svg)](https://github.com/PsyGioX/localnotes)
 [![DOMPurify](https://img.shields.io/badge/XSS-DOMPurify-red.svg)](https://github.com/cure53/DOMPurify)
 [![PWA](https://img.shields.io/badge/PWA-Enabled-purple.svg)](https://github.com/PsyGioX/localnotes)
@@ -46,10 +46,10 @@ Give everyone a **private, fast, multilingual notebook** that works like a nativ
 
 | Goal | What it means in practice |
 |------|---------------------------|
-| **Privacy by default** | Notes live in IndexedDB on your device. No backend, no analytics until consent, no cloud sync unless you export files yourself. |
-| **Security you can verify** | Open-source client-side encryption (AES-256-GCM v4/v5), DOMPurify sanitization, strict CSP, domain-bound `.note` files. |
+| **Privacy by default** | Notes live in IndexedDB on your device, encrypted at rest under your master password. No backend, no analytics until consent, no cloud sync unless you export files yourself. |
+| **Security you can verify** | Open-source client-side encryption (AES-256-GCM, `.note` format v5), DOMPurify sanitization, strict CSP, domain-bound `.note` files. |
 | **Works everywhere** | PWA install, offline Service Worker cache, 12 UI languages, mobile keyboard handling, iOS safe-area support. |
-| **Lightweight & fast** | Custom editor (~15 KB) instead of heavy WYSIWYG bundles; crypto runs in a Web Worker so the UI stays responsive. |
+| **Lightweight & fast** | A custom, dependency-free editor (one script, no build step, cached by the Service Worker) instead of a heavy WYSIWYG bundle; crypto runs in a Web Worker so the UI stays responsive. |
 | **Organize your way** | Tags, colors, due dates, calendar, pinned notes, workspaces (tabs), grid/list views, instant search with transliteration. |
 | **Portable data** | Export/import HTML, Markdown, encrypted `.note` — your notes are never locked to one browser tab. |
 | **Accessible & extensible** | Stable `window.*` APIs for integrations, scripts, and future plugins without a build step. |
@@ -64,11 +64,14 @@ Give everyone a **private, fast, multilingual notebook** that works like a nativ
 ### Key Features
 
 - **🔒 Max-2026 encryption** — AES-256-GCM + HMAC-SHA-512 + PBKDF2-SHA-512 (600k iterations) + domain binding
-- **🔐 App Lock** — optional PIN and/or access file; idle timeout (10 min); lock screen on new session
+- **🔐 Encrypted vault / App Lock** — notes are encrypted at rest with a random AES-256 data key wrapped by your master password; optional access file and 12-word recovery phrase; idle lock after 10 min; 5 wrong attempts lock input for 60 s
 - **🛡️ DOMPurify XSS protection** — all note content sanitized before rendering
 - **🌍 12 languages** — full UI localization including all modals, buttons and error messages
 - **📱 PWA** — install as a native app on any device; safe update flow without reload loops
-- **⚡ LocalNotesEditor** — custom lightweight editor (~15KB), no external dependencies
+- **⚡ LocalNotesEditor** — custom editor with no external dependencies: tables, code blocks, callouts, formulas, `[[wiki-links]]`, templates, Markdown mode
+- **🎨 Drawing pad** — vector sketches inside notes: brushes, 30+ shapes, fill / fill colour, line styles, arrow heads, opacity, resize handles; drawings stay re-editable
+- **🗃️ Task Board** — Kanban view of your notes
+- **🧭 Onboarding tour** — step-by-step spotlight guide of the main toolbar
 - **🗂️ Workspaces** — separate note collections in tabs (see [WORKSPACES_README.md](WORKSPACES_README.md))
 - **🏷️ Tags & colors** — organize notes by topic with color labels
 - **📅 Built-in calendar** — view notes by date (month / week / agenda)
@@ -108,16 +111,44 @@ Local Notes exposes a **browser-global API** (`window.*`) for scripting, automat
 
 ```javascript
 await notesDB.init();
-await notesDB.saveNote(note);      // { id, content, creationTime, lastModified, title, tags?, dueDate?, color?, pinned?, workspaceId? }
-await notesDB.getAllNotes();
-await notesDB.getNote(id);
+await notesDB.saveNote(note);        // { id, content, creationTime, lastModified, title, tags?, dueDate?, color?, pinned?, workspaceId? }
+await notesDB.saveNotePatch(patch);  // partial update on top of the stored note (keeps tags, pinned, colour, …)
+await notesDB.getAllNotes();         // content with images inlined
+await notesDB.getAllNotes({ light: true });  // no image bytes — use for lists, search, graph
+await notesDB.getNote(id);           // also accepts { light: true }
 await notesDB.deleteNote(id);
+
+// Version history (last 20 kept per note)
+await notesDB.saveVersion(noteId, content, savedAt);
+await notesDB.getVersions(noteId);
+await notesDB.deleteVersion(versionId);
+await notesDB.pruneVersions(noteId, keep);
+
+// Settings
 await notesDB.saveSetting(key, value);
 await notesDB.getSetting(key);
+await notesDB.saveEncryptedSetting(key, value);
+await notesDB.getEncryptedSetting(key);
+
+// Encryption vault (see App Lock)
+notesDB.vaultReady;                              // true when the data key is unlocked in memory
+await notesDB.isVaultSetup();
+await notesDB.setVaultCredential(slot, secret);  // slot: 'pin' | 'file' | 'recovery'
+await notesDB.unlockVaultWithCredential(slot, secret);
+await notesDB.removeVaultCredential(slot);       // the last remaining credential cannot be removed
+
 await notesDB.migrateFromLocalStorage();
 ```
 
-**IndexedDB schema:** database `LocalNotesDB` v1 — object stores `notes` (keyPath: `id`) and `settings`.
+**IndexedDB schema:** database `LocalNotesDB` **v2** — object stores:
+
+| Store | Key | Indexes | Holds |
+|-------|-----|---------|-------|
+| `notes` | `id` | `creationTime`, `lastModified`, `title` | Notes (content encrypted when the vault is set up) |
+| `settings` | `key` | — | App settings, vault slots / wrapped keys, and image records (`img:<hash>`) |
+| `noteVersions` | auto `id` | `noteId`, `savedAt` | Previous versions of a note |
+
+Larger images are stored once, content-addressed, as `img:<hash>` records in `settings`; the note HTML keeps `<img src="cid:ln-<hash>">` (survives DOMPurify, never triggers a network request). `gcImages()` removes unreferenced records.
 
 ### Encryption (`window.encryption`)
 
@@ -129,9 +160,9 @@ const encrypted = await encryption.encrypt(plainText, password);
 const decrypted = await encryption.decrypt(encrypted, password);
 ```
 
-- **Formats:** v5 (current), v4, v3, v2 (legacy decrypt supported)
-- **Domain binding:** decryption only works on `localnotes-three.vercel.app` (HKDF `info` includes origin)
-- **Worker:** heavy KDF/AES runs in `js/crypto-worker.js`; main thread fallback if worker fails
+- **Formats:** v5 (current, written by `encrypt`); v4, v3 and v2 are still readable (legacy)
+- **Domain binding:** `.note` files only decrypt on `localnotes-three.vercel.app` (HKDF `info` includes the origin); `localhost` / `127.0.0.1` are accepted for local development
+- **Worker:** heavy KDF/AES runs in `js/crypto-worker.js`; main thread fallback if the worker fails
 
 ### Editor (`window.localNotesEditorAPI`)
 
@@ -149,25 +180,32 @@ localNotesEditorAPI.isInitialized();
 localNotesEditorAPI.getInstance();    // raw LocalNotesEditor instance
 ```
 
-### App Lock (`window.AppLock`)
+The editor class itself (`insertImage()`, `insertVideo()`, `destroy()`, options such as `onWikiLinkSearch`, the drawing pad, …) is documented in [`localnoteseditor/README.md`](localnoteseditor/README.md).
 
-Optional PIN and/or access-file lock (`js/app-lock.js`). Settings stored in `localStorage`; session unlock in `sessionStorage`.
+### App Lock / encryption vault (`window.AppLock`)
+
+`js/app-lock.js` is the unlock screen of the **encryption vault** — entering the right credential *is* how notes get decrypted, not a second check on top of them.
+
+- A **master password** (min. 8 characters) is mandatory: a non-dismissable setup screen appears on first run, and `AppLock.ensureUnlocked()` is awaited by the boot sequence before notes load.
+- Notes are encrypted at rest with a random AES-256 **data key**. The key is never stored as-is; it is wrapped once per unlock credential ("slot", each with its own PBKDF2-SHA-512 key, 600k iterations): `pin` (the password / PIN), `file` (optional access file) and `recovery` (optional 12-word phrase). Any enrolled slot unlocks the same notes.
+- The master password **cannot be reset**. The recovery phrase is shown once when generated and never stored; generating a new one invalidates the old one.
+- Idle timeout: 10 minutes. After 5 wrong attempts input is locked for 60 seconds (the counters are kept in `localStorage`, so a page reload does not reset them).
 
 ```javascript
-AppLock.isEnabled();      // true if PIN or file lock configured
-AppLock.isUnlocked();     // true if current tab session passed unlock
-AppLock.lockNow();        // lock immediately (shows lock screen)
-AppLock.openSettings();   // open lock settings modal
-AppLock.init();           // called automatically on load
+AppLock.ensureUnlocked();  // shows setup / unlock screen if needed; resolves when the vault is open
+AppLock.isUnlocked();      // true when the data key is in memory (same as notesDB.vaultReady)
+AppLock.isEnabled();       // alias of isUnlocked()
+AppLock.lockNow();         // lock immediately (alias: AppLock.lock())
+AppLock.openSettings();    // open lock settings (add / change / remove unlock methods)
 ```
 
-| Storage key | Purpose |
-|-------------|---------|
-| `ln_lock_pin_hash` | SHA-256 hash of PIN |
-| `ln_lock_file_hash` | SHA-256 hash of access file bytes |
-| `ln_lock_enabled` | Mode: `pin`, `file`, or `both` |
-| `ln_lock_session` | Session unlock flag (`sessionStorage`) |
-| `ln_lock_last_activity` | Idle timer anchor |
+| Where | Key | Purpose |
+|-------|-----|---------|
+| IndexedDB `settings` | `vaultSlots`, `vaultSalt_<slot>`, `vaultWrapped_<slot>` | Enrolled slots, their salts and the wrapped data key |
+| `localStorage` | `ln_lock_last_activity` | Idle timer anchor |
+| `localStorage` | `ln_lock_failed_attempts`, `ln_lock_locked_until` | Rate limiting |
+
+> Older versions of this document listed `ln_lock_pin_hash`, `ln_lock_file_hash`, `ln_lock_enabled` and `ln_lock_session`. The app no longer uses them.
 
 ### Graph View (`window.GraphView`)
 
@@ -209,7 +247,7 @@ window.changeLanguage('ru');         // switch UI language
 window.currentLang;                  // active language code
 ```
 
-Sources: `js/translations.js` (runtime) + `json/lang.json` (static fetch).
+Sources: `/locales/<lang>.json` (in-app strings, loaded by `js/i18n.js`) and `/locales/site/<lang>.json` (static landing-page strings) — see [`locales/README.md`](locales/README.md).
 
 ### Themes (`window.themeManager`)
 
@@ -266,7 +304,7 @@ await importNotesMarkdownAdvanced(files);  // extended MD import with images
 Footer toggle (`js/network-mode.js`) — forces Service Worker into cache-only mode:
 
 ```javascript
-localStorage.getItem('ln_network_mode');  // 'online' | 'offline'
+localStorage.getItem('ln_network_mode');  // 'online' | 'auto' | 'offline'
 window.lnNetworkModeRefreshLabels();      // refresh toggle labels after language change
 ```
 
@@ -308,42 +346,35 @@ window._noteMeta;  // { tags, dueDate, color, pinned } while Note Settings modal
 
 ---
 
-## 🔐 Encryption (v4 — Max-2026)
+## 🔐 Encryption (v5)
 
-Local Notes uses a multi-layer encryption pipeline for exported `.note` files:
+Two layers use the same primitives: the **vault** (notes at rest, see App Lock) and exported **`.note` files**.
 
 ```
 PASSWORD
   │
   ▼
-PBKDF2-SHA-512 (600 000 iterations)
+PBKDF2-SHA-512 (600 000 iterations, 32-byte random salt) → 512 bits
   │
   ▼
-HKDF-SHA-512 → 5 independent keys:
-  K_aes   — AES-256-GCM  (encryption)
-  K_mac   — HMAC-SHA-512 (integrity)
-  K_shuf  — Fisher-Yates block shuffle
-  K_xor   — XOR keystream (SHA-512 PRF)
-  K_cc    — reserved (ChaCha20 layer)
+HKDF-SHA-512 (info = origin binding) → 2 independent keys:
+  K_aes  — AES-256-GCM  (encryption)
+  K_mac  — HMAC-SHA-512 (integrity)
   │
   ▼
-ENCRYPT PIPELINE:
-  1. Zero-padding (hides plaintext length)
-  2. XOR-stream (K_xor) — first transformation layer
-  3. Block shuffle (K_shuf) — Fisher-Yates permutation
-  4. AES-256-GCM (K_aes) — main encryption
-  5. HMAC-SHA-512 (K_mac) — Encrypt-then-MAC
-  6. Canary bytes — truncation/corruption detector
-  7. Zeroize all intermediate buffers
+ENCRYPT:
+  1. AES-256-GCM with a fresh 12-byte IV (K_aes)
+  2. HMAC-SHA-512 over header + ciphertext (K_mac) — Encrypt-then-MAC
+  3. Zeroize intermediate key material
 ```
 
-**Format v4:** `magic(4) | version(1) | salt(32) | iv(12) | hmac(64) | cipher | canary(8)`
+**Format v5:** `magic "NV5\0"(4) | version(1) | salt(32) | iv(12) | hmac(64) | ciphertext`, base64-encoded. The HMAC covers the 49-byte header plus the ciphertext and is verified before anything is decrypted.
 
-**Domain binding:** keys are cryptographically tied to `localnotes-three.vercel.app` via HKDF `info` parameter — files cannot be decrypted on any other domain.
+**Domain binding:** keys are cryptographically tied to `localnotes-three.vercel.app` via the HKDF `info` parameter, so `.note` files cannot be decrypted on another domain. `localhost` / `127.0.0.1` are treated as part of the same trust boundary so local development works.
 
-**KDF cache key:** SHA-256(password + salt) — password never stored in plaintext as a Map key.
+**KDF cache key:** SHA-256(password + salt) — the password is never kept as a Map key.
 
-**Backward compatible** with v2 and v3 formats.
+**Legacy:** v4 (extra XOR-stream and block-shuffle layers, padding, canary bytes), v3 and v2 files are still readable. The v4 extra layers were dropped in v5 in favour of plain AES-256-GCM + HMAC-SHA-512.
 
 ---
 
@@ -364,6 +395,10 @@ ENCRYPT PIPELINE:
 - Real frame-busting: `window.top.location = window.self.location`
 - Cross-origin frame fallback: `document.documentElement.style.display = 'none'`
 
+### Encryption at rest
+- Notes are stored encrypted (AES-256-GCM) once the vault is set up; the data key only lives in memory while the app is unlocked
+- Static-site exports and HTML/Markdown exports are **plaintext** by design
+
 ### Cryptographic IDs
 - Note IDs generated with `crypto.getRandomValues()` — not `Math.random()`
 - Worker message IDs use CSPRNG
@@ -377,18 +412,21 @@ ENCRYPT PIPELINE:
 ## ✨ Features
 
 ### 📝 Editor (LocalNotesEditor)
-- ~15KB, zero dependencies — replaced TinyMCE (was 500KB+)
-- Rich formatting: headings, lists, tables, links, blockquotes, code blocks
+- One dependency-free script (`localnoteseditor/core.js`, no build step) — replaced TinyMCE; see [`localnoteseditor/README.md`](localnoteseditor/README.md)
+- Rich formatting: headings, lists, tables, links, blockquotes, code blocks with syntax highlighting, callout boxes
 - Media: images (drag & drop), videos (YouTube, Vimeo, Twitch, Rutube, VK, TikTok)
-- Interactive checklists, emoji picker, special characters
-- Find & Replace, word/character count
+- Interactive checklists, emoji picker, special characters, date/time
+- **Formulas** — native MathML, editable in place
+- **Drawing pad** — brush types (pen, marker, pencil, calligraphy, spray, dotted), eraser, 30+ shapes; per-object fill and fill colour, line style (solid / dashed / dotted), arrow heads, opacity, *Keep proportions*, resize handles and a Move tool that edits the selected object; drawings are stored as vector data and reopen with a double-click
+- Find & Replace, word/character statistics, show blocks, HTML source view
 - Text color & highlight with live caret color sync
-- Fullscreen mode, Undo/Redo (Ctrl+Z / Ctrl+Y)
+- Fullscreen (F11) and focus mode (F12), Undo/Redo (Ctrl+Z / Ctrl+Y), keyboard shortcuts reference (Ctrl+/), Quick Insert menu (`/`)
+- Markdown mode, Markdown/HTML import and export
 - Quick Edit mode directly in the notes list
 - **Custom templates** — save any note as a reusable template with icon/category, `{{date}}`/`{{time}}`/`{{weekday}}` variables, JSON export/import
 
 ### ⌨️ Command Palette
-- `Ctrl+K` / `⌘K` — new note, calendar, task board, view toggle, theme, lock now, graph view, sync nearby, export as static site
+- `Ctrl+K` / `⌘K` — new note, calendar, task board, view toggle, theme, lock now, graph view, publish as static site
 - Instant search across note titles and content
 - Respects App Lock — disabled while the app is locked
 
@@ -405,7 +443,7 @@ ENCRYPT PIPELINE:
 - Packaged as a real `.zip`, written entirely client-side: no library added, the same zero-dependency approach as the Notion/Keep import, mirrored for writing (`CompressionStream('deflate-raw')` + a hand-rolled Local File Header / Central Directory / EOCD writer)
 - Filter by workspace, exclude specific tags, or export pinned-only, before generating
 - Host it anywhere static (GitHub Pages, Vercel, Netlify) or just open `index.html` locally
-- The dialog is explicit that this produces **plaintext** HTML — App Lock only gates the app's UI, it doesn't encrypt note content in storage
+- The output is **plaintext** HTML, even though notes are encrypted at rest inside the app — the dialog warns about this; exclude anything sensitive before sharing
 
 ### 🔗 Wiki-links & Backlinks
 - Type `[[` in the editor to link to another note, autocomplete included
@@ -448,17 +486,15 @@ ENCRYPT PIPELINE:
 
 ## 🌐 Translation System
 
-All 12 languages (EN, RU, UA, PL, CS, SK, BG, HR, SR, BS, MK, SL) have complete translations for:
+All 12 languages (EN, RU, UA, PL, CS, SK, BG, HR, SR, BS, MK, SL) have complete translations — 864 in-app keys and 223 static-site keys per language, checked by `node scripts/verify-locales.js`. Covered areas include:
 
 - Main UI (buttons, titles, messages)
-- Decrypt Note modal (title, password label, buttons, status messages, origin error)
-- Import errors (encrypted file warning, file error, partial success)
-- Calendar (Month/Week/Agenda buttons, Today, month names, weekdays)
-- Note Settings modal (Tags, Due date, Color, Pin, New tag, Clear, Apply)
-- Editor toolbar
+- Vault / App Lock screens, Decrypt Note modal and import errors
+- Calendar, Note Settings, Task Board, Graph View, Command Palette
+- Editor toolbar, dialogs, templates and the drawing pad
 - All policy pages
 
-Translations live in `js/translations.js` and `json/lang.json`, applied via `window.t(key)`.
+Strings live in `/locales/<lang>.json` (in-app) and `/locales/site/<lang>.json` (static pages). `js/i18n.js` loads only English (fallback) plus the current language; text is read with `window.t(key)`. Full details: [`locales/README.md`](locales/README.md).
 
 ---
 
@@ -468,54 +504,57 @@ Translations live in `js/translations.js` and `json/lang.json`, applied via `win
 
 ```
 localnotes/
-├── index.html                    # Main page (EN)
-├── manifest.json                 # PWA manifest
-├── sw.js                         # Service Worker (with origin validation)
-├── robots.txt / sitemap.xml
+├── index.html / beta.html          # Main page (EN) and beta page
+├── manifest.json                   # PWA manifest (share_target, shortcuts)
+├── sw.js                           # Service Worker (precache, network modes, origin validation)
+├── vercel.json / robots.txt / sitemap*.xml
+├── privacy_policy.html / usage_policy.html / cookie_policy.html / cookie.html
+├── README.md / README_RU.md / WORKSPACES_README.md / release-checklist.md
 │
-├── css/
-│   ├── index.css                 # Main styles
-│   ├── app-lock.css              # App lock screen & settings modal
-│   ├── editor-modal.css          # Editor modal styles
-│   ├── tags-calendar.css         # Tags, calendar, decrypt modal
-│   ├── workspaces.css            # Workspaces tabs UI
-│   └── img.css / highlight.css / print.css / page.css / apple.css
+├── css/                            # index, adaptive, apple, page, print, highlight, modal-system,
+│                                   # editor-modal, app-lock, action-bar, sidebar, tags-calendar,
+│                                   # task-board, workspaces, onboarding-tour, screenshot, scroll-top, img
 │
 ├── js/
-│   ├── index.js                  # App logic, encryption v4/v5, import/export
-│   ├── app-lock.js               # App Lock (PIN / file / idle timeout)
-│   ├── purify.min.js             # DOMPurify — XSS sanitization (local, no CDN)
-│   ├── translations.js           # 12 languages, 400+ keys
-│   ├── translate.js              # Language detection & switching
-│   ├── tags-calendar.js          # Tags system + calendar
-│   ├── screenshot.js             # Note card → PNG screenshot
-│   ├── graph-view.js             # Graph View (wiki-link force-directed map)
-│   ├── site-export.js            # Static site export (client-side zip writer)
-│   ├── workspaces.js             # Workspaces manager
-│   ├── workspaces-integration.js # Workspaces hooks into index.js
-│   ├── workspaces-translations.js
-│   ├── security.js               # SecurityManager (clickjacking) + SecureStorage
-│   ├── network-mode.js           # Online/offline toggle → Service Worker
-│   ├── themes.js / utils.js / selectors.js
-│   ├── performance.js / editor-integration.js
-│   └── date-utils.js / img.js / preloader.js / magicurl.js / pwa.js / crypto-worker.js
+│   ├── index.js                    # App logic, NotesDatabase (IndexedDB + vault), encryption v5, import/export
+│   ├── app-lock.js                 # Encryption vault unlock UI, recovery phrase, idle lock
+│   ├── crypto-worker.js            # PBKDF2 / AES work off the main thread
+│   ├── security.js                 # SecurityManager (clickjacking) + SecureStorage
+│   ├── purify.min.js               # DOMPurify — XSS sanitization (local, no CDN)
+│   ├── i18n.js                     # window.t() — loads /locales/<lang>.json
+│   ├── translate.js                # Language detection & switching (window.changeLanguage)
+│   ├── editor-integration.js       # Creates LocalNotesEditor, wiki-link hooks, mobile keyboard layout
+│   ├── markdown.js                 # Markdown <-> HTML, live Markdown mode, smart paste
+│   ├── import-formats.js           # Import from Notion / Evernote / Google Keep
+│   ├── tags-calendar.js            # Tags system + calendar
+│   ├── task-board.js               # Kanban task board
+│   ├── sidebar.js                  # Collapsible notes sidebar
+│   ├── action-bar.js               # Collapsible toolbar segment (view / tasks / lock / graph / publish)
+│   ├── command-palette.js          # Ctrl+K palette
+│   ├── graph-view.js               # Graph View (wiki-link force-directed map)
+│   ├── site-export.js              # Static site export (client-side zip writer)
+│   ├── screenshot.js               # Note card → PNG
+│   ├── share-target.js             # Web Share Target / shortcut entry points
+│   ├── workspaces.js / workspaces-integration.js   # Workspaces manager + hooks
+│   ├── onboarding-tour.js          # Step-by-step toolbar tour
+│   ├── network-mode.js             # Online / Auto / Offline toggle → Service Worker
+│   ├── pwa.js                      # SW registration + update toast
+│   ├── themes.js / utils.js / selectors.js / date-utils.js / img.js / scroll-top.js
+│   ├── performance.js / preloader.js
+│   ├── script-loader.js / page-init.js / lang-redirect.js / ga-init.js   # CSP-safe bootstrap scripts
+│   └── highlight.min.js            # Code highlighting
 │
-├── json/lang.json                # Static UI translations (all 12 languages)
+├── locales/                        # <lang>.json (in-app) and site/<lang>.json (static pages); README.md
+├── scripts/verify-locales.js       # Checks every language has the same keys
 │
-├── localnoteseditor/
-│   ├── core.js                   # Editor engine (~15KB)
-│   ├── styles.css
-│   └── bootstrap-icons/
-│
+├── localnoteseditor/               # Editor: core.js, styles.css, bootstrap-icons/, docs (*.md)
+├── cookies_banner_universal/       # GDPR cookie banner (Consent Mode v2) + README
+├── landing/                        # Static multilingual landing pages
 ├── fonts/ favicon/ resources/
-├── cookies_banner_universal/     # GDPR cookie banner (Consent Mode v2)
 │
-└── [lang]/                       # ru, ua, pl, cs, sk, bg, hr, sr, bs, mk, sl
-    ├── index.html
-    ├── manifest.json
-    ├── privacy_policy.html
-    ├── usage_policy.html
-    └── cookie_policy.html
+└── [lang]/                         # ru, ua, pl, cs, sk, bg, hr, sr, bs, mk, sl
+    ├── index.html / beta.html
+    └── privacy_policy.html / usage_policy.html / cookie_policy.html
 ```
 
 ### Tech Stack
@@ -524,7 +563,7 @@ localnotes/
 |-------|-----------|
 | Frontend | Vanilla JS ES6+, HTML5, CSS3 |
 | Editor | LocalNotesEditor (custom, no deps) |
-| Storage | IndexedDB |
+| Storage | IndexedDB (`LocalNotesDB` v2), encrypted at rest |
 | Encryption | Web Crypto API — AES-256-GCM + HMAC-SHA-512 + PBKDF2-SHA-512 |
 | XSS Sanitization | DOMPurify (local) |
 | PWA | Service Worker + Web App Manifest |
@@ -536,7 +575,7 @@ localnotes/
 1. **Init** → language detection → theme → editor init
 2. **Create note** → LocalNotesEditor → IndexedDB
 3. **Render note** → `DOMPurify.sanitize(content)` → `innerHTML`
-4. **Export** → 5-layer encryption pipeline → `.note` file download
+4. **Export** → PBKDF2 → HKDF → AES-256-GCM + HMAC-SHA-512 (v5) → `.note` file download
 5. **Import** → `DOMPurify.sanitize()` → Decrypt modal → validation → IndexedDB
 6. **Language switch** → `updateButtonTexts()` → all UI elements updated
 
@@ -558,7 +597,7 @@ python -m http.server 8000
 
 Open `http://localhost:8000`.
 
-> **Note:** encrypted `.note` files are domain-bound to `localnotes-three.vercel.app`. Decryption will not work on localhost.
+> **Note:** encrypted `.note` files are domain-bound to `localnotes-three.vercel.app`: they cannot be decrypted on other (clone) domains. `localhost` / `127.0.0.1` are accepted for development and use the same binding, so a `.note` file from the production site opens locally and vice versa.
 
 ### Install as PWA
 Click the install icon in Chrome/Edge address bar and confirm.
@@ -567,7 +606,14 @@ Click the install icon in Chrome/Edge address bar and confirm.
 
 ## 🆕 Changelog
 
-### v1.11.0 (current)
+### v1.11.1 (current)
+- **🎨 Drawing pad — parameters for finished shapes.** With the **Move** tool, the option panel now edits the *selected* object (colour, size, fill, fill colour, line style, arrow heads, opacity); one undo step per edit
+- **✨ New drawing parameters** — separate **fill colour**, **line style** (solid / dashed / dotted), **arrow heads** (end / both ends), **opacity** (10–100 %, translucent objects are composited as a whole)
+- **✨ Resize handles** on the selected object; **Keep proportions** (or Shift) preserves the aspect ratio while resizing; lines and arrows snap to 45°, and *Keep proportions* now also applies to them while drawing
+- **🌍 12 languages** — 10 new strings for the above (864 keys per language)
+- **📚 Documentation refreshed** — encryption section now describes format v5 and the vault / App Lock (recovery phrase, slots, rate limit); IndexedDB v2 schema (`noteVersions`, image records); locales moved to `/locales`; editor docs rewritten to match the real API and current file sizes; removed references to deleted files (`js/translations.js`, `json/lang.json`, `js/workspaces-translations.js`, `js/magicurl.js`)
+
+### v1.11.0
 - **🗑️ Sync Nearby removed** — the WebRTC-based device-to-device sync feature (and its QR-code pairing path, `js/lan-sync.js` + `js/qrcode.js`) has been removed, along with its toolbar button and Command Palette entry
 
 ### v1.10.1
@@ -659,17 +705,20 @@ Locally in IndexedDB. Nothing is ever sent to a server.
 **How secure is the encryption?**
 AES-256-GCM with PBKDF2-SHA-512 (600,000 iterations) + HMAC-SHA-512 integrity check + domain binding. Industry-leading protection as of 2026.
 
-**Why can't I decrypt on localhost?**
-`.note` files are cryptographically bound to `localnotes-three.vercel.app` via HKDF domain binding. This is intentional — it prevents decryption outside the official site.
+**Why can't I decrypt a `.note` file on another website?**
+`.note` files are cryptographically bound to `localnotes-three.vercel.app` via HKDF domain binding. This is intentional — it prevents decryption on clone domains. (`localhost` / `127.0.0.1` are allowed for local development.)
 
 **How to move notes to another browser?**
 Export to `.note` file, then import at [localnotes-three.vercel.app](https://localnotes-three.vercel.app/).
 
 **How to add a new language?**
-Add a language block in `js/translations.js`, create a `[lang]/` folder with HTML pages, add the language to `js/translate.js`.
+Add `locales/<lang>.json` and `locales/site/<lang>.json` with exactly the same keys as `en.json` (run `node scripts/verify-locales.js`), create a `[lang]/` folder with the HTML pages, and add the code to `supportedLanguages` in `js/translate.js` and to the list in `sw.js`.
 
 **How does App Lock work?**
-Optional PIN (4–8 digits) and/or access file. Lock triggers on new browser session or after 10 minutes idle. Unlock methods are configured separately — only one active method is shown unless both were saved historically.
+It is the unlock screen of the encryption vault. You create a master password (min. 8 characters) on first run; you can add an access file and a 12-word recovery phrase as extra ways in. The app locks on a new browser session and after 10 minutes idle; 5 wrong attempts block input for 60 seconds.
+
+**I forgot my master password — can my notes be recovered?**
+Only with the recovery phrase (if you generated and saved one) or another enrolled unlock method such as the access file. Otherwise they are permanently unreadable — there is no server to reset from.
 
 **Is there a public API?**
 Yes — see [JavaScript API](#-javascript-api). All major features expose `window.*` globals for scripting and integrations.

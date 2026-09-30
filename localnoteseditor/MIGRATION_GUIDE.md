@@ -10,7 +10,9 @@ LocalNotesEditor replaced TinyMCE in Local Notes v1.1.0. Migration is complete �
 |---------------|----------------------|
 | `/editor_news/tinymce.min.js` | `/localnoteseditor/core.js` |
 | `/css/tinymce-custom.css` | `/localnoteseditor/styles.css` |
-| `/js/tinymce-translations.js` | `js/translations.js` (unified) |
+| `/js/tinymce-translations.js` | `/locales/<lang>.json` (loaded by `js/i18n.js`, read through `window.t()`) |
+
+> Earlier revisions of this guide pointed to `js/translations.js`. That file, `js/workspaces-translations.js` and `json/lang.json` no longer exist — all strings live in `/locales`. See `locales/README.md`.
 
 ### HTML
 
@@ -30,24 +32,21 @@ tinymce.get('editorContainer').getContent()
 tinymce.get('editorContainer').setContent(html)
 
 // New
-localNotesEditorInstance.getContent()
-localNotesEditorInstance.setContent(html)
-// or via compat layer:
-getEditorContent()
-setEditorContent(html)
+localNotesEditorAPI.getContent()
+localNotesEditorAPI.setContent(html)
+// or on the raw instance:
+localNotesEditorAPI.getInstance().getContent()
 ```
 
-### Compatibility Layer
+### Compatibility layer
 
-`js/editor-integration.js` exposes the old function names so existing code continues to work:
+`js/editor-integration.js` creates the editor on page load, wires the wiki-link callbacks (`onWikiLinkSearch` / `onWikiLinkOpen`) and exposes:
 
 ```javascript
-getEditorContent()     // → editor.getContent()
-setEditorContent(html) // → editor.setContent(html)
-clearEditor()          // → editor.clear()
-focusEditor()          // → editor.ed.focus()
-insertImage()          // → editor.insertImage()
-insertChecklistItem()  // → editor.insertChecklistItem()
+window.localNotesEditorAPI = {
+  getContent, setContent, getText, clear, destroy,
+  isInitialized, focus, undo, redo, getInstance
+};
 ```
 
 ## Feature Comparison
@@ -55,15 +54,17 @@ insertChecklistItem()  // → editor.insertChecklistItem()
 | Feature | TinyMCE | LocalNotesEditor |
 |---------|---------|-----------------|
 | Rich formatting | ✓ | ✓ |
-| Lists & checklists | ✓ | ✓ |
+| Lists & checklists | ✓ | ✓ (custom checklist with colour / priority / label) |
 | Images & videos | ✓ | ✓ |
 | Tables | ✓ | ✓ |
-| Links | ✓ | ✓ |
-| Code blocks | ✓ | ✓ |
+| Links | ✓ | ✓ (plus `[[wiki-links]]` between notes) |
+| Code blocks | ✓ | ✓ (syntax highlighting) |
 | Find & Replace | ✓ | ✓ |
 | Undo/Redo | ✓ | ✓ |
 | Dark mode | ✓ | ✓ |
-| i18n | External files | Built-in via `window.t()` |
-| Color sync with cursor | ✗ | ✓ |
-| File size | ~500KB | ~15KB |
+| i18n | External files | Built-in via `window.t()`, 12 languages |
+| Formulas | plugin | ✓ native MathML, no MathJax/KaTeX |
+| Vector drawing pad | ✗ | ✓ re-editable sketches |
+| Callouts, templates, slash menu | plugins | ✓ built in |
+| Size | ~500 KB+ | ~340 KB `core.js` + ~120 KB `styles.css`, un-minified |
 | Dependencies | Multiple | None |
