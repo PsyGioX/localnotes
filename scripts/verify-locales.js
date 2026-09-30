@@ -1,4 +1,16 @@
 #!/usr/bin/env node
+/*
+ * Local Notes — a local-first, privacy-focused notes app (PWA): rich-text/Markdown editor,
+ * AES-256-GCM encrypted storage in the browser, offline mode, 12 languages. No server-side data.
+ * Local Notes — локальное приватное приложение для заметок (PWA): редактор rich-text/Markdown,
+ * шифрование AES-256-GCM в браузере, офлайн-режим, 12 языков. Данные не уходят на сервер.
+ *
+ * Copyright (c) 2026 PsyGioX. Licensed under the MIT License.
+ * Source: https://github.com/PsyGioX/localnotes — Site: https://localnotes-three.vercel.app
+ *
+ * Copyright (c) 2026 PsyGioX. Лицензия MIT.
+ * Исходники: https://github.com/PsyGioX/localnotes — Сайт: https://localnotes-three.vercel.app
+ */
 /**
  * Verifies that every language file under /locales (and /locales/site)
  * defines exactly the same set of keys, and that no value is empty.

@@ -1,4 +1,16 @@
-﻿// Глобальная переменная для хранения текущего языка
+﻿/*
+ * Local Notes — a local-first, privacy-focused notes app (PWA): rich-text/Markdown editor,
+ * AES-256-GCM encrypted storage in the browser, offline mode, 12 languages. No server-side data.
+ * Local Notes — локальное приватное приложение для заметок (PWA): редактор rich-text/Markdown,
+ * шифрование AES-256-GCM в браузере, офлайн-режим, 12 языков. Данные не уходят на сервер.
+ *
+ * Copyright (c) 2026 PsyGioX. Licensed under the MIT License.
+ * Source: https://github.com/PsyGioX/localnotes — Site: https://localnotes-three.vercel.app
+ *
+ * Copyright (c) 2026 PsyGioX. Лицензия MIT.
+ * Исходники: https://github.com/PsyGioX/localnotes — Сайт: https://localnotes-three.vercel.app
+ */
+// Глобальная переменная для хранения текущего языка
 // Инициализируем сразу из localStorage чтобы быть готовыми до рендера нот
 window.currentLang = null;
 
