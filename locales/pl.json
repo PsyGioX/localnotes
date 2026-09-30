@@ -865,6 +865,7 @@
   "drawOptions": "Opcje",
   "drawBrush": "Pędzel",
   "drawEraser": "Gumka",
+  "drawSelect": "Przesuń",
   "drawBrushSize": "Rozmiar pędzla",
   "drawColor": "Wybór koloru",
   "drawCustomColor": "Własny kolor",

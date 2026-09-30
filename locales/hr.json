@@ -865,6 +865,7 @@
   "drawOptions": "Opcije",
   "drawBrush": "Kist",
   "drawEraser": "Gumica",
+  "drawSelect": "Premjesti",
   "drawBrushSize": "Veličina kista",
   "drawColor": "Odabir boje",
   "drawCustomColor": "Vlastita boja",

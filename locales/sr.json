@@ -865,6 +865,7 @@
   "drawOptions": "Опције",
   "drawBrush": "Четкица",
   "drawEraser": "Гумица",
+  "drawSelect": "Премести",
   "drawBrushSize": "Величина четкице",
   "drawColor": "Избор боје",
   "drawCustomColor": "Сопствена боја",

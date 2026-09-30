@@ -865,6 +865,7 @@
   "drawOptions": "Опции",
   "drawBrush": "Кисть",
   "drawEraser": "Ластик",
+  "drawSelect": "Переместить",
   "drawBrushSize": "Размер кисти",
   "drawColor": "Выбор цвета",
   "drawCustomColor": "Свой цвет",

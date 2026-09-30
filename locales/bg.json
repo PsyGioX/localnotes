@@ -865,6 +865,7 @@
   "drawOptions": "Опции",
   "drawBrush": "Четка",
   "drawEraser": "Гума",
+  "drawSelect": "Премести",
   "drawBrushSize": "Размер на четката",
   "drawColor": "Избор на цвят",
   "drawCustomColor": "Собствен цвят",

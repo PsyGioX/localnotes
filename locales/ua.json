@@ -865,6 +865,7 @@
   "drawOptions": "Опції",
   "drawBrush": "Пензель",
   "drawEraser": "Гумка",
+  "drawSelect": "Перемістити",
   "drawBrushSize": "Розмір пензля",
   "drawColor": "Вибір кольору",
   "drawCustomColor": "Власний колір",

@@ -3505,6 +3505,7 @@ class LocalNotesEditor {
             st.fill = !!pf.fill; st.keep = !!pf.keep;
         }
         var hist = [], hi = -1, cur = null, activeId = null, restored = false, done = false;
+        var sel = null, drag = null; // select/move tool: index of the selected object, active drag {idx, o, sx, sy, g, moved}
 
         // Validate + load stored vector data (never trust attribute content)
         var parse = function(json) {
@@ -3578,6 +3579,7 @@ class LocalNotesEditor {
                 '<div class="lne-draw-sec lne-draw-sec-opts"><div class="lne-draw-h">' + _('drawOptions', 'Options') + '</div>' +
                   '<div class="lne-draw-tools lne-draw-cols2">' +
                     tool('b', 'bi bi-brush', _('drawBrush', 'Brush')) +
+                    tool('v', 'bi bi-arrows-move', _('drawSelect', 'Move')) +
                     tool('e', 'bi bi-eraser', _('drawEraser', 'Eraser')) +
                   '</div></div>' +
                 '<div class="lne-draw-sec lne-draw-sec-brushes"><div class="lne-draw-h">' + _('drawBrushType', 'Brush type') + '</div>' +
@@ -3750,13 +3752,8 @@ class LocalNotesEditor {
                 strokePath(c, p, s);
             }
         };
-        var drawObj = function(c, o) {
-            c.save();
-            c.lineCap = 'round'; c.lineJoin = 'round';
-            c.lineWidth = o.s; c.strokeStyle = o.c; c.fillStyle = o.c;
-            if (o.k === 'e') { c.globalCompositeOperation = 'destination-out'; c.strokeStyle = '#000'; c.fillStyle = '#000'; }
-            if (o.k === 'b') { brushStroke(c, o); c.restore(); return; }
-            if (o.k === 'e') { strokePath(c, o.p, o.s); c.restore(); return; }
+        // Builds the outline of a shape object as the current path of context `c` (shared by drawing and hit-testing)
+        var shapePath = function(c, o) {
             var x1 = o.a[0], y1 = o.a[1], x2 = o.a[2], y2 = o.a[3];
             var L = Math.min(x1, x2), T = Math.min(y1, y2), Rr = Math.max(x1, x2), B = Math.max(y1, y2);
             c.beginPath();
@@ -3765,6 +3762,16 @@ class LocalNotesEditor {
             else if (o.k === 't') { c.moveTo((L + Rr) / 2, T); c.lineTo(Rr, B); c.lineTo(L, B); c.closePath(); }
             else if (defOf(o.k)) defOf(o.k).d(c, L, T, Math.max(1, Rr - L), Math.max(1, B - T));
             else if (o.k === 'l' || o.k === 'a') { c.moveTo(x1, y1); c.lineTo(x2, y2); }
+        };
+        var drawObj = function(c, o) {
+            c.save();
+            c.lineCap = 'round'; c.lineJoin = 'round';
+            c.lineWidth = o.s; c.strokeStyle = o.c; c.fillStyle = o.c;
+            if (o.k === 'e') { c.globalCompositeOperation = 'destination-out'; c.strokeStyle = '#000'; c.fillStyle = '#000'; }
+            if (o.k === 'b') { brushStroke(c, o); c.restore(); return; }
+            if (o.k === 'e') { strokePath(c, o.p, o.s); c.restore(); return; }
+            var x1 = o.a[0], y1 = o.a[1], x2 = o.a[2], y2 = o.a[3];
+            shapePath(c, o);
             if (o.f && isFillable(o.k)) c.fill('evenodd');
             c.stroke();
             if (o.k === 'a') {
@@ -3778,16 +3785,100 @@ class LocalNotesEditor {
             }
             c.restore();
         };
-        var rebuild = function() {
+        var rebuild = function(skip) {
             bctx.clearRect(0, 0, base.width, base.height);
             if (st.base && st.base.complete && st.base.naturalWidth) bctx.drawImage(st.base, 0, 0, st.W, st.H);
-            for (var i = 0; i < st.objs.length; i++) drawObj(bctx, st.objs[i]);
+            for (var i = 0; i < st.objs.length; i++) { if (i !== skip) drawObj(bctx, st.objs[i]); }
             render();
+        };
+        // ── Select / move helpers ──
+        // Bounding box of an object incl. stroke width / brush spread: [left, top, right, bottom]
+        var boundsOf = function(o) {
+            var x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, i, pad = o.s / 2;
+            if (o.p) {
+                for (i = 0; i < o.p.length; i += 2) {
+                    x0 = Math.min(x0, o.p[i]); x1 = Math.max(x1, o.p[i]);
+                    y0 = Math.min(y0, o.p[i + 1]); y1 = Math.max(y1, o.p[i + 1]);
+                }
+                if (o.t === 'm') pad = o.s * 1.1; else if (o.t === 's') pad = o.s * 1.6 + 4; else if (o.t === 'c') pad = o.s * 1.3 + 2;
+            } else {
+                x0 = Math.min(o.a[0], o.a[2]); x1 = Math.max(o.a[0], o.a[2]);
+                y0 = Math.min(o.a[1], o.a[3]); y1 = Math.max(o.a[1], o.a[3]);
+                if (o.k === 'a') pad = Math.max(pad, Math.max(12, o.s * 3.5));
+            }
+            return [x0 - pad, y0 - pad, x1 + pad, y1 + pad];
+        };
+        // Copy of an object shifted by (dx, dy); committed objects are never mutated (history shares them)
+        var shifted = function(o, dx, dy) {
+            var n = {}, k, i, src = o.p || o.a, out = new Array(src.length);
+            for (k in o) if (Object.prototype.hasOwnProperty.call(o, k)) n[k] = o[k];
+            for (i = 0; i < src.length; i += 2) {
+                out[i] = Math.round((src[i] + dx) * 10) / 10;
+                out[i + 1] = Math.round((src[i + 1] + dy) * 10) / 10;
+            }
+            if (o.p) n.p = out; else n.a = out;
+            return n;
+        };
+        // Keep at least a small part of the moved object inside the canvas so it can't be lost off-screen
+        var clampShift = function(o, dx, dy) {
+            var b = boundsOf(o), m = 12;
+            dx = Math.max(m - b[2], Math.min(st.W - m - b[0], dx));
+            dy = Math.max(m - b[3], Math.min(st.H - m - b[1], dy));
+            return [dx, dy];
+        };
+        var hitCtx = document.createElement('canvas').getContext('2d');
+        var distSeg = function(px, py, ax, ay, bx, by) {
+            var dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy;
+            var t = l2 ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / l2)) : 0;
+            return Math.hypot(px - ax - t * dx, py - ay - t * dy);
+        };
+        // Topmost object under the point: first by its visible ink, then (Paint-like) by the box of an empty shape
+        var hitTest = function(x, y, tol) {
+            var i, o, j, r;
+            for (i = st.objs.length - 1; i >= 0; i--) {
+                o = st.objs[i];
+                if (o.k === 'e') continue;
+                if (o.k === 'b') {
+                    r = tol + (o.t === 'm' ? o.s * 1.1 : o.t === 's' ? o.s * 1.6 + 4 : o.s / 2);
+                    if (o.p.length === 2) { if (Math.hypot(x - o.p[0], y - o.p[1]) <= r) return i; continue; }
+                    for (j = 2; j < o.p.length; j += 2) if (distSeg(x, y, o.p[j - 2], o.p[j - 1], o.p[j], o.p[j + 1]) <= r) return i;
+                } else {
+                    hitCtx.lineWidth = o.s + tol * 2; hitCtx.lineJoin = 'round'; hitCtx.lineCap = 'round';
+                    shapePath(hitCtx, o);
+                    if (o.k === 'a') { // arrow head
+                        var ang = Math.atan2(o.a[3] - o.a[1], o.a[2] - o.a[0]), hl = Math.max(12, o.s * 3.5), sp = Math.PI / 7;
+                        hitCtx.moveTo(o.a[2], o.a[3]); hitCtx.lineTo(o.a[2] - hl * Math.cos(ang - sp), o.a[3] - hl * Math.sin(ang - sp));
+                        hitCtx.moveTo(o.a[2], o.a[3]); hitCtx.lineTo(o.a[2] - hl * Math.cos(ang + sp), o.a[3] - hl * Math.sin(ang + sp));
+                    }
+                    if (hitCtx.isPointInStroke(x, y)) return i;
+                    if (o.f && isFillable(o.k) && hitCtx.isPointInPath(x, y, 'evenodd')) return i;
+                }
+            }
+            for (i = st.objs.length - 1; i >= 0; i--) {
+                o = st.objs[i];
+                if (!o.a || o.k === 'l' || o.k === 'a') continue;
+                if (x >= Math.min(o.a[0], o.a[2]) && x <= Math.max(o.a[0], o.a[2]) && y >= Math.min(o.a[1], o.a[3]) && y <= Math.max(o.a[1], o.a[3])) return i;
+            }
+            return -1;
+        };
+        var drawSelection = function() {
+            var o = drag ? drag.g : (sel !== null ? st.objs[sel] : null);
+            if (!o) return;
+            var b = boundsOf(o), k = st.W / (cv.clientWidth || st.W), pad = 3 * k;
+            ctx.save();
+            ctx.lineWidth = Math.max(1, 1.5 * k);
+            ctx.strokeStyle = '#ffffff'; ctx.setLineDash([]);
+            ctx.strokeRect(b[0] - pad, b[1] - pad, b[2] - b[0] + pad * 2, b[3] - b[1] + pad * 2);
+            ctx.strokeStyle = '#2f80ed'; ctx.setLineDash([6 * k, 4 * k]);
+            ctx.strokeRect(b[0] - pad, b[1] - pad, b[2] - b[0] + pad * 2, b[3] - b[1] + pad * 2);
+            ctx.restore();
         };
         var render = function() {
             ctx.clearRect(0, 0, cv.width, cv.height);
             ctx.drawImage(base, 0, 0);
+            if (drag) drawObj(ctx, drag.g);
             if (cur) drawObj(ctx, cur);
+            if (st.tool === 'v') drawSelection();
         };
         var fit = function() {
             var cs = window.getComputedStyle(wrap);
@@ -3818,6 +3909,7 @@ class LocalNotesEditor {
             if (i < 0 || i >= hist.length) return;
             hi = i;
             st.objs = hist[hi].o.slice(); st.base = hist[hi].b;
+            sel = null; drag = null;
             rebuild(); updateHistBtns();
         };
         hist.push(snapshot()); hi = 0; updateHistBtns();
@@ -3842,11 +3934,12 @@ class LocalNotesEditor {
             ov.querySelector('.lne-draw-sw-custom').classList.toggle('is-on', customSel && !isEraser);
             if (customSel) colorInp.value = st.color.length === 7 ? st.color : '#000000';
             drawPreview();
-            cv.style.cursor = isEraser ? 'cell' : 'crosshair';
+            cv.style.cursor = isEraser ? 'cell' : (st.tool === 'v' ? 'default' : 'crosshair');
         };
         var drawPreview = function() {
             var W = pvCv.width, H = pvCv.height, s = Math.min(st.size, 24);
             pvCtx.clearRect(0, 0, W, H);
+            if (st.tool === 'v') return;
             if (st.tool === 'e') {
                 pvCtx.save();
                 pvCtx.strokeStyle = '#555'; pvCtx.lineWidth = 1.5; pvCtx.setLineDash([4, 3]);
@@ -3858,8 +3951,8 @@ class LocalNotesEditor {
             for (var i = 0; i <= 40; i++) { var u = i / 40; pts.push(18 + u * (W - 36), H / 2 + Math.sin(u * Math.PI * 2) * H * 0.2); }
             drawObj(pvCtx, { k: 'b', c: st.color, s: s, t: st.tool === 'b' ? st.brush : 'p', r: 7, p: pts });
         };
-        var setTool = function(t) { st.tool = t; syncUI(); };
-        var setBrush = function(b) { if (!BRUSHES[b]) return; st.brush = b; st.tool = 'b'; syncUI(); };
+        var setTool = function(t) { st.tool = t; if (t !== 'v') { sel = null; } syncUI(); render(); };
+        var setBrush = function(b) { if (!BRUSHES[b]) return; st.brush = b; st.tool = 'b'; sel = null; syncUI(); render(); };
         var setColor = function(c) { st.color = c; if (st.tool === 'e') st.tool = 'b'; syncUI(); };
 
         ov.addEventListener('click', function(e) {
@@ -3875,7 +3968,7 @@ class LocalNotesEditor {
         redoBtn.addEventListener('click', function() { goHist(hi + 1); });
         ov.querySelector('.lne-draw-clear').addEventListener('click', function() {
             if (!st.objs.length && !st.base) return;
-            st.objs = []; st.base = null; pushHist(); rebuild();
+            st.objs = []; st.base = null; sel = null; pushHist(); rebuild();
         });
         ov.querySelector('.lne-draw-ratio').addEventListener('change', function(e) {
             var d = RATIOS[e.target.value]; if (!d) return;
@@ -3902,13 +3995,38 @@ class LocalNotesEditor {
             activeId = e.pointerId;
             try { cv.setPointerCapture(e.pointerId); } catch (err) {}
             var p = toPt(e);
+            if (st.tool === 'v') {
+                var k0 = st.W / (cv.getBoundingClientRect().width || st.W);
+                var hit = hitTest(p[0], p[1], (e.pointerType === 'mouse' ? 5 : 12) * k0);
+                if (hit < 0) { sel = null; activeId = null; try { cv.releasePointerCapture(e.pointerId); } catch (err) {} render(); return; }
+                sel = hit;
+                drag = { idx: hit, o: st.objs[hit], sx: p[0], sy: p[1], g: st.objs[hit], moved: false };
+                cv.style.cursor = 'move';
+                rebuild(hit); // base without the dragged object; it is drawn on top as a ghost while moving
+                return;
+            }
             if (st.tool === 'b') cur = { k: 'b', c: st.color, s: st.size, t: st.brush, r: (Math.random() * 4294967295) >>> 0, p: [p[0], p[1]] };
             else if (st.tool === 'e') cur = { k: 'e', c: st.color, s: st.size, p: [p[0], p[1]] };
             else cur = { k: st.tool, c: st.color, s: st.size, f: st.fill ? 1 : 0, a: [p[0], p[1], p[0], p[1]] };
             render();
         });
         cv.addEventListener('pointermove', function(e) {
-            if (e.pointerId !== activeId || !cur) return;
+            if (st.tool === 'v' && !drag && e.buttons === 0 && activeId === null) {
+                var kh = st.W / (cv.getBoundingClientRect().width || st.W), ph = toPt(e);
+                cv.style.cursor = hitTest(ph[0], ph[1], 5 * kh) >= 0 ? 'move' : 'default';
+                return;
+            }
+            if (e.pointerId !== activeId) return;
+            if (drag) {
+                e.preventDefault();
+                var pm = toPt(e), sh = clampShift(drag.o, pm[0] - drag.sx, pm[1] - drag.sy);
+                if (e.shiftKey) { if (Math.abs(sh[0]) > Math.abs(sh[1])) sh[1] = 0; else sh[0] = 0; } // Shift = move along one axis
+                if (sh[0] || sh[1]) drag.moved = true;
+                drag.g = shifted(drag.o, sh[0], sh[1]);
+                render();
+                return;
+            }
+            if (!cur) return;
             e.preventDefault();
             if (cur.p) {
                 var evs = (typeof e.getCoalescedEvents === 'function' && e.getCoalescedEvents()) || [];
@@ -3928,6 +4046,15 @@ class LocalNotesEditor {
             if (e.pointerId !== activeId) return;
             try { cv.releasePointerCapture(e.pointerId); } catch (err) {}
             activeId = null;
+            if (drag) {
+                var d = drag; drag = null;
+                cv.style.cursor = 'default';
+                if (!cancel && d.moved) {
+                    st.objs = st.objs.slice(); st.objs[d.idx] = d.g;
+                    rebuild(); pushHist();
+                } else rebuild();
+                return;
+            }
             var o = cur; cur = null;
             if (!cancel && o) {
                 var keep = true;
@@ -3960,6 +4087,21 @@ class LocalNotesEditor {
             var mod = e.ctrlKey || e.metaKey, k = (e.key || '').toLowerCase();
             if (mod && k === 'z') { e.preventDefault(); e.stopPropagation(); goHist(e.shiftKey ? hi + 1 : hi - 1); }
             else if (mod && k === 'y') { e.preventDefault(); e.stopPropagation(); goHist(hi + 1); }
+            else if (st.tool === 'v' && sel !== null && !drag && sel < st.objs.length && !(e.target && e.target.closest && e.target.closest('input, select, textarea'))) {
+                var step = e.shiftKey ? 10 : 1, mvx = 0, mvy = 0;
+                if (k === 'delete' || k === 'backspace') {
+                    e.preventDefault(); e.stopPropagation();
+                    st.objs = st.objs.slice(); st.objs.splice(sel, 1); sel = null;
+                    pushHist(); rebuild(); return;
+                }
+                if (k === 'arrowleft') mvx = -step; else if (k === 'arrowright') mvx = step;
+                else if (k === 'arrowup') mvy = -step; else if (k === 'arrowdown') mvy = step; else return;
+                e.preventDefault(); e.stopPropagation();
+                var cs = clampShift(st.objs[sel], mvx, mvy);
+                if (!cs[0] && !cs[1]) return;
+                st.objs = st.objs.slice(); st.objs[sel] = shifted(st.objs[sel], cs[0], cs[1]);
+                pushHist(); rebuild();
+            }
         };
         document.addEventListener('keydown', onKey, true);
 

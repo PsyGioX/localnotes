@@ -865,6 +865,7 @@
   "drawOptions": "Options",
   "drawBrush": "Brush",
   "drawEraser": "Eraser",
+  "drawSelect": "Move",
   "drawBrushSize": "Brush size",
   "drawColor": "Choose color",
   "drawCustomColor": "Custom color",

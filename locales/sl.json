@@ -865,6 +865,7 @@
   "drawOptions": "Možnosti",
   "drawBrush": "Čopič",
   "drawEraser": "Radirka",
+  "drawSelect": "Premakni",
   "drawBrushSize": "Velikost čopiča",
   "drawColor": "Izbira barve",
   "drawCustomColor": "Lastna barva",
