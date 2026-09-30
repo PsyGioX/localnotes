@@ -637,7 +637,7 @@ class NotesDatabase {
         } catch (e) { console.error('Migration error:', e); }
     }
     extractTitle(content) {
-        const d = document.createElement('div');
+        const d = _inertDiv();
         d.innerHTML = DOMPurify.sanitize(content || '');
         const h = d.querySelector('h1,h2,h3,h4,h5,h6');
         if (h) return h.textContent.trim();
@@ -1393,6 +1393,13 @@ function isEncryptedFile(content) {
     return content && (content.startsWith('{"encrypted":') || content.includes('"format":"encrypted"') || /^[A-Za-z0-9+/]{100,}={0,2}$/.test(content.trim()));
 }
 
+// Container for parsing note HTML off-screen. It belongs to an inert document, so the
+// <img src="cid:ln-…"> placeholders inside it are never fetched (a detached div of the
+// live document still starts image loads -> net::ERR_UNKNOWN_URL_SCHEME).
+function _inertDiv() {
+    return document.implementation.createHTMLDocument('').createElement('div');
+}
+
 function validateAndFixImages(content) {
     if (!content) return content;
     try {
@@ -1400,7 +1407,7 @@ function validateAndFixImages(content) {
             ADD_TAGS: ['iframe', 'video', 'source'],
             ADD_ATTR: ['allowfullscreen', 'frameborder', 'scrolling', 'allow', 'src', 'width', 'height', 'controls', 'autoplay', 'muted', 'loop']
         });
-        const d = document.createElement('div'); d.innerHTML = safe;
+        const d = _inertDiv(); d.innerHTML = safe;
         if (window.restrictIframeEmbeds) window.restrictIframeEmbeds(d);
         d.querySelectorAll('img').forEach(img => {
             if (!img.src) { img.remove(); return; }
@@ -1420,7 +1427,7 @@ function fixChecklistStructure(content) {
         ADD_TAGS: ['iframe', 'video', 'source'],
         ADD_ATTR: ['allowfullscreen', 'frameborder', 'scrolling', 'allow', 'src', 'width', 'height', 'controls', 'autoplay', 'muted', 'loop']
     });
-    const d = document.createElement('div'); d.innerHTML = safe;
+    const d = _inertDiv(); d.innerHTML = safe;
     if (window.restrictIframeEmbeds) window.restrictIframeEmbeds(d);
     d.querySelectorAll('.checklist-item-wrapper').forEach(wrapper => {
         let cb = wrapper.querySelector('.checklist-checkbox-ios');
@@ -1449,7 +1456,7 @@ function isClCheckboxChecked(cb) {
 function getChecklistProgress(content) {
     if (!content) return null;
     const safe = DOMPurify.sanitize(content);
-    const d = document.createElement('div'); d.innerHTML = safe;
+    const d = _inertDiv(); d.innerHTML = safe;
     // New .cl-item structure
     const newItems = d.querySelectorAll('.cl-item .cl-cb');
     if (newItems.length > 0) {
@@ -1478,7 +1485,7 @@ async function processMediaContent(content, opts) {
         ADD_TAGS: ['iframe', 'video', 'source'],
         ADD_ATTR: ['allowfullscreen', 'frameborder', 'scrolling', 'allow', 'src', 'width', 'height', 'controls', 'autoplay', 'muted', 'loop']
     });
-    const d = document.createElement('div'); d.innerHTML = safe;
+    const d = _inertDiv(); d.innerHTML = safe;
     if (window.restrictIframeEmbeds) window.restrictIframeEmbeds(d);
     const imgs = d.querySelectorAll('img[src^="blob:"]');
     for (const img of imgs) {
