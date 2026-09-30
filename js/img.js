@@ -507,7 +507,12 @@ function collectGallery(target) {
         index: list.indexOf(target),
         items: list.map((im) => ({
             src: im.currentSrc || im.src,
-            alt: im.getAttribute('alt') || '',
+            // never use the transient 'Image load error' placeholder as a caption
+            alt: (() => {
+                const a = im.hasAttribute('data-orig-alt') ? im.getAttribute('data-orig-alt') : (im.getAttribute('alt') || '');
+                // also drops the placeholder if it was already saved into note HTML (e.g. by a checklist toggle)
+                return a === 'Image load error' ? '' : a;
+            })(),
             drawing: im.classList.contains('lne-drawing')
         }))
     };

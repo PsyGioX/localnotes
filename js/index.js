@@ -3135,8 +3135,22 @@ function buildNoteCardElement(note, allTags) {
 
             // Image handlers
             notePreview.querySelectorAll('img').forEach(img => {
-                img.addEventListener('load', () => img.classList.add('loaded'));
-                img.addEventListener('error', () => { img.classList.add('error'); img.alt = 'Image load error'; });
+                img.addEventListener('load', () => {
+                    img.classList.add('loaded');
+                    img.classList.remove('error');
+                    // restore the user's own alt text (the error placeholder must not stick)
+                    if (img.hasAttribute('data-orig-alt')) {
+                        img.alt = img.getAttribute('data-orig-alt');
+                        img.removeAttribute('data-orig-alt');
+                    }
+                });
+                img.addEventListener('error', () => {
+                    // cid:ln-… placeholders are resolved to blob: URLs a moment later — not a real failure
+                    if (String(img.getAttribute('src') || '').startsWith('cid:ln-')) return;
+                    img.classList.add('error');
+                    if (!img.hasAttribute('data-orig-alt')) img.setAttribute('data-orig-alt', img.getAttribute('alt') || '');
+                    img.alt = 'Image load error';
+                });
                 if (img.complete && img.naturalHeight) img.classList.add('loaded');
                 img.addEventListener('click', handleImageClick);
             });
