@@ -292,13 +292,16 @@ function updateButtonTexts() {
     const appLockBtn = document.getElementById("appLockBtn");
     if (appLockBtn) {
         const lang = window.currentLang || 'en';
-        const lockLabel = window.langData?.[lang]?.appLockBtn
-            || (typeof window.t === 'function' ? window.t('appLockBtn') : null)
-            || 'Lock';
+        const deviceMode = !!(window.AppLock && window.AppLock.mode && window.AppLock.mode() === 'device');
+        const lockLabel = deviceMode
+            ? (window.langData?.[lang]?.lockProtect || (typeof window.t === 'function' ? window.t('lockProtect') : null) || 'Protect')
+            : (window.langData?.[lang]?.appLockBtn
+                || (typeof window.t === 'function' ? window.t('appLockBtn') : null)
+                || 'Lock');
         const isActive = window.AppLock && window.AppLock.isEnabled();
         appLockBtn.innerHTML = isActive
             ? `<i class="bi bi-shield-lock-fill"></i> ${lockLabel}<i class="bi bi-gear-fill ln-lock-gear-badge" aria-hidden="true"></i>`
-            : `<i class="bi bi-shield-lock"></i> ${lockLabel}`;
+            : `<i class="bi ${deviceMode ? 'bi-shield-plus' : 'bi-shield-lock'}"></i> ${lockLabel}`;
         const titleHint = langData.lockNowTitle
             || (typeof window.t === 'function' ? window.t('lockNowTitle') : null);
         const settingsTitle = langData.lockSettingsTitle

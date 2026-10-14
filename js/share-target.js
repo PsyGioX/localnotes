@@ -105,6 +105,18 @@
         });
     }
 
+    // openModal() fills the editor asynchronously; writing before it finishes
+    // gets overwritten (empty editor). Wait until the modal is shown, then write.
+    async function openEditorAndWait(maxWaitMs) {
+        window.openModal();
+        const modal = document.getElementById('editModal');
+        const start = Date.now();
+        while (modal && modal.style.display !== 'block' && Date.now() - start < maxWaitMs) {
+            await new Promise(r => setTimeout(r, 50));
+        }
+        return waitForEditorReady(maxWaitMs);
+    }
+
     // Opens a new, blank note and pre-fills it with the shared content.
     // Never auto-saves on the user's behalf — they review it in the editor
     // like any other note and hit Save themselves.
@@ -116,8 +128,7 @@
         if (url && url.trim() && /^https?:\/\//i.test(url.trim())) parts.push('<p><a href="' + escapeHtmlLocal(url.trim()) + '" target="_blank" rel="noopener">' + escapeHtmlLocal(url.trim()) + '</a></p>');
         const content = parts.join('') || '<p><br></p>';
 
-        window.openModal(); // opens the editor with a fresh, unsaved note
-        const ed = await waitForEditorReady(4000);
+        const ed = await openEditorAndWait(6000); // opens the editor with a fresh, unsaved note
         if (ed) ed.setContent(content);
     }
 
@@ -159,8 +170,7 @@
             return;
         }
         if (typeof window.openModal !== 'function') return;
-        window.openModal();
-        const ed = await waitForEditorReady(4000);
+        const ed = await openEditorAndWait(6000);
         if (ed) {
             // note.content is fully attacker-controlled (anyone can craft a
             // #shared= link) and setContent() does no sanitization of its
@@ -228,5 +238,17 @@
     // its own startup before acting — this script loads last in
     // script-loader.js specifically so that's normally already true, but a
     // short delay avoids any race on first paint.
-    setTimeout(run, 150);
+    //
+    // The app only finishes booting (window.appReady) after the vault is
+    // unlocked, so a shared note used to open behind the lock screen with the
+    // hash already cleared. Wait for appReady (bounded) instead of a fixed delay.
+    function runWhenAppReady() {
+        const started = Date.now();
+        (function poll() {
+            if (window.appReady) { setTimeout(run, 150); return; }
+            if (Date.now() - started > 10 * 60 * 1000) return;
+            setTimeout(poll, 100);
+        })();
+    }
+    runWhenAppReady();
 })();

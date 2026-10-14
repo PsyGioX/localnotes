@@ -1016,3 +1016,15 @@ button.ln-lock-file-label:active {
 [data-theme="light"] .ln-lss-btn-cancel { background: #f8f9fa; color: #6c757d; border-color: #dee2e6; }
 [data-theme="light"] .ln-lss-btn-cancel:hover { background: #e9ecef; color: #212529; }
 [data-theme="light"] .ln-lock-toast { background: #ffffff; border-color: #dee2e6; color: #212529; }
+
+/* ── Optional password: "Start without a password", device-mode note, idle select ── */
+.ln-lock-or { display: flex; align-items: center; gap: 12px; margin: 18px 0 12px; color: var(--text-secondary, #888); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+.ln-lock-or::before, .ln-lock-or::after { content: ""; flex: 1; height: 1px; background: var(--border-color, #272727); }
+.ln-lock-btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px 16px; background: transparent; color: var(--text-primary, #fff); border: 2px solid var(--border-color, #272727); border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: border-color 0.2s, color 0.2s, background 0.2s; }
+.ln-lock-btn-secondary:hover, .ln-lock-btn-secondary:focus-visible { border-color: var(--primary-color, #aefc6e); color: var(--primary-color, #aefc6e); outline: none; }
+.ln-lock-nopass-hint { margin: 10px 2px 0; font-size: 12.5px; line-height: 1.45; color: var(--text-secondary, #888); text-align: center; }
+.ln-lss-device-note { margin: 0 0 14px; }
+.ln-lss-idle-field { margin-top: 16px; }
+.ln-lss-select { font-family: inherit; cursor: pointer; }
+[data-theme="light"] .ln-lock-btn-secondary { color: #212529; border-color: #dee2e6; }
+[data-theme="light"] .ln-lock-nopass-hint { color: #6c757d; }

@@ -20,15 +20,19 @@
  * key handling; this file only builds the setup/unlock/settings UI and the
  * idle-timeout re-lock around it.
  *
- * A master password is mandatory: window.AppLock.ensureUnlocked() is
- * awaited from index.js's boot sequence before notes ever load, and shows
- * a non-dismissable first-run setup screen if no credential exists yet.
+ * A password is OPTIONAL: window.AppLock.ensureUnlocked() is awaited from
+ * index.js's boot sequence before notes ever load. On first run the setup
+ * screen offers "Start without a password" (vault mode 'device': notes stay
+ * encrypted at rest but open automatically) next to PIN / access file.
+ * A password can be added or removed any time from the lock settings.
  */
 (function () {
     'use strict';
 
     const KEY_LAST_ACTIVITY = 'ln_lock_last_activity';
-    const IDLE_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
+    const KEY_IDLE_MINUTES = 'ln_lock_idle_minutes';
+    const DEFAULT_IDLE_MINUTES = 10;
+    const IDLE_CHOICES = [1, 5, 10, 30, 60, 0]; // minutes; 0 = never
     const MAX_ATTEMPTS = 5;
     const KEY_FAILED_ATTEMPTS = 'ln_lock_failed_attempts';
     const KEY_LOCKED_UNTIL = 'ln_lock_locked_until';
@@ -132,12 +136,26 @@
         sessionStorage.setItem(KEY_LAST_ACTIVITY, String(Date.now()));
     }
     function clearActivity() { sessionStorage.removeItem(KEY_LAST_ACTIVITY); }
+    function getIdleMinutes() {
+        const raw = localStorage.getItem(KEY_IDLE_MINUTES);
+        if (raw === null) return DEFAULT_IDLE_MINUTES;
+        const n = parseInt(raw, 10);
+        return IDLE_CHOICES.includes(n) ? n : DEFAULT_IDLE_MINUTES;
+    }
+    function setIdleMinutes(n) {
+        if (!IDLE_CHOICES.includes(n)) n = DEFAULT_IDLE_MINUTES;
+        localStorage.setItem(KEY_IDLE_MINUTES, String(n));
+        if (isUnlocked()) touchActivity();
+    }
+    function isPasswordMode() { return db().vaultMode === 'password'; }
     function isIdleExpired() {
+        const minutes = getIdleMinutes();
+        if (minutes === 0) return false; // "never"
         const raw = sessionStorage.getItem(KEY_LAST_ACTIVITY);
         if (!raw) return true;
         const last = parseInt(raw, 10);
         if (!Number.isFinite(last)) return true;
-        return Date.now() - last >= IDLE_TIMEOUT_MS;
+        return Date.now() - last >= minutes * 60 * 1000;
     }
 
     function applyLockInert(lockScreenId) {
@@ -208,6 +226,25 @@
             lockTabRecovery: 'Recovery phrase',
             lockRecoveryRegenHint: 'Generating a new phrase replaces the old one — the previous phrase will stop working immediately.',
             lockRecoveryRegen: 'Generate new recovery phrase',
+            lockStartWithout: 'Start without a password',
+            lockStartWithoutHint: 'Your notes stay encrypted on this device and open automatically. You can add a password any time in the lock settings.',
+            lockOr: 'or',
+            lockDeviceStatus: 'No password: notes open automatically on this device. Add a PIN or access file to require it at every launch.',
+            lockDeviceHonest: 'This protects against copied files and backups, but not against someone using this browser profile.',
+            lockProtect: 'Protect',
+            lockProtectTitle: 'Notes open without a password. Tap to add one.',
+            lockTabOff: 'No password',
+            lockRemoveHint: 'Notes will open automatically, without asking for a PIN or file. Confirm with your current PIN, access file or recovery phrase.',
+            lockCurrentPin: 'Current PIN (to confirm)',
+            lockCurrentFile: 'Current access file (to confirm)',
+            lockCurrentPhrase: 'Or recovery phrase',
+            lockRemoveConfirmBtn: 'Remove password',
+            lockRemoved: 'Password removed. Notes now open automatically.',
+            lockVerifyFailed: 'That PIN, file or phrase is not correct.',
+            lockIdleTitle: 'Auto-lock after inactivity',
+            lockIdleMinutes: '{n} min',
+            lockIdleNever: 'Never',
+            lockProtectedDone: 'Password set',
         };
         return FB[key] || fallback || key;
     }
@@ -286,7 +323,7 @@
     }
 
     function checkIdleLock() {
-        if (!isUnlocked()) return;
+        if (!isUnlocked() || !isPasswordMode()) return;
         if (!isIdleExpired()) return;
         db().lockVaultSession();
         clearActivity();
@@ -294,7 +331,7 @@
     }
 
     function lockNow() {
-        if (!isUnlocked()) return;
+        if (!isUnlocked() || !isPasswordMode()) return;
         db().lockVaultSession();
         clearActivity();
         showUnlockScreen();
@@ -549,6 +586,12 @@
                     <i class="bi bi-check-lg"></i> ${tr('lockFirstRunConfirm')}
                 </button>
                 <div class="ln-lock-error" id="ln-lock-error" aria-live="polite"></div>
+
+                <div class="ln-lock-or" aria-hidden="true"><span>${tr('lockOr')}</span></div>
+                <button type="button" class="ln-lock-btn ln-lock-btn-secondary" id="ln-setup-no-password">
+                    <i class="bi bi-unlock"></i> ${tr('lockStartWithout')}
+                </button>
+                <p class="ln-lock-nopass-hint">${tr('lockStartWithoutHint')}</p>
             </div>`;
 
         document.body.appendChild(overlay);
@@ -586,6 +629,14 @@
         });
 
         return new Promise(resolve => {
+            overlay.querySelector('#ln-setup-no-password').addEventListener('click', async () => {
+                try { await db().enableDeviceMode(); }
+                catch (e) { console.error('enableDeviceMode failed', e); showLockError(String(e && e.message || e)); return; }
+                overlay.classList.add('ln-lock-unlocking');
+                releaseInert();
+                setTimeout(() => overlay.remove(), 400);
+                resolve();
+            });
             overlay.querySelector('#ln-setup-confirm').addEventListener('click', async () => {
                 if (!overlay.querySelector('#ln-setup-ack').checked) { showLockError(tr('lockAckRequired')); return; }
 
@@ -672,14 +723,73 @@
         });
     }
 
+    // Used when a password is added to a passwordless vault from settings:
+    // same recovery-phrase step as first run, on its own inert overlay.
+    async function runRecoveryStepAfterEnable() {
+        const overlay = document.createElement('div');
+        overlay.id = 'ln-lock-screen';
+        overlay.className = 'ln-lock-overlay';
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.innerHTML = '<div class="ln-lock-panel ln-lock-panel-setup"></div>';
+        document.body.appendChild(overlay);
+        applyLockInert('ln-lock-screen');
+        await showRecoveryPhraseStep(overlay);
+        touchActivity();
+        setupIdleWatcher();
+        overlay.classList.add('ln-lock-unlocking');
+        releaseInert();
+        setTimeout(() => overlay.remove(), 400);
+        if (typeof window._updateLockBtn === 'function') window._updateLockBtn();
+    }
+
+    // On a first visit to a localized page (/ru/, /pl/, ...) the app's strings
+    // are fetched asynchronously, and the lock screens used to be built before
+    // they arrived — so they came up in English. Wait briefly (bounded, so a
+    // blocked/slow fetch can never keep notes locked behind a blank screen).
+    async function waitForTranslations(maxMs = 1500) {
+        const start = Date.now();
+        while (Date.now() - start < maxMs) {
+            const lang = window.currentLang;
+            if (!lang || lang === 'en') return;
+            if (window.translations && window.translations[lang]) return;
+            await new Promise(r => setTimeout(r, 50));
+        }
+    }
+
+    function hasIncomingSharedContent() {
+        try {
+            if ((window.location.hash || '').indexOf('#shared=') === 0) return true;
+            const q = new URLSearchParams(window.location.search);
+            return ['title', 'text', 'url'].some(k => (q.get(k) || '').trim());
+        } catch { return false; }
+    }
+
     // Awaited once from index.js's boot sequence, before notes ever load.
     let ensurePromise = null;
     function ensureUnlocked() {
         if (ensurePromise) return ensurePromise;
         ensurePromise = (async () => {
             if (isUnlocked()) return;
-            const setUp = await db().isVaultSetup();
-            await (setUp ? buildUnlockScreen() : buildFirstRunScreen());
+            const mode = await db().refreshVaultMode();
+            if (mode === 'device') {
+                // Passwordless vault: unlock silently. A missing/corrupt key
+                // record must never fall through to "first run" — that would
+                // mint a new key and orphan the existing notes.
+                if (!(await db().unlockVaultWithDeviceKey())) {
+                    throw new Error('Local Notes: device key is missing; refusing to create a new vault over existing data');
+                }
+                return;
+            }
+            // Recipient of a shared-note link / Web Share on first visit: don't put
+            // a lock-setup wall in front of the note. Start passwordless (can be
+            // protected later from the toolbar).
+            if (mode === 'none' && hasIncomingSharedContent()) {
+                await db().enableDeviceMode();
+                return;
+            }
+            await waitForTranslations();
+            await (mode === 'password' ? buildUnlockScreen() : buildFirstRunScreen());
         })();
         return ensurePromise;
     }
@@ -693,7 +803,14 @@
         document.getElementById('ln-lock-settings-modal')?.remove();
         const showPin = await hasPinConfigured();
         const showFile = await hasFileConfigured();
+        const showRecoveryCfg = await hasRecoveryConfigured();
+        await db().refreshVaultMode();
+        const deviceMode = db().vaultMode === 'device';
         const initialTab = showFile && !showPin ? 'file' : 'pin';
+        const idleOptions = IDLE_CHOICES.map(n => {
+            const label = n === 0 ? tr('lockIdleNever') : tr('lockIdleMinutes').replace('{n}', String(n));
+            return `<option value="${n}"${n === getIdleMinutes() ? ' selected' : ''}>${label}</option>`;
+        }).join('');
 
         const overlay = document.createElement('div');
         overlay.id = 'ln-lock-settings-modal';
@@ -712,8 +829,10 @@
                     <div class="ln-lss-tabs" role="tablist">
                         <button type="button" class="ln-lss-tab" data-mode="pin" role="tab"><i class="bi bi-123"></i> ${tr('lockModePin')}</button>
                         <button type="button" class="ln-lss-tab" data-mode="file" role="tab"><i class="bi bi-file-earmark-lock"></i> ${tr('lockModeFile')}</button>
-                        <button type="button" class="ln-lss-tab" data-mode="recovery" role="tab"><i class="bi bi-key"></i> ${tr('lockTabRecovery')}</button>
+                        ${deviceMode ? '' : `<button type="button" class="ln-lss-tab" data-mode="recovery" role="tab"><i class="bi bi-key"></i> ${tr('lockTabRecovery')}</button>
+                        <button type="button" class="ln-lss-tab" data-mode="off" role="tab"><i class="bi bi-unlock"></i> ${tr('lockTabOff')}</button>`}
                     </div>
+                    ${deviceMode ? `<p class="ln-lss-hint ln-lss-device-note" id="ln-lss-device-note"><i class="bi bi-info-circle"></i> <span>${tr('lockDeviceStatus')} ${tr('lockDeviceHonest')}</span></p>` : ''}
 
                     <div class="ln-lss-section ln-lss-pin-section" id="ln-lss-pin-section">
                         <div class="ln-lss-field">
@@ -749,11 +868,27 @@
                         </div>
                     </div>
 
+                    <div class="ln-lss-section ln-lss-off-section" id="ln-lss-off-section">
+                        <p class="ln-lss-hint"><i class="bi bi-info-circle"></i> <span>${tr('lockRemoveHint')} ${tr('lockDeviceHonest')}</span></p>
+                        ${showPin ? `<div class="ln-lss-field"><label class="ln-lss-label" for="ln-lss-off-pin">${tr('lockCurrentPin')}</label>
+                            <input type="password" inputmode="numeric" pattern="[0-9]*" id="ln-lss-off-pin" class="ln-lss-input" maxlength="8" autocomplete="current-password" /></div>` : ''}
+                        ${showFile ? `<div class="ln-lss-field"><label class="ln-lss-label" for="ln-lss-off-file">${tr('lockCurrentFile')}</label>
+                            <input type="file" id="ln-lss-off-file" class="ln-lss-input" /></div>` : ''}
+                        ${showRecoveryCfg ? `<div class="ln-lss-field"><label class="ln-lss-label" for="ln-lss-off-phrase">${tr(showPin || showFile ? 'lockCurrentPhrase' : 'lockRecoveryPlaceholder')}</label>
+                            <input type="text" id="ln-lss-off-phrase" class="ln-lss-input" autocomplete="off" spellcheck="false" /></div>` : ''}
+                        <button type="button" class="ln-lss-btn ln-lss-btn-danger" id="ln-lss-off-confirm"><i class="bi bi-unlock"></i> ${tr('lockRemoveConfirmBtn')}</button>
+                    </div>
+
+                    ${deviceMode ? '' : `<div class="ln-lss-field ln-lss-idle-field">
+                        <label class="ln-lss-label" for="ln-lss-idle">${tr('lockIdleTitle')}</label>
+                        <select id="ln-lss-idle" class="ln-lss-input ln-lss-select">${idleOptions}</select>
+                    </div>`}
+
                     <p class="ln-lss-status" id="ln-lss-status" aria-live="polite"></p>
                     <div class="ln-lss-error" id="ln-lss-error" aria-live="polite"></div>
                 </div>
                 <div class="ln-lock-settings-footer">
-                    <button type="button" class="ln-lss-btn ln-lss-btn-lock-now" id="ln-lss-lock-now"><i class="bi bi-lock-fill"></i> ${tr('lockNow')}</button>
+                    ${deviceMode ? '' : `<button type="button" class="ln-lss-btn ln-lss-btn-lock-now" id="ln-lss-lock-now"><i class="bi bi-lock-fill"></i> ${tr('lockNow')}</button>`}
                     <button type="button" class="ln-lss-btn ln-lss-btn-cancel" id="ln-lss-cancel"><i class="bi bi-x-lg"></i> ${tr('cancel')}</button>
                     <button type="button" class="ln-lss-btn ln-lss-btn-primary" id="ln-lss-save"><i class="bi bi-floppy"></i> ${tr('lockSave')}</button>
                 </div>
@@ -772,7 +907,8 @@
             overlay.querySelector('#ln-lss-pin-section').style.display = activeTab === 'pin' ? '' : 'none';
             overlay.querySelector('#ln-lss-file-section').style.display = activeTab === 'file' ? '' : 'none';
             overlay.querySelector('#ln-lss-recovery-section').style.display = activeTab === 'recovery' ? '' : 'none';
-            overlay.querySelector('#ln-lss-save').style.display = activeTab === 'recovery' ? 'none' : '';
+            overlay.querySelector('#ln-lss-off-section').style.display = activeTab === 'off' ? '' : 'none';
+            overlay.querySelector('#ln-lss-save').style.display = (activeTab === 'recovery' || activeTab === 'off') ? 'none' : '';
         };
 
         const refreshStatus = async () => {
@@ -814,6 +950,29 @@
             generateAndDownloadAccessFile();
             const hint = overlay.querySelector('.ln-lss-hint-generate');
             if (hint) { hint.style.color = 'var(--primary-color, #aefc6e)'; hint.innerHTML = `<i class="bi bi-check-circle-fill"></i> ${tr('lockGenerateDownloaded')}`; }
+        });
+
+        overlay.querySelector('#ln-lss-idle')?.addEventListener('change', e => {
+            setIdleMinutes(parseInt(e.target.value, 10));
+            showToast(tr('lockSaved'));
+        });
+
+        overlay.querySelector('#ln-lss-off-confirm')?.addEventListener('click', async () => {
+            if (isRateLimited()) { showError(tr('lockTooMany')); return; }
+            const pin = overlay.querySelector('#ln-lss-off-pin')?.value || '';
+            const file = overlay.querySelector('#ln-lss-off-file')?.files?.[0];
+            const phrase = overlay.querySelector('#ln-lss-off-phrase')?.value || '';
+            let ok = false;
+            if (pin) ok = await db().verifyVaultCredential('pin', pin);
+            if (!ok && file) ok = await db().verifyVaultCredential('file', await readFileSecret(file));
+            if (!ok && phrase) ok = await db().verifyVaultCredential('recovery', normalizePhrase(phrase));
+            if (!ok) { recordFailure(); showError(tr('lockVerifyFailed')); return; }
+            clearRateLimit();
+            await db().disablePasswordProtection();
+            clearActivity();
+            close();
+            showToast(tr('lockRemoved'));
+            if (typeof window._updateLockBtn === 'function') window._updateLockBtn();
         });
 
         overlay.querySelector('#ln-lss-lock-now')?.addEventListener('click', () => { close(); lockNow(); });
@@ -866,7 +1025,8 @@
                 await db().setVaultCredential('pin', newPin);
                 await refreshStatus();
                 close();
-                showToast(tr('lockSaved'));
+                if (deviceMode) { await runRecoveryStepAfterEnable(); showToast(tr('lockProtectedDone')); }
+                else showToast(tr('lockSaved'));
                 return;
             }
             if (activeTab === 'file') {
@@ -876,7 +1036,8 @@
                 await db().setVaultCredential('file', secret);
                 await refreshStatus();
                 close();
-                showToast(tr('lockSaved'));
+                if (deviceMode) { await runRecoveryStepAfterEnable(); showToast(tr('lockProtectedDone')); }
+                else showToast(tr('lockSaved'));
             }
         });
     }
@@ -884,7 +1045,10 @@
     window.AppLock = {
         ensureUnlocked,
         openSettings: openAppLockSettings,
-        isEnabled: () => isUnlocked(),
+        isEnabled: () => isUnlocked() && isPasswordMode(),
+        mode: () => db().vaultMode,
+        getIdleMinutes,
+        setIdleMinutes,
         isUnlocked,
         lockNow,
         lock: lockNow

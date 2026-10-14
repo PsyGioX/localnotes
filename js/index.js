@@ -669,6 +669,7 @@ class NotesDatabase {
     // same notes. Throws if called for a 2nd+ slot while locked — the app
     // only ever calls this from an already-unlocked settings screen.
     async setVaultCredential(slot, secret) {
+        if (slot === 'device') throw new Error("'device' is not a credential slot; use enableDeviceMode()");
         const slots = await this._vaultSlots();
         let keyBytes;
         if (!slots.length) {
@@ -689,17 +690,107 @@ class NotesDatabase {
         const wrapped = await this._rawFieldEncrypt(btoa(bin), credKey);
         await this.saveSetting('vaultSalt_' + slot, btoa(String.fromCharCode(...salt)));
         await this.saveSetting('vaultWrapped_' + slot, wrapped);
-        if (!slots.includes(slot)) await this.saveSetting('vaultSlots', [...slots, slot]);
+        let nextSlots = slots.includes(slot) ? slots : [...slots, slot];
+        // Setting the first real credential on a passwordless vault: the same
+        // data key is now wrapped by that credential, so the plain-stored
+        // device key is no longer needed (and must not stay on disk).
+        const leavingDeviceMode = slots.includes('device');
+        if (leavingDeviceMode) nextSlots = nextSlots.filter(s => s !== 'device');
+        await this._setVaultSlots(nextSlots);
+        if (leavingDeviceMode) await this.saveSetting('vaultDeviceKey', null);
         if (!slots.length) await this._encryptExistingPlaintext(); // very first credential: migrate pre-vault plaintext
+    }
+
+    // ── Passwordless ("device") mode ────────────────────────────────────────
+    // Lets people use the app without choosing a PIN/file. Notes are still
+    // stored encrypted (so the code path is identical and a password can be
+    // added later by just wrapping the SAME data key — no re-encryption),
+    // but the data key itself sits next to them in IndexedDB and is loaded
+    // automatically. Honest threat model: this protects against copied
+    // files/backups of the profile, NOT against someone who can open this
+    // browser profile. The UI says so.
+    //   vaultMode: 'none'     — nothing set up yet (first run)
+    //              'device'   — passwordless
+    //              'password' — at least one PIN/file/recovery slot
+    get vaultMode() { return this._vaultMode || 'none'; }
+
+    async _setVaultSlots(slots) {
+        await this.saveSetting('vaultSlots', slots);
+        this._vaultMode = this._modeFromSlots(slots);
+    }
+    _modeFromSlots(slots) {
+        if (!slots || !slots.length) return 'none';
+        return slots.includes('device') ? 'device' : 'password';
+    }
+    async refreshVaultMode() {
+        this._vaultMode = this._modeFromSlots(await this._vaultSlots());
+        return this._vaultMode;
+    }
+    async isDeviceMode() { return (await this.refreshVaultMode()) === 'device'; }
+
+    static _b64FromBytes(bytes) { let bin = ''; for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]); return btoa(bin); }
+    static _bytesFromB64(b64) { const bin = atob(b64); const out = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i); return out; }
+
+    // First run only: create the vault without any credential.
+    async enableDeviceMode() {
+        const slots = await this._vaultSlots();
+        if (slots.length) throw new Error('Vault is already set up');
+        const keyBytes = crypto.getRandomValues(new Uint8Array(32));
+        this._vaultKey = await crypto.subtle.importKey('raw', keyBytes, 'AES-GCM', true, ['encrypt', 'decrypt']);
+        await this.saveSetting('vaultDeviceKey', NotesDatabase._b64FromBytes(keyBytes));
+        await this._setVaultSlots(['device']);
+        await this._encryptExistingPlaintext(); // migrate pre-vault plaintext notes
+    }
+
+    // Boot path for passwordless vaults. Returns false if the key record is
+    // missing/corrupt (caller must not silently create a new vault then).
+    async unlockVaultWithDeviceKey() {
+        const b64 = await this.getSetting('vaultDeviceKey');
+        if (!b64 || typeof b64 !== 'string') return false;
+        try {
+            this._vaultKey = await crypto.subtle.importKey('raw', NotesDatabase._bytesFromB64(b64), 'AES-GCM', true, ['encrypt', 'decrypt']);
+            this._vaultMode = 'device';
+            return true;
+        } catch { return false; }
+    }
+
+    // Checks a credential WITHOUT touching the live session key.
+    async verifyVaultCredential(slot, secret) {
+        const saltB64 = await this.getSetting('vaultSalt_' + slot);
+        const wrapped = await this.getSetting('vaultWrapped_' + slot);
+        if (!saltB64 || !wrapped) return false;
+        try {
+            const salt = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0));
+            const credKey = await this._deriveVaultKey(secret, salt);
+            await this._rawFieldDecrypt(wrapped, credKey);
+            return true;
+        } catch { return false; }
+    }
+
+    // Password -> passwordless. Caller (UI) must have verified a credential.
+    // Crash-safe order: write the device key first, then flip the slots,
+    // and only then delete the wrapped copies.
+    async disablePasswordProtection() {
+        if (!this._vaultKey) throw new Error('Vault must be unlocked');
+        const slots = await this._vaultSlots();
+        if (slots.includes('device')) return;
+        const keyBytes = new Uint8Array(await crypto.subtle.exportKey('raw', this._vaultKey));
+        await this.saveSetting('vaultDeviceKey', NotesDatabase._b64FromBytes(keyBytes));
+        await this._setVaultSlots(['device']);
+        for (const slot of slots) {
+            await this.saveSetting('vaultSalt_' + slot, null);
+            await this.saveSetting('vaultWrapped_' + slot, null);
+        }
     }
 
     // Removes one unlock method. Refuses to remove the last remaining one —
     // the vault must always stay reachable by at least one credential.
     async removeVaultCredential(slot) {
         const slots = await this._vaultSlots();
+        if (slot === 'device') throw new Error("Use disablePasswordProtection()/setVaultCredential() to change passwordless mode");
         const remaining = slots.filter(s => s !== slot);
         if (!remaining.length) throw new Error('Cannot remove the last unlock method');
-        await this.saveSetting('vaultSlots', remaining);
+        await this._setVaultSlots(remaining);
         await this.saveSetting('vaultSalt_' + slot, null);
         await this.saveSetting('vaultWrapped_' + slot, null);
     }
@@ -720,6 +811,7 @@ class NotesDatabase {
             const bytes = new Uint8Array(bin.length);
             for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
             this._vaultKey = await crypto.subtle.importKey('raw', bytes, 'AES-GCM', true, ['encrypt', 'decrypt']);
+            this._vaultMode = 'password';
             return true;
         } catch { return false; }
     }
@@ -3377,6 +3469,12 @@ function showWelcomeMessage() {
             <h1 class="welcome-title">${gt('welcomeTitle','Welcome to Local Notes')}</h1>
             <p class="welcome-subtitle">${gt('welcomeSubtitle','Secure, private note-taking in your browser')}</p>
         </div>
+        <div class="welcome-quick" role="group">
+            <button type="button" class="welcome-quick-btn welcome-quick-new primary" id="welcomeNewNote"><i class="bi bi-plus-lg"></i> <span class="wq-label">${gt('addNote','Add a note')}</span></button>
+            <button type="button" class="welcome-quick-btn welcome-quick-import" id="welcomeImportNotes"><i class="bi bi-box-arrow-in-down"></i> <span class="wq-label">${gt('importNotes','Import notes')}</span></button>
+            <button class="welcome-quick-btn welcome-dismiss-btn" id="welcomeDismissBtn">${gt('welcomeDismiss','Show instructions')}</button>
+        </div>
+        <details class="welcome-more"><summary class="welcome-more-summary">${gt('welcomeAbout','About Local Notes')}</summary>
         <div class="welcome-section"><h2 class="welcome-section-title">${gt('welcomeAbout','About Local Notes')}</h2>
             <p class="welcome-description">${gt('welcomeDescription','Local Notes is a secure web application for creating and storing notes directly in your browser.')}</p></div>
         <div class="welcome-section"><h2 class="welcome-section-title">${gt('welcomeFeatures','Key Features')}</h2>
@@ -3402,12 +3500,16 @@ function showWelcomeMessage() {
             <p class="welcome-developer-info">${gt('welcomeDeveloperInfo','Developed by PsyGioX. Open source project focused on privacy and security.')}</p></div>
         <div class="welcome-section"><h2 class="welcome-section-title">${gt('welcomeGetStarted','Get Started')}</h2>
             <p class="welcome-get-started">${gt('welcomeGetStartedText','Click Add Note to create your first note.')}</p></div>
-        <div class="welcome-actions">
-            <button class="welcome-dismiss-btn" id="welcomeDismissBtn">${gt('welcomeDismiss','Show instructions')}</button>
-        </div></div>`;
+        </details></div>`;
     notesContainer.appendChild(wc);
     var dismissBtn = document.getElementById('welcomeDismissBtn');
     if (dismissBtn) dismissBtn.addEventListener('click', showWelcomeInstructions);
+    // Quick-start actions simply forward to the real toolbar buttons, so
+    // there is exactly one implementation of "new note" / "import".
+    const wqNew = document.getElementById('welcomeNewNote');
+    if (wqNew) wqNew.addEventListener('click', () => { const b = document.getElementById('addNoteButton'); if (b) b.click(); });
+    const wqImport = document.getElementById('welcomeImportNotes');
+    if (wqImport) wqImport.addEventListener('click', () => { const b = document.getElementById('importButton'); if (b) b.click(); });
     setTimeout(() => updateWelcomeTranslations(), 100);
 }
 
@@ -3432,6 +3534,8 @@ function updateWelcomeTranslations() {
         const sectionTitles = wm.querySelectorAll('.welcome-section-title');
         const sectionTitleKeys = ['welcomeAbout', 'welcomeFeatures', 'welcomeGoals', 'welcomeDeveloper', 'welcomeGetStarted'];
         sectionTitles.forEach((el, idx) => { if (sectionTitleKeys[idx]) el.textContent = t(sectionTitleKeys[idx]) || el.textContent; });
+        const moreSummary = wm.querySelector('.welcome-more-summary');
+        if (moreSummary) moreSummary.textContent = t('welcomeAbout') || moreSummary.textContent;
 
         // Update text blocks
         const map = {
@@ -3440,7 +3544,9 @@ function updateWelcomeTranslations() {
             '.welcome-description': 'welcomeDescription',
             '.welcome-developer-info': 'welcomeDeveloperInfo',
             '.welcome-get-started': 'welcomeGetStartedText',
-            '.welcome-dismiss-btn': 'welcomeDismiss'
+            '.welcome-dismiss-btn': 'welcomeDismiss',
+            '.welcome-quick-new .wq-label': 'addNote',
+            '.welcome-quick-import .wq-label': 'importNotes'
         };
         Object.entries(map).forEach(([sel, key]) => { const el = wm.querySelector(sel); if (el) el.textContent = t(key) || el.textContent; });
 
@@ -4877,7 +4983,13 @@ function initializeEventListeners() {
             // its own Next/Back clicks — those land on .ln-tour-overlay,
             // outside moreMenu/moreToggle, so without this check they'd
             // immediately re-close the menu the tour just opened.
-            if (e.target.closest('.ln-tour-overlay')) return;
+            // composedPath() is captured at dispatch time: the tour re-renders
+            // its tooltip inside the Next/Back handler, which detaches the
+            // clicked button before this listener runs, so e.target.closest()
+            // alone can no longer find the overlay and would close the menu
+            // the tour just opened.
+            if (e.target.closest('.ln-tour-overlay') ||
+                (typeof e.composedPath === 'function' && e.composedPath().some(n => n && n.classList && n.classList.contains('ln-tour-overlay')))) return;
             closeMoreMenu();
         });
         document.addEventListener('keydown', e => {
@@ -4934,17 +5046,22 @@ function initializeEventListeners() {
             resetHoldVisual();
             const enabled = window.AppLock && window.AppLock.isEnabled();
             lockBtn.classList.toggle('ln-lock-active', !!enabled);
-            const label = (typeof t === 'function' ? t('appLockBtn') : null) || 'Lock';
+            const deviceMode = !!(window.AppLock && window.AppLock.mode && window.AppLock.mode() === 'device');
+            const label = deviceMode
+                ? ((typeof t === 'function' ? t('lockProtect') : null) || 'Protect')
+                : ((typeof t === 'function' ? t('appLockBtn') : null) || 'Lock');
             // The gear is now its own always-visible button next to this
             // one (#appLockSettingsBtn) rather than a badge hinting at a
             // hidden hold/right-click gesture — so this button's own label
             // only needs to reflect lock state, not "there's more here".
             lockBtn.innerHTML = enabled
                 ? `<i class="bi bi-shield-lock-fill"></i> ${label}`
-                : `<i class="bi bi-shield-lock"></i> ${label}`;
+                : `<i class="bi ${deviceMode ? 'bi-shield-plus' : 'bi-shield-lock'}"></i> ${label}`;
             const titleHint = (typeof t === 'function' ? t('lockNowTitle') : null)
                 || 'Tap to lock. Hold or right-click for settings.';
-            lockBtn.title = enabled ? titleHint : ((typeof t === 'function' ? t('lockSettingsTitle') : null) || 'App Lock');
+            lockBtn.title = enabled ? titleHint
+                : (deviceMode ? ((typeof t === 'function' ? t('lockProtectTitle') : null) || 'Notes open without a password. Tap to add one.')
+                              : ((typeof t === 'function' ? t('lockSettingsTitle') : null) || 'App Lock'));
         };
         updateLockBtn();
 
@@ -5021,6 +5138,20 @@ function initializeEventListeners() {
     if (calBtn) calBtn.addEventListener('click', () => {
         if (typeof openCalendar === 'function') openCalendar();
     });
+    // Calendar is a *view*, so it also sits in the view switcher next to
+    // Grid/List and Tasks. It only forwards to #calendarBtn (which keeps the
+    // one real handler, and the onboarding-tour target) and mirrors its
+    // translated label whenever the language changes.
+    const viewCalBtn = document.getElementById('viewCalendarBtn');
+    if (viewCalBtn && calBtn) {
+        viewCalBtn.addEventListener('click', () => calBtn.click());
+        const syncCalLabel = () => {
+            const label = calBtn.textContent.trim();
+            if (label) { viewCalBtn.innerHTML = '<i class="bi bi-calendar3"></i> ' + label.replace(/</g, '&lt;'); viewCalBtn.title = label; }
+        };
+        syncCalLabel();
+        new MutationObserver(syncCalLabel).observe(calBtn, { childList: true, characterData: true, subtree: true });
+    }
 
     const cancelBtn = document.getElementById('cancelNoteButton');
     if (cancelBtn) cancelBtn.addEventListener('click', closeModal);

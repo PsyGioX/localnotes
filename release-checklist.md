@@ -1,4 +1,4 @@
-# Release Checklist — Local Notes v1.11.1
+# Release Checklist — Local Notes v1.12.0
 
 Copy this file's unchecked items into the release PR. Items under **Baseline** describe guarantees that earlier releases established and every release must keep.
 
@@ -16,7 +16,8 @@ Copy this file's unchecked items into the release PR. Items under **Baseline** d
 
 ## 2. Automated / scripted checks
 
-- [ ] `node scripts/verify-locales.js` — 12 languages, 864 in-app keys and 223 site keys each, no gaps, no empty values
+- [ ] `pytest tests/` (browser tests) and `node tests/test_locales_optional_lock.js`
+- [ ] `node scripts/verify-locales.js` — 12 languages, 883 in-app keys and 223 site keys each, no gaps, no empty values
 - [ ] `core.js` parses without errors (`node -e "new Function(require('fs').readFileSync('localnoteseditor/core.js','utf8'))"`)
 - [ ] No references to deleted files: `js/translations.js`, `js/workspaces-translations.js`, `json/lang.json`, `js/magicurl.js`, `js/lan-sync.js`, `js/qrcode.js`
 - [ ] Documentation matches the code (README, `localnoteseditor/*.md`, `locales/README.md`, `WORKSPACES_README.md`, `cookies_banner_universal/README.md`)
@@ -30,10 +31,11 @@ Copy this file's unchecked items into the release PR. Items under **Baseline** d
 - [ ] Offline after the Service Worker installed; Online / Auto / Offline network modes
 
 **Vault / App Lock**
-- [ ] First run: master password setup is non-dismissable, ≥ 8 characters, acknowledgement checkbox required
+- [ ] First run: PIN setup needs the acknowledgement checkbox; **Start without a password** opens the app straight away and survives a reload without a prompt
+- [ ] Device mode → add a PIN (recovery phrase step shown, notes intact) → remove it again with the PIN / phrase; a wrong PIN changes nothing
 - [ ] Unlock with password, with access file, with recovery phrase; regenerating the phrase invalidates the old one
 - [ ] 5 wrong attempts → 60 s lock that survives a reload
-- [ ] Idle lock after 10 minutes; last remaining credential cannot be removed
+- [ ] Idle lock after the chosen timeout (default 10 min, "never" respected, none in device mode); last remaining credential cannot be removed
 - [ ] Existing pre-vault (plaintext) notes are migrated after the first credential is created
 
 **Notes / editor**

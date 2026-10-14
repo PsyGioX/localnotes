@@ -196,3 +196,226 @@
         padding: 4px calc(4px + env(safe-area-inset-bottom, 0px)) !important;
     }
 }
+
+/* =============================================================================
+   v1.12 — calmer chrome: compact header, one primary action, tidy "⋯" menu,
+   Calendar as a view segment, compact empty state.
+   Appended last on purpose: it refines the rules above without touching them.
+   ========================================================================= */
+
+/* ── Compact header: one slim row instead of a 100px banner ─────────────── */
+.info-app {
+    height: 56px;
+    gap: 12px;
+}
+.info-app .logo { width: 32px; height: 32px; }
+.info-app .name-app {
+    font-size: 1.4em;
+    margin: 0;
+    line-height: 1;
+}
+.info-app .beta-badge {
+    font-size: 0.6rem;
+    padding: 3px 7px;
+    letter-spacing: 0.1em;
+}
+
+/* ── Toolbar: [Add a note] [⋯] [search ........................] ─────────── */
+@media (min-width: 769px) {
+    .center_nav .sticky {
+        padding: 10px 20px;
+        align-items: center;
+    }
+    .center_nav .block_btn {
+        flex: 0 0 auto;
+        position: relative;
+    }
+    .center_nav #addNoteButton {
+        flex: 0 0 auto;
+        min-width: 168px;
+        padding: 0 22px;
+        font-weight: 700;
+    }
+    .center_nav .search-wrap {
+        flex: 1 1 auto;
+    }
+}
+
+/* Desktop: the secondary actions live in the same dropdown the phone layout
+   already uses (the toggle was previously hidden above 768px). */
+@media (min-width: 769px) {
+    .more-actions-toggle {
+        display: flex !important;
+        flex: 0 0 auto !important;
+        width: 48px;
+        height: 48px;
+        padding: 0 !important;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--button-border);
+        border-radius: 8px;
+        background: var(--button-bg);
+        color: var(--button-text);
+        font-size: 18px;
+        cursor: pointer;
+        transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .more-actions-toggle:hover { background: var(--button-hover); }
+    .more-actions-toggle:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 2px; }
+    .more-actions-toggle[aria-expanded="true"] {
+        background: rgba(174, 252, 110, 0.14);
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+    }
+    .more-actions-menu {
+        display: flex !important;
+        flex-direction: column;
+        gap: 2px;
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
+        min-width: 280px;
+        z-index: 30;
+        padding: 8px;
+        border-radius: 12px;
+        background: var(--modal-bg, var(--header-bg));
+        border: 1px solid var(--border-color);
+        box-shadow: 0 14px 36px rgba(0, 0, 0, 0.38);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-6px);
+        transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s;
+    }
+    .more-actions-menu.open {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
+    /* .block_btn clips overflow for its (mobile) scroll strip; without this
+       the open panel is cut off right below the toolbar row. */
+    .center_nav .block_btn,
+    .center_nav .sticky,
+    .center_nav {
+        overflow: visible !important;
+    }
+    .more-actions-toggle i { font-size: 20px; }
+    .more-actions-menu button {
+        flex: none !important;
+        width: 100% !important;
+        height: 42px !important;
+        justify-content: flex-start !important;
+        padding: 0 14px !important;
+        gap: 10px !important;
+        border: none !important;
+        border-radius: 8px !important;
+        background: transparent !important;
+        color: var(--button-text) !important;
+        font-family: inherit !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+    }
+    .more-actions-menu button:hover,
+    .more-actions-menu button:focus-visible {
+        background: var(--button-hover) !important;
+        outline: none;
+    }
+    /* Destructive action: last, red, and set apart from everything else. */
+    .more-actions-menu #clearAllButton {
+        order: 99;
+        position: relative;
+        margin-top: 9px;
+        color: #dc3545 !important;
+    }
+    .more-actions-menu #clearAllButton::before {
+        content: '';
+        position: absolute;
+        top: -5px;
+        left: 6px;
+        right: 6px;
+        height: 1px;
+        background: var(--border-color);
+    }
+    .more-actions-menu #clearAllButton:hover,
+    .more-actions-menu #clearAllButton:focus-visible {
+        background: rgba(220, 53, 69, 0.12) !important;
+    }
+}
+
+/* ── Calendar as a segment of the view switcher ─────────────────────────── */
+.btn_view_div #viewCalendarBtn {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    height: 42px !important;
+    border: none !important;
+    border-left: 1px solid var(--border-color) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: linear-gradient(135deg, #1a1a1a 0%, rgba(174, 252, 110, 0.08) 100%) !important;
+    color: var(--button-text, #e0e0e0) !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    cursor: pointer !important;
+}
+.btn_view_div #viewCalendarBtn:hover { background: rgba(174, 252, 110, 0.1) !important; }
+.btn_view_div.ln-collapsed #viewCalendarBtn { display: none !important; }
+@media (max-width: 700px) {
+    /* Phones already reach Calendar through the "⋯" menu; keep the bar short. */
+    .btn_view_div #viewCalendarBtn { display: none !important; }
+}
+
+/* ── Compact empty state (replaces the full-page welcome wall) ──────────── */
+.welcome-message .welcome-quick {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin: 20px 0 10px;
+}
+.welcome-message .welcome-quick-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 46px;
+    padding: 0 20px;
+    border-radius: 10px;
+    border: 1px solid var(--button-border);
+    background: var(--button-bg);
+    color: var(--button-text);
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+.welcome-message .welcome-quick-btn:hover { background: var(--button-hover); border-color: var(--primary-color); }
+.welcome-message .welcome-quick-btn:active { transform: scale(0.97); }
+.welcome-message .welcome-quick-btn.primary {
+    background: var(--primary-color);
+    border-color: transparent;
+    color: #000;
+}
+.welcome-message .welcome-quick-btn.primary:hover { filter: brightness(1.06); }
+.welcome-message .welcome-more { margin-top: 6px; }
+.welcome-message .welcome-more-summary {
+    cursor: pointer;
+    list-style: none;
+    text-align: center;
+    padding: 10px;
+    color: var(--text-secondary, #9a9a9a);
+    font-size: 14px;
+    user-select: none;
+}
+.welcome-message .welcome-more-summary::-webkit-details-marker { display: none; }
+.welcome-message .welcome-more-summary::before { content: '▸ '; }
+.welcome-message .welcome-more[open] .welcome-more-summary::before { content: '▾ '; }
+.welcome-message .welcome-more-summary:hover { color: var(--primary-color); }
+
+/* Slimmer workspace tab strip on desktop (the tabs themselves are unchanged) */
+@media (min-width: 769px) {
+    .workspace-tabs-wrapper { padding-top: 4px; }
+    .workspace-tab { min-height: 32px; padding: 5px 12px; }
+}

@@ -2,7 +2,7 @@
 
 ![Local Notes Screenshot](https://github.com/PsyGioX/localnotes/blob/main/sccc.png?raw=true)
 
-[![Version](https://img.shields.io/badge/Version-1.11.1-brightgreen.svg)](https://github.com/PsyGioX/localnotes/releases)
+[![Version](https://img.shields.io/badge/Version-1.12.0-brightgreen.svg)](https://github.com/PsyGioX/localnotes/releases)
 [![Security](https://img.shields.io/badge/Security-AES--256--GCM%20%2B%20HMAC--SHA--512-blue.svg)](https://github.com/PsyGioX/localnotes)
 [![DOMPurify](https://img.shields.io/badge/XSS-DOMPurify-red.svg)](https://github.com/cure53/DOMPurify)
 [![PWA](https://img.shields.io/badge/PWA-Enabled-purple.svg)](https://github.com/PsyGioX/localnotes)
@@ -46,7 +46,7 @@ Give everyone a **private, fast, multilingual notebook** that works like a nativ
 
 | Goal | What it means in practice |
 |------|---------------------------|
-| **Privacy by default** | Notes live in IndexedDB on your device, encrypted at rest under your master password. No backend, no analytics until consent, no cloud sync unless you export files yourself. |
+| **Privacy by default** | Notes live in IndexedDB on your device, encrypted at rest (optionally locked behind a password you choose). No backend, no analytics until consent, no cloud sync unless you export files yourself. |
 | **Security you can verify** | Open-source client-side encryption (AES-256-GCM, `.note` format v5), DOMPurify sanitization, strict CSP, domain-bound `.note` files. |
 | **Works everywhere** | PWA install, offline Service Worker cache, 12 UI languages, mobile keyboard handling, iOS safe-area support. |
 | **Lightweight & fast** | A custom, dependency-free editor (one script, no build step, cached by the Service Worker) instead of a heavy WYSIWYG bundle; crypto runs in a Web Worker so the UI stays responsive. |
@@ -64,7 +64,7 @@ Give everyone a **private, fast, multilingual notebook** that works like a nativ
 ### Key Features
 
 - **🔒 Max-2026 encryption** — AES-256-GCM + HMAC-SHA-512 + PBKDF2-SHA-512 (600k iterations) + domain binding
-- **🔐 Encrypted vault / App Lock** — notes are encrypted at rest with a random AES-256 data key wrapped by your master password; optional access file and 12-word recovery phrase; idle lock after 10 min; 5 wrong attempts lock input for 60 s
+- **🔐 Encrypted vault / App Lock** — notes are encrypted at rest with a random AES-256 data key wrapped by your optional password; optional access file and 12-word recovery phrase; configurable idle lock (default 10 min); 5 wrong attempts lock input for 60 s
 - **🛡️ DOMPurify XSS protection** — all note content sanitized before rendering
 - **🌍 12 languages** — full UI localization including all modals, buttons and error messages
 - **📱 PWA** — install as a native app on any device; safe update flow without reload loops
@@ -186,10 +186,10 @@ The editor class itself (`insertImage()`, `insertVideo()`, `destroy()`, options 
 
 `js/app-lock.js` is the unlock screen of the **encryption vault** — entering the right credential *is* how notes get decrypted, not a second check on top of them.
 
-- A **master password** (min. 8 characters) is mandatory: a non-dismissable setup screen appears on first run, and `AppLock.ensureUnlocked()` is awaited by the boot sequence before notes load.
+- A password is **optional**. The first-run screen offers *Start without a password* next to PIN / access file; `AppLock.ensureUnlocked()` is awaited by the boot sequence before notes load. Without a password the vault runs in **device mode** (slot `device`): notes are still encrypted at rest, but the data key is kept next to them in IndexedDB (`vaultDeviceKey`) and loaded automatically — this protects against copied files and backups, not against someone using your browser profile. A password can be added later (the same data key is wrapped by it, nothing is re-encrypted) or removed again (*No password* tab, confirmed with the current PIN / file / recovery phrase) from the lock settings. If the device key record goes missing, the app refuses to start rather than silently creating a new vault over existing notes.
 - Notes are encrypted at rest with a random AES-256 **data key**. The key is never stored as-is; it is wrapped once per unlock credential ("slot", each with its own PBKDF2-SHA-512 key, 600k iterations): `pin` (the password / PIN), `file` (optional access file) and `recovery` (optional 12-word phrase). Any enrolled slot unlocks the same notes.
 - The master password **cannot be reset**. The recovery phrase is shown once when generated and never stored; generating a new one invalidates the old one.
-- Idle timeout: 10 minutes. After 5 wrong attempts input is locked for 60 seconds (the counters are kept in `localStorage`, so a page reload does not reset them).
+- Idle timeout: configurable (1 / 5 / 10 / 30 / 60 minutes or never; default 10; stored in `localStorage`). Not applicable in device mode. After 5 wrong attempts input is locked for 60 seconds (the counters are kept in `localStorage`, so a page reload does not reset them).
 
 ```javascript
 AppLock.ensureUnlocked();  // shows setup / unlock screen if needed; resolves when the vault is open
@@ -606,7 +606,16 @@ Click the install icon in Chrome/Edge address bar and confirm.
 
 ## 🆕 Changelog
 
-### v1.11.1 (current)
+### v1.12.0 (current)
+- **🔓 Optional lock** — the first-run screen now has **Start without a password**: notes stay encrypted at rest and open automatically (vault *device mode*). A PIN / access file can be added later from the lock settings, and removed again (confirmed with the current PIN, file or recovery phrase). The toolbar button reads **Protect** while no password is set.
+- **⏱️ Configurable auto-lock** — choose 1 / 5 / 10 / 30 / 60 minutes or *never* (default stays 10 minutes).
+- **🛡️ Safety** — a missing device key never triggers a new empty vault; `verifyVaultCredential()` checks a credential without touching the live session.
+- **🧭 Calmer interface** — slim one-row header; the secondary actions (Import, Calendar, Quick Edit) now sit in the "⋯" menu on desktop too, with **Clear all notes** last, in red and set apart; Calendar joins Grid/List and Tasks in the view switcher; the empty state is a compact card with *Add a note / Import notes / Show instructions* and a collapsible "About" instead of a full-page wall of text.
+- **🐛 Onboarding tour** — the tour now actually opens the "⋯" menu for its Import / Calendar / Quick Edit steps (the Next button re-rendered the tooltip and the outside-click handler closed the menu immediately; this also affected phones).
+- **🌍 12 languages** — 16 new strings (883 keys per language)
+- **🧪 Tests** — `tests/` adds real-browser (Playwright/Chromium) tests for first run, device mode, adding / removing a password and the idle timeout, plus a locale check
+
+### v1.11.1
 - **🎨 Drawing pad — parameters for finished shapes.** With the **Move** tool, the option panel now edits the *selected* object (colour, size, fill, fill colour, line style, arrow heads, opacity); one undo step per edit
 - **✨ New drawing parameters** — separate **fill colour**, **line style** (solid / dashed / dotted), **arrow heads** (end / both ends), **opacity** (10–100 %, translucent objects are composited as a whole)
 - **✨ Resize handles** on the selected object; **Keep proportions** (or Shift) preserves the aspect ratio while resizing; lines and arrows snap to 45°, and *Keep proportions* now also applies to them while drawing
@@ -715,7 +724,7 @@ Export to `.note` file, then import at [localnotes-three.vercel.app](https://loc
 Add `locales/<lang>.json` and `locales/site/<lang>.json` with exactly the same keys as `en.json` (run `node scripts/verify-locales.js`), create a `[lang]/` folder with the HTML pages, and add the code to `supportedLanguages` in `js/translate.js` and to the list in `sw.js`.
 
 **How does App Lock work?**
-It is the unlock screen of the encryption vault. You create a master password (min. 8 characters) on first run; you can add an access file and a 12-word recovery phrase as extra ways in. The app locks on a new browser session and after 10 minutes idle; 5 wrong attempts block input for 60 seconds.
+It is the unlock screen of the encryption vault. On first run you can start without a password (notes are still encrypted, but open automatically) or set a PIN; a password can be added or removed later in the lock settings. You can add an access file and a 12-word recovery phrase as extra ways in. The app locks on a new browser session and after 10 minutes idle; 5 wrong attempts block input for 60 seconds.
 
 **I forgot my master password — can my notes be recovered?**
 Only with the recovery phrase (if you generated and saved one) or another enrolled unlock method such as the access file. Otherwise they are permanently unreadable — there is no server to reset from.
