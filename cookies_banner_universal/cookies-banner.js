@@ -273,13 +273,13 @@
         },
         theme: {
             primary: '#4CAF50',
-            secondary: '#2196F3',
+            secondary: '#1bb94b',
             background: '#ffffff',
             text: '#333333',
             border: '#e0e0e0',
             shadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
             borderRadius: '12px',
-            fontFamily: '"Golos Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+            fontFamily: '"Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
         }
     };
 
@@ -604,7 +604,7 @@
                 }
                 
                 .cookies-banner-btn-link:hover {
-                    color: #1976d2;
+                    color: #0da03c;
                 }
                 
                 .cookies-preferences {
@@ -777,7 +777,7 @@
                 }
                 
                 .cookies-details summary:hover {
-                    color: #1976d2;
+                    color: #0da03c;
                 }
                 
                 .cookies-list {

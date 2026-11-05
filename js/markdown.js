@@ -364,7 +364,8 @@ window.importNotesMarkdownAdvanced = async function(files) {
     btn.setAttribute('aria-label', mdLabel);
     btn.setAttribute('data-shortcut', 'Ctrl+M');
     btn.setAttribute('type','button');
-    btn.innerHTML = '<i class="bi bi-markdown"></i>';
+    btn.classList.add('lne-btn-lg');
+    btn.innerHTML = '<i class="bi bi-markdown"></i><span class="lne-lg-label">Markdown</span>';
     let _toggling = false;
     btn.addEventListener('touchend', e => {
       e.preventDefault(); // prevent ghost click on mobile
@@ -377,12 +378,17 @@ window.importNotesMarkdownAdvanced = async function(files) {
       if (_toggling) return; // already handled by touchend
       toggle();
     });
+    // Ribbon layout: the Markdown toggle lives in its own group on the "View" tab
     const rows = tb.querySelectorAll('.lne-toolbar-row');
-    const row = rows[rows.length - 1];
+    const row = tb.querySelector('.lne-toolbar-row[data-tab="view"]') || rows[rows.length - 1];
     if (row) {
       const sep = document.createElement('div'); sep.className = 'lne-sep';
       const grp = document.createElement('div'); grp.className = 'lne-grp';
-      grp.appendChild(btn); row.appendChild(sep); row.appendChild(grp);
+      const body = document.createElement('div'); body.className = 'lne-grp-body';
+      const line = document.createElement('div'); line.className = 'lne-line';
+      const lab = document.createElement('div'); lab.className = 'lne-grp-label'; lab.textContent = 'Markdown';
+      line.appendChild(btn); body.appendChild(line); grp.appendChild(body); grp.appendChild(lab);
+      row.appendChild(sep); row.appendChild(grp);
     }
   }
 

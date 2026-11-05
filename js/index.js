@@ -1755,7 +1755,7 @@ function fileToBase64(file) {
 // ============================================================================
 function showCustomAlert(title, message, type = 'info') {
     const iconMap = { info: 'bi-info-circle', success: 'bi-check-circle', warning: 'bi-exclamation-triangle', error: 'bi-x-circle' };
-    const colorMap = { info: '#007bff', success: '#28a745', warning: '#ffc107', error: '#dc3545' };
+    const colorMap = { info: '#12ae44', success: '#28a745', warning: '#ffc107', error: '#dc3545' };
     const alertModal = document.createElement('div');
     alertModal.className = 'modal';
     alertModal.id = 'customAlertModal';
@@ -1787,7 +1787,7 @@ function showCustomPrompt(title, message, defaultValue = '', onConfirm = null) {
     promptModal.id = 'customPromptModal';
     promptModal.innerHTML = `
         <div class="modal-content-error">
-            <h3 style="display:flex;align-items:center;gap:10px;color:#007bff;">
+            <h3 style="display:flex;align-items:center;gap:10px;color:#12ae44;">
                 <i class="bi bi-pencil-square" style="font-size:24px;" aria-hidden="true"></i><span id="_csp_title"></span>
             </h3>
             <p style="margin:15px 0;line-height:1.5;" id="_csp_msg"></p>
@@ -1797,7 +1797,7 @@ function showCustomPrompt(title, message, defaultValue = '', onConfirm = null) {
                 <button id="customPromptCancel" style="background:#6c757d;color:white;border:none;padding:10px 24px;border-radius:5px;cursor:pointer;font-size:15px;">
                     ${window.t ? window.t('cancel') : 'Cancel'}
                 </button>
-                <button id="customPromptOk" style="background:#007bff;color:white;border:none;padding:10px 24px;border-radius:5px;cursor:pointer;font-size:15px;">OK</button>
+                <button id="customPromptOk" style="background:#12ae44;color:white;border:none;padding:10px 24px;border-radius:5px;cursor:pointer;font-size:15px;">OK</button>
             </div>
         </div>`;
     document.body.appendChild(promptModal);
@@ -2165,7 +2165,7 @@ function openNoteSettings(noteId) {
     };
 
     const dateVal = meta.dueDate ? new Date(meta.dueDate).toISOString().slice(0, 16) : '';
-    const colorSwatches = ['', '#aefc6e', '#4ec9b0', '#c586c0', '#f1c40f', '#e74c3c', '#4a86e8', '#ff7eb3'].map(c =>
+    const colorSwatches = ['', '#aefc6e', '#4ec9b0', '#c586c0', '#f1c40f', '#e74c3c', '#2ac660', '#ff7eb3'].map(c =>
         `<button class="nsm-color-sw${meta.color === c ? ' active' : ''}" data-c="${c}" style="background:${c || 'transparent'}" title="${c || 'Default'}"></button>`
     ).join('');
 
@@ -3567,31 +3567,25 @@ function updateWelcomeTranslations() {
 // Russian, Ukrainian, Bulgarian, Serbian, Macedonian, Bosnian, Croatian, Slovak, Czech, Polish, Slovenian
 function transliterateAdvanced(text) {
     const map = {
-        // Russian / Ukrainian / Bulgarian / Macedonian / Serbian / Bosnian
+        // Cyrillic: Russian / Ukrainian / Bulgarian / Macedonian / Serbian / Bosnian
         'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'yo','ж':'zh','з':'z',
         'и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r',
         'с':'s','т':'t','у':'u','ф':'f','х':'h','ц':'ts','ч':'ch','ш':'sh','щ':'sch',
-        'ъ':'','ы':'y','ь':'','э':'e','ю':'yu','я':'ya',
-        // Ukrainian specific
+        'ъ':'a','ы':'y','ь':'','э':'e','ю':'yu','я':'ya',
+        // Ukrainian
         'і':'i','ї':'yi','є':'ye','ґ':'g',
-        // Bulgarian specific
-        'ь':'','ъ':'a',
         // Serbian / Macedonian Cyrillic
-        'ђ':'dj','ж':'zh','љ':'lj','њ':'nj','ћ':'c','џ':'dz','ѓ':'gj','ѕ':'dz','ѐ':'e',
-        'ј':'j','ќ':'kj','ѓ':'gj','ѐ':'e','ѣ':'e',
-        // Polish diacritics
-        'ą':'a','ć':'c','ę':'e','ł':'l','ń':'n','ó':'o','ś':'s','ź':'z','ż':'z',
-        // Czech / Slovak diacritics
-        'á':'a','č':'c','ď':'d','é':'e','ě':'e','í':'i','ň':'n','ř':'r','š':'s',
-        'ť':'t','ú':'u','ů':'u','ý':'y','ž':'z',
-        // Croatian / Bosnian / Serbian Latin
+        'ђ':'dj','љ':'lj','њ':'nj','ћ':'c','џ':'dz','ѓ':'gj','ѕ':'dz','ѐ':'e',
+        'ј':'j','ќ':'kj','ѣ':'e',
+        // Polish
+        'ą':'a','ę':'e','ł':'l','ń':'n','ó':'o','ś':'s','ź':'z','ż':'z',
+        // Czech / Slovak
+        'á':'a','ď':'d','é':'e','ě':'e','í':'i','ň':'n','ř':'r',
+        'ť':'t','ú':'u','ů':'u','ý':'y',
+        // Croatian / Bosnian / Serbian Latin / Slovenian
         'đ':'d','ć':'c','č':'c','š':'s','ž':'z',
-        // Slovenian
-        // (same as Croatian above)
         // German / other common
         'ä':'ae','ö':'oe','ü':'ue','ß':'ss',
-        // Macedonian specific
-        'ѓ':'gj','ѕ':'dz','ј':'j','љ':'lj','њ':'nj','ќ':'kj','џ':'dz',
     };
     return text.toLowerCase().split('').map(c => map[c] !== undefined ? map[c] : c).join('');
 }
@@ -4755,7 +4749,7 @@ async function importNotesMarkdown(files) {
     if (typeof window.importNotesMarkdownAdvanced === 'function') {
         return window.importNotesMarkdownAdvanced(files);
     }
-    let imported = 0;
+    let imported = 0, errors = 0;
     for (const file of files) {
         try {
             const text = await file.text();

@@ -55,12 +55,12 @@
 }
 @media (hover: hover) {
     .ln-scroll-top:hover {
-        color: var(--primary-color, #28a745);
-        border-color: var(--primary-color, #28a745);
+        color: var(--primary-color, #098b38);
+        border-color: var(--primary-color, #098b38);
     }
 }
 .ln-scroll-top:active { transform: scale(0.92); box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3); }
-.ln-scroll-top:focus-visible { outline: 2px solid var(--primary-color, #28a745); outline-offset: 3px; }
+.ln-scroll-top:focus-visible { outline: 2px solid var(--primary-color, #098b38); outline-offset: 3px; }
 
 /* Phones / small tablets: the right edge already carries a stack —
        footer bar → "Add note" FAB (bottom 88px, 56px) → sidebar tab (+12px gap, 44px).

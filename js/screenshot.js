@@ -34,7 +34,7 @@
         } catch { return ''; }
     }
 
-    const CL_PRIO = { high: '#f87171', mid: '#fbbf24', low: '#60a5fa' };
+    const CL_PRIO = { high: '#f87171', mid: '#fbbf24', low: '#47d877' };
     const CL_CB_INDENT = 28;
 
     /** Only accept explicit #rgb / #rrggbb (ignore garbage attrs). */
@@ -312,6 +312,78 @@
         return segs;
     }
 
+    // ── Pre-layout: wrap table cells & checklist rows so nothing overflows ────
+    function wrapText(ctx, text, maxW) {
+        const out = [];
+        const paras = String(text || '').split(/\n/);
+        for (const para of paras) {
+            let line = '';
+            for (const word of para.split(/\s+/).filter(Boolean)) {
+                let w = word;
+                while (ctx.measureText(w).width > maxW && w.length > 1) {
+                    // hard-break over-long tokens by character
+                    let k = w.length;
+                    while (k > 1 && ctx.measureText(w.slice(0, k)).width > maxW) k--;
+                    if (line) { out.push(line); line = ''; }
+                    out.push(w.slice(0, k)); w = w.slice(k);
+                }
+                const cand = line ? line + ' ' + w : w;
+                if (ctx.measureText(cand).width > maxW && line) { out.push(line); line = w; }
+                else line = cand;
+            }
+            out.push(line);
+        }
+        return out.length ? out : [''];
+    }
+
+    function layoutBlocks(segs, ctx, contentW, base, font, lineH, pad) {
+        for (const seg of segs) {
+            if (seg.kind !== 'table') continue;
+            const cols = Math.max(1, ...seg.rows.map(r => r.length));
+            const fs = Math.max(14, base - 3), lh = Math.round(fs * 1.45);
+            // column widths proportional to the longest content, min share so nothing collapses
+            const weights = [];
+            for (let c = 0; c < cols; c++) {
+                let m = 0;
+                for (const r of seg.rows) {
+                    const cell = r[c]; if (!cell) continue;
+                    ctx.font = `${cell.bold ? '700' : '400'} ${fs}px ${font}`;
+                    m = Math.max(m, Math.min(ctx.measureText(cell.text).width + pad * 2, contentW));
+                }
+                weights.push(Math.max(m, 48));
+            }
+            // never narrower than the longest single word (so words don't split mid-way)
+            const minW = [];
+            for (let c = 0; c < cols; c++) {
+                let m = 0;
+                for (const r of seg.rows) {
+                    const cell = r[c]; if (!cell) continue;
+                    ctx.font = `${cell.bold ? '700' : '400'} ${fs}px ${font}`;
+                    for (const w of String(cell.text).split(/\s+/)) m = Math.max(m, ctx.measureText(w).width);
+                }
+                minW.push(Math.ceil(m + pad * 2 + 2));
+            }
+            const sum = weights.reduce((a, b) => a + b, 0);
+            let colW = weights.map((w, c) => Math.max(Math.floor(contentW * 0.12), Math.min(minW[c], Math.floor(contentW * 0.45)), Math.floor(w / sum * contentW)));
+            let over = colW.reduce((a, b) => a + b, 0) - contentW;
+            while (over > 0) { const i = colW.indexOf(Math.max(...colW)); const d = Math.min(over, Math.max(1, colW[i] - 40)); colW[i] -= d; over -= d; if (d <= 1 && colW[i] <= 40) break; }
+            const diff = contentW - colW.reduce((a, b) => a + b, 0);
+            colW[colW.indexOf(Math.max(...colW))] += diff;
+            const lines = [], rowH = [];
+            seg.rows.forEach((r, ri) => {
+                lines[ri] = []; let mx = 1;
+                for (let c = 0; c < cols; c++) {
+                    const cell = r[c] || { text: '', bold: false };
+                    ctx.font = `${(ri === 0 && cell.bold) || cell.bold ? '700' : '400'} ${fs}px ${font}`;
+                    lines[ri][c] = wrapText(ctx, cell.text, colW[c] - pad * 2);
+                    mx = Math.max(mx, lines[ri][c].length);
+                }
+                rowH[ri] = mx * lh + pad * 2;
+            });
+            seg.layout = { cols, colW, lines, rowH, fs, lh, total: rowH.reduce((a, b) => a + b, 0) };
+        }
+    }
+
     // ── Height pre-pass ───────────────────────────────────────────────────────
     function calcContentHeight(segs, lineH, cellH) {
         let h = 0;
@@ -321,7 +393,7 @@
             if (s.kind === 'br')     { h += lineH * 0.6; continue; }
             if (s.kind === 'checklistItem') { h += lineH; continue; }
             if (s.kind === 'table') {
-                h += s.rows.length * cellH + 8;
+                h += (s.layout ? s.layout.total : s.rows.length * cellH) + 8;
                 continue;
             }
             // text
@@ -334,31 +406,38 @@
     // ── Main render ───────────────────────────────────────────────────────────
     async function renderNoteToCanvas(note, opts = {}) {
         const SCALE     = 2;
-        const CARD_W    = opts.width || 1080;
-        const PAD       = 64;
-        const FONT      = 'Golos Text, system-ui, sans-serif';
+        const narrow    = window.innerWidth <= 600;
+        const CARD_W    = opts.width || (narrow ? 720 : 1000);
+        const small     = CARD_W < 800;
+        const PAD       = small ? 36 : 56;
+        const FONT      = '"Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif';
         const dark      = isDark();
         const watermark = opts.watermark !== undefined ? opts.watermark : 'Local Notes';
 
-        const BG       = dark ? '#0d0d0d' : '#f4f5f7';
-        const SURFACE  = dark ? '#161616' : '#ffffff';
-        const TEXT     = dark ? '#f0f0f0' : '#111111';
-        const SUBTEXT  = dark ? '#c0c0c0' : '#3a4250';
-        const ACCENT   = note.color || (dark ? '#aefc6e' : '#28a745');
-        const BORDER   = dark ? '#2a2a2a' : '#e0e3e8';
-        const CODE_BG  = dark ? '#222'    : '#f0f0f0';
-        const QUOTE_BG = dark ? 'rgba(174,252,110,0.07)' : 'rgba(40,167,69,0.07)';
-        const TBL_HEAD = dark ? '#1e1e1e' : '#f0f2f5';
-        const TBL_BDR  = dark ? '#333'    : '#d0d4da';
+        // Office 2024 palette
+        const BG       = dark ? '#1f1f1f' : '#f3f2f1';
+        const SURFACE  = dark ? '#292929' : '#ffffff';
+        const TEXT     = dark ? '#f0f0f0' : '#242424';
+        const HEADING  = dark ? '#74e297' : '#08471a';
+        const SUBTEXT  = dark ? '#d6d6d6' : '#424242';
+        const MUTED    = dark ? '#a6a6a6' : '#616161';
+        const ACCENT   = dark ? '#43d774' : '#098b38';
+        const BAR      = note.color || (dark ? '#18512b' : '#098b38');
+        const BORDER   = dark ? '#3d3d3d' : '#e1dfdd';
+        const CODE_BG  = dark ? '#1f1f1f' : '#f3f2f1';
+        const QUOTE_BG = dark ? 'rgba(67,215,116,0.12)' : 'rgba(9,139,56,0.08)';
+        const TBL_HEAD = dark ? '#23412d' : '#e3faeb';
+        const TBL_BDR  = dark ? '#4a4a4a' : '#c8c6c4';
 
-        const BASE     = 22;
-        const LINE_H   = Math.round(BASE * 1.75);  // line-box height (top-based)
-        const CELL_H   = Math.round(BASE * 2.0);
-        const META_SZ  = 17;
-        const HEADER_H = 80;
-        const FOOTER_H = 72;
-        const MARGIN   = 40;
-        const CONTENT_W = CARD_W - PAD * 2;
+        const BASE     = small ? 21 : 22;
+        const LINE_H   = Math.round(BASE * 1.7);
+        const CELL_PAD = 10;
+        const META_SZ  = 16;
+        const BAR_H    = 64;      // blue title bar
+        const HEADER_H = 0;
+        const FOOTER_H = 44;      // blue status bar
+        const MARGIN   = small ? 20 : 32;
+        const CONTENT_W = CARD_W - MARGIN * 2 - PAD * 2;
 
         // Parse
         const parser = document.createElement('div');
@@ -373,81 +452,63 @@
         const segs = domToSegments(parser, mctx, CONTENT_W, BASE, FONT);
         document.body.removeChild(parser);
 
+        const CELL_H = LINE_H;
+        layoutBlocks(segs, mctx, CONTENT_W, BASE, FONT, LINE_H, CELL_PAD);
         const contentH = calcContentHeight(segs, LINE_H, CELL_H);
         // Divider gap: 16px above line + 24px below line before first text top
-        const DIV_GAP  = 40;
-        const META_H   = 56;
-        const TOTAL_H  = MARGIN + PAD + HEADER_H + DIV_GAP + contentH + META_H + FOOTER_H + PAD + MARGIN;
+        const DIV_GAP  = 36;
+        const META_H   = 0;
+        const TOTAL_H  = MARGIN + BAR_H + PAD * 0.75 + contentH + DIV_GAP + FOOTER_H + MARGIN + 12;
 
         const canvas = document.createElement('canvas');
         canvas.width  = CARD_W * SCALE;
-        canvas.height = Math.max(TOTAL_H, 480) * SCALE;
+        canvas.height = Math.ceil(Math.max(TOTAL_H, 420) * SCALE);
         const ctx = canvas.getContext('2d');
         ctx.scale(SCALE, SCALE);
         const CH = canvas.height / SCALE;
 
-        // Outer bg
+        // Canvas
         ctx.fillStyle = BG;
         ctx.fillRect(0, 0, CARD_W, CH);
-        const bgG = ctx.createLinearGradient(0, 0, CARD_W, CH);
-        bgG.addColorStop(0, dark ? 'rgba(174,252,110,0.03)' : 'rgba(40,167,69,0.04)');
-        bgG.addColorStop(1, 'transparent');
-        ctx.fillStyle = bgG; ctx.fillRect(0, 0, CARD_W, CH);
 
-        // Card
+        // Paper sheet
         const cX = MARGIN, cY = MARGIN, cW = CARD_W - MARGIN * 2, cH = CH - MARGIN * 2;
-        ctx.fillStyle = dark ? 'rgba(0,0,0,0.55)' : 'rgba(0,0,0,0.07)';
-        ctx.fillRect(cX + 4, cY + 4, cW, cH);
+        ctx.fillStyle = dark ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.12)';
+        ctx.fillRect(cX + 1, cY + 3, cW, cH);
         ctx.fillStyle = SURFACE; ctx.fillRect(cX, cY, cW, cH);
-        ctx.strokeStyle = BORDER; ctx.lineWidth = 1; ctx.strokeRect(cX, cY, cW, cH);
-        ctx.fillStyle = ACCENT; ctx.fillRect(cX, cY, 5, cH);
-        const tG = ctx.createLinearGradient(cX, 0, cX + cW, 0);
-        tG.addColorStop(0, ACCENT);
-        tG.addColorStop(0.5, dark ? 'rgba(174,252,110,0.25)' : 'rgba(40,167,69,0.25)');
-        tG.addColorStop(1, 'transparent');
-        ctx.fillStyle = tG; ctx.fillRect(cX, cY, cW, 3);
+        ctx.strokeStyle = BORDER; ctx.lineWidth = 1; ctx.strokeRect(cX + 0.5, cY + 0.5, cW - 1, cH - 1);
 
-        // Header
+        // Title bar (always white text on blue)
+        ctx.fillStyle = BAR; ctx.fillRect(cX, cY, cW, BAR_H);
         const conX = cX + PAD;
-        let y = cY + PAD;  // y = TOP of current element
-
-        const lR = 22, lX = conX + lR, lY = y + lR;
-        ctx.beginPath(); ctx.arc(lX, lY, lR, 0, Math.PI * 2);
-        ctx.fillStyle = ACCENT; ctx.fill();
-        ctx.fillStyle = dark ? '#000' : '#fff';
-        ctx.font = `700 16px ${FONT}`;
+        const rightEdge = cX + cW - PAD;
+        const tile = 32, tileY = cY + (BAR_H - tile) / 2;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(conX, tileY, tile, tile);
+        ctx.fillStyle = '#098b38';
+        ctx.font = `700 15px ${FONT}`;
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText('LN', lX, lY);
-        ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-        ctx.fillStyle = TEXT; ctx.font = `600 22px ${FONT}`;
-        ctx.fillText('Local Notes', conX + lR * 2 + 14, y + lR + 7);
-
+        ctx.fillText('LN', conX + tile / 2, tileY + tile / 2 + 1);
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#ffffff'; ctx.font = `600 20px ${FONT}`;
+        ctx.fillText('Local Notes', conX + tile + 14, cY + BAR_H / 2 + 1);
         if (note.pinned) {
-            const pl = '📌 Pinned';
-            ctx.font = `500 15px ${FONT}`;
-            const pW = ctx.measureText(pl).width + 20;
-            const pX = cX + cW - PAD - pW, pY = y + 6;
-            ctx.fillStyle = dark ? 'rgba(174,252,110,0.12)' : 'rgba(40,167,69,0.1)';
-            ctx.fillRect(pX, pY, pW, 28);
-            ctx.strokeStyle = ACCENT; ctx.lineWidth = 1; ctx.strokeRect(pX, pY, pW, 28);
-            ctx.fillStyle = ACCENT;
-            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.fillText(pl, pX + pW / 2, pY + 14);
-            ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+            const pl = (window.t && window.t('pinned') !== 'pinned' && window.t('pinned')) || 'Pinned';
+            ctx.font = `600 14px ${FONT}`;
+            const pW = ctx.measureText(pl).width + 22;
+            const pX = rightEdge - pW, pY = cY + (BAR_H - 28) / 2;
+            ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 1;
+            ctx.strokeRect(pX + 0.5, pY + 0.5, pW - 1, 27);
+            ctx.fillStyle = '#ffffff'; ctx.textAlign = 'center';
+            ctx.fillText(pl, pX + pW / 2, pY + 14.5);
+            ctx.textAlign = 'left';
         }
-        y += HEADER_H;
+        ctx.textBaseline = 'alphabetic';
 
-        // Divider — 16px gap above, draw line, 24px gap below
-        y += 16;
-        const dG = ctx.createLinearGradient(conX, 0, cX + cW - PAD, 0);
-        dG.addColorStop(0, ACCENT); dG.addColorStop(0.3, BORDER); dG.addColorStop(1, 'transparent');
-        ctx.strokeStyle = dG; ctx.lineWidth = 1.5;
-        ctx.beginPath(); ctx.moveTo(conX, y); ctx.lineTo(cX + cW - PAD, y); ctx.stroke();
-        y += 24;
+        let y = cY + BAR_H + Math.round(PAD * 0.75);  // y = TOP of current element
 
         // ── Body segments — y is always TOP of line box ───────────────────────
-        const rightEdge = cX + cW - PAD; // right boundary of content area
-        const bodyClipBottom = cY + cH - FOOTER_H;
+        const bodyClipBottom = cY + cH - FOOTER_H - 8;
         ctx.save();
         ctx.beginPath();
         ctx.rect(conX, y, rightEdge - conX, Math.max(0, bodyClipBottom - y));
@@ -456,7 +517,7 @@
         for (const seg of segs) {
             if (seg.kind === 'hr') {
                 ctx.strokeStyle = BORDER; ctx.lineWidth = 1;
-                ctx.beginPath(); ctx.moveTo(conX, y + 12); ctx.lineTo(rightEdge, y + 12); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(conX, y + 12.5); ctx.lineTo(rightEdge, y + 12); ctx.stroke();
                 y += 24; continue;
             }
             if (seg.kind === 'spacer') { y += Math.round(LINE_H * 0.45); continue; }
@@ -483,7 +544,7 @@
                     ctx.fillStyle = hexToRgba(rowColor, dark ? 0.06 : 0.08);
                     ctx.fillRect(conX, y + 1, rightEdge - conX, lh - 2);
                 } else if (seg.legacy) {
-                    ctx.fillStyle = dark ? 'rgba(174,252,110,0.05)' : 'rgba(40,167,69,0.05)';
+                    ctx.fillStyle = dark ? 'rgba(88,220,131,0.05)' : 'rgba(9,139,56,0.05)';
                     ctx.fillRect(conX, y + 1, rightEdge - conX, lh - 2);
                 }
 
@@ -492,7 +553,7 @@
                     if (seg.checked) {
                         ctx.fillStyle = cbCol;
                         ctx.fillRect(cbX, cbY, CB, CB);
-                        ctx.strokeStyle = dark ? '#000' : '#fff';
+                        ctx.strokeStyle = '#fff';
                         ctx.lineWidth = 2;
                         ctx.beginPath();
                         ctx.moveTo(cbX + 4, cbY + 9);
@@ -508,19 +569,16 @@
 
                 ctx.font = `400 ${fSize}px ${FONT}`;
                 ctx.textBaseline = 'alphabetic';
-                ctx.fillStyle = seg.checked
-                    ? (dark ? 'rgba(240,240,240,0.42)' : 'rgba(58,66,80,0.45)')
-                    : SUBTEXT;
+                ctx.fillStyle = seg.checked ? MUTED : SUBTEXT;
                 ctx.fillText(seg.text, textX, baseline);
 
                 if (seg.checked) {
-                    const tw = ctx.measureText(seg.text).width;
-                    const strikeCol = seg.color || ACCENT;
-                    ctx.strokeStyle = hexToRgba(strikeCol, 0.45);
+                    const tw = Math.min(ctx.measureText(seg.text).width, rightEdge - textX);
+                    ctx.strokeStyle = MUTED;
                     ctx.lineWidth = 1.5;
                     ctx.beginPath();
                     ctx.moveTo(textX, baseline - fSize * 0.35);
-                    ctx.lineTo(textX + Math.min(tw, rightEdge - textX), baseline - fSize * 0.35);
+                    ctx.lineTo(textX + tw, baseline - fSize * 0.35);
                     ctx.stroke();
                 }
 
@@ -546,53 +604,33 @@
                 continue;
             }
 
-            // ── Table ─────────────────────────────────────────────────────────
+            // ── Table (wrapped cells, row heights from layoutBlocks) ──────────
             if (seg.kind === 'table') {
-                const cols   = Math.max(...seg.rows.map(r => r.length));
-                if (cols === 0) continue;
-                const tW     = rightEdge - conX;
-                const colW   = Math.floor(tW / cols);
-                const tPad   = 10;
-
+                const L = seg.layout; if (!L) continue;
+                const tW = rightEdge - conX;
+                let rowY = y;
                 for (let ri = 0; ri < seg.rows.length; ri++) {
-                    const row   = seg.rows[ri];
+                    const row = seg.rows[ri], rh = L.rowH[ri];
                     const isHdr = ri === 0 && row.some(c => c.bold);
-                    const rowY  = y + ri * CELL_H;
-
-                    // Row background
-                    ctx.fillStyle = isHdr ? TBL_HEAD : (ri % 2 === 0 ? SURFACE : (dark ? '#1a1a1a' : '#fafafa'));
-                    ctx.fillRect(conX, rowY, tW, CELL_H);
-
-                    // Row border
-                    ctx.strokeStyle = TBL_BDR; ctx.lineWidth = 1;
-                    ctx.strokeRect(conX, rowY, tW, CELL_H);
-
-                    for (let ci = 0; ci < cols; ci++) {
-                        const cell  = row[ci] || { text: '', bold: false };
-                        const cellX = conX + ci * colW;
-
-                        // Cell right border
-                        if (ci < cols - 1) {
-                            ctx.strokeStyle = TBL_BDR; ctx.lineWidth = 1;
-                            ctx.beginPath();
-                            ctx.moveTo(cellX + colW, rowY);
-                            ctx.lineTo(cellX + colW, rowY + CELL_H);
-                            ctx.stroke();
-                        }
-
-                        // Cell text — clip to cell width
-                        ctx.save();
-                        ctx.rect(cellX + tPad, rowY, colW - tPad * 2, CELL_H);
-                        ctx.clip();
-                        ctx.fillStyle = isHdr ? TEXT : SUBTEXT;
-                        ctx.font = `${isHdr || cell.bold ? '700' : '400'} ${BASE - 2}px ${FONT}`;
-                        ctx.textBaseline = 'middle';
-                        ctx.fillText(cell.text, cellX + tPad, rowY + CELL_H / 2);
+                    ctx.fillStyle = isHdr ? TBL_HEAD : SURFACE;
+                    ctx.fillRect(conX, rowY, tW, rh);
+                    let cx = conX;
+                    for (let ci = 0; ci < L.cols; ci++) {
+                        const cell = row[ci] || { text: '', bold: false };
+                        const lines = L.lines[ri][ci] || [];
+                        ctx.strokeStyle = TBL_BDR; ctx.lineWidth = 1;
+                        ctx.strokeRect(cx + 0.5, rowY + 0.5, L.colW[ci] - 1, rh - 1);
+                        ctx.fillStyle = isHdr ? HEADING : SUBTEXT;
+                        ctx.font = `${isHdr || cell.bold ? '700' : '400'} ${L.fs}px ${FONT}`;
                         ctx.textBaseline = 'alphabetic';
-                        ctx.restore();
+                        lines.forEach((ln, li) => {
+                            ctx.fillText(ln, cx + CELL_PAD, rowY + CELL_PAD + li * L.lh + Math.round(L.fs * 0.85) + 2);
+                        });
+                        cx += L.colW[ci];
                     }
+                    rowY += rh;
                 }
-                y += seg.rows.length * CELL_H + 8;
+                y += L.total + 8;
                 continue;
             }
 
@@ -638,9 +676,9 @@
             ctx.font = `${fs} ${fw} ${fSize}px ${ff}`;
             ctx.textBaseline = 'alphabetic';
 
-            if      (seg.heading)  ctx.fillStyle = TEXT;
-            else if (seg.code)     ctx.fillStyle = dark ? '#aefc6e' : '#28a745';
-            else if (seg.quote)    ctx.fillStyle = dark ? '#d8d8d8' : '#333';
+            if      (seg.heading)  ctx.fillStyle = HEADING;
+            else if (seg.code)     ctx.fillStyle = dark ? '#74e297' : '#098b38';
+            else if (seg.quote)    ctx.fillStyle = SUBTEXT;
             else                   ctx.fillStyle = SUBTEXT;
 
             ctx.fillText(seg.text, drawX, baseline);
@@ -669,33 +707,19 @@
 
         ctx.restore();
 
-        y += 20;
-
-        // Meta date
-        const dateStr = fmtDate(note.lastModified || note.creationTime);
-        if (dateStr) {
-            ctx.fillStyle = dark ? 'rgba(174,252,110,0.65)' : 'rgba(40,167,69,0.75)';
-            ctx.font = `500 ${META_SZ}px ${FONT}`;
-            ctx.textBaseline = 'top';
-            ctx.fillText('📅 ' + dateStr, conX, y);
-            ctx.textBaseline = 'alphabetic';
-        }
-        y += META_H;
-
-        // Footer
+        // Status bar (blue, white text)
         const fY = cY + cH - FOOTER_H;
-        ctx.fillStyle = dark ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.03)';
-        ctx.fillRect(cX, fY, cW, FOOTER_H);
-        ctx.strokeStyle = BORDER; ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(cX + 5, fY); ctx.lineTo(cX + cW, fY); ctx.stroke();
-        ctx.beginPath(); ctx.arc(conX + 6, fY + FOOTER_H / 2, 5, 0, Math.PI * 2);
-        ctx.fillStyle = ACCENT; ctx.fill();
-        ctx.fillStyle = SUBTEXT; ctx.font = `600 ${META_SZ}px ${FONT}`;
-        ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-        ctx.fillText(watermark || 'Local Notes', conX + 20, fY + FOOTER_H / 2);
-        ctx.fillStyle = ACCENT; ctx.font = `500 ${Math.round(META_SZ * 0.88)}px ${FONT}`;
+        ctx.fillStyle = BAR; ctx.fillRect(cX, fY, cW, FOOTER_H);
+        ctx.fillStyle = '#ffffff'; ctx.font = `500 ${META_SZ}px ${FONT}`;
+        ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+        const dateStr = fmtDate(note.lastModified || note.creationTime);
+        const words = segs.reduce((n, g) => n + (g.text ? g.text.split(/\s+/).filter(Boolean).length : 0), 0);
+        const wl = (window.t && window.t('words') !== 'words' && window.t('words')) || 'Words';
+        const left = [dateStr, words ? `${wl}: ${words}` : ''].filter(Boolean).join('   ·   ');
+        ctx.fillText(left, conX, fY + FOOTER_H / 2 + 1);
         ctx.textAlign = 'right';
-        ctx.fillText('localnotes-three.vercel.app', cX + cW - PAD, fY + FOOTER_H / 2);
+        const rtxt = small ? (watermark || 'Local Notes') : (watermark || 'Local Notes') + ' · localnotes-three.vercel.app';
+        ctx.fillText(rtxt, rightEdge, fY + FOOTER_H / 2 + 1);
         ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
 
         return canvas.toDataURL('image/png');
@@ -787,8 +811,8 @@
                 || 'Generating screenshot…';
         }
         el.innerHTML = `
-            <div style="width:44px;height:44px;border:4px solid rgba(174,252,110,0.25);
-                border-top:4px solid #aefc6e;border-radius:50%;
+            <div style="width:44px;height:44px;border:4px solid rgba(88,220,131,0.25);
+                border-top:4px solid #58dc83;border-radius:50%;
                 animation:ln-spin 0.75s linear infinite;"></div>
             <span style="font-size:15px;opacity:0.85;">${genText}</span>
             <style>@keyframes ln-spin{to{transform:rotate(360deg)}}</style>`;

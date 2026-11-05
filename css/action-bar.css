@@ -84,8 +84,8 @@
     justify-content: center !important;
     gap: 8px !important;
     cursor: pointer !important;
-    background: linear-gradient(135deg, #1a1a1a 0%, rgba(174, 252, 110, 0.08) 100%) !important;
-    border-color: rgba(174, 252, 110, 0.4) !important;
+    background: linear-gradient(135deg, #1a1a1a 0%, rgba(88,220,131, 0.08) 100%) !important;
+    border-color: rgba(88,220,131, 0.4) !important;
 }
 .btn_view_div #toggleTaskBoardButton,
 .btn_view_div #appLockBtn,
@@ -105,14 +105,14 @@
 .btn_view_div #appLockBtn:hover,
 .btn_view_div #graphViewBtn:hover,
 .btn_view_div #siteExportBtn:hover {
-    background: rgba(174, 252, 110, 0.1) !important;
+    background: rgba(88,220,131, 0.1) !important;
     transform: none !important;
 }
 .btn_view_div #toggleTaskBoardButton.active {
-    background: rgba(174, 252, 110, 0.16) !important;
+    background: rgba(88,220,131, 0.16) !important;
 }
 .btn_view_div #toggleViewButton::before { display: none !important; }
-.btn_view_div #appLockBtn.ln-lock-active { color: var(--primary-color, #aefc6e) !important; }
+.btn_view_div #appLockBtn.ln-lock-active { color: var(--primary-color, #58dc83) !important; }
 
 /* Sits right under the sticky header with actual breathing room, instead
    of being jammed against it. */
@@ -138,7 +138,7 @@
     transition: background 0.2s ease, transform 0.25s ease !important;
 }
 .btn_view_div .ln-actionbar-collapse:hover {
-    background: rgba(174, 252, 110, 0.1) !important;
+    background: rgba(88,220,131, 0.1) !important;
 }
 .btn_view_div.ln-collapsed .ln-actionbar-collapse {
     transform: rotate(180deg) !important;
@@ -263,7 +263,7 @@
     .more-actions-toggle:hover { background: var(--button-hover); }
     .more-actions-toggle:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 2px; }
     .more-actions-toggle[aria-expanded="true"] {
-        background: rgba(174, 252, 110, 0.14);
+        background: rgba(88,220,131, 0.14);
         border-color: var(--primary-color);
         color: var(--primary-color);
     }
@@ -350,7 +350,7 @@
     border-left: 1px solid var(--border-color) !important;
     border-radius: 0 !important;
     box-shadow: none !important;
-    background: linear-gradient(135deg, #1a1a1a 0%, rgba(174, 252, 110, 0.08) 100%) !important;
+    background: linear-gradient(135deg, #1a1a1a 0%, rgba(88,220,131, 0.08) 100%) !important;
     color: var(--button-text, #e0e0e0) !important;
     font-size: 14px !important;
     font-weight: 600 !important;
@@ -360,7 +360,7 @@
     gap: 8px !important;
     cursor: pointer !important;
 }
-.btn_view_div #viewCalendarBtn:hover { background: rgba(174, 252, 110, 0.1) !important; }
+.btn_view_div #viewCalendarBtn:hover { background: rgba(88,220,131, 0.1) !important; }
 .btn_view_div.ln-collapsed #viewCalendarBtn { display: none !important; }
 @media (max-width: 700px) {
     /* Phones already reach Calendar through the "⋯" menu; keep the bar short. */

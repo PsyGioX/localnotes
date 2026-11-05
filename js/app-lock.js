@@ -619,7 +619,7 @@
             generateAndDownloadAccessFile();
             const hint = overlay.querySelector('.ln-setup-hint-generate');
             if (hint) {
-                hint.style.color = 'var(--primary-color, #aefc6e)';
+                hint.style.color = 'var(--primary-color, #58dc83)';
                 hint.innerHTML = `<i class="bi bi-check-circle-fill"></i> ${tr('lockGenerateDownloaded')}`;
             }
         });
@@ -949,7 +949,7 @@
         overlay.querySelector('#ln-lss-generate-file')?.addEventListener('click', () => {
             generateAndDownloadAccessFile();
             const hint = overlay.querySelector('.ln-lss-hint-generate');
-            if (hint) { hint.style.color = 'var(--primary-color, #aefc6e)'; hint.innerHTML = `<i class="bi bi-check-circle-fill"></i> ${tr('lockGenerateDownloaded')}`; }
+            if (hint) { hint.style.color = 'var(--primary-color, #58dc83)'; hint.innerHTML = `<i class="bi bi-check-circle-fill"></i> ${tr('lockGenerateDownloaded')}`; }
         });
 
         overlay.querySelector('#ln-lss-idle')?.addEventListener('change', e => {

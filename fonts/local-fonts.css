@@ -1,10 +1,2 @@
-/* Локальные шрифты — только используемые */
-
-/* Golos Text — основной шрифт интерфейса */
-@import url('./golos_web/golostext.css');
-
-/* Intro — шрифт логотипа */
-@import url('./intro/intro.css');
-
-/* Lekton Nerd Font Mono — моноширинный для кода */
+/* Local fonts — only what is actually used (code blocks). UI uses the system Segoe UI stack. */
 @import url('./lekton-nerd-font-mono/lekton-nerd-font-mono.css');

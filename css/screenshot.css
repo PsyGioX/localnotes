@@ -99,7 +99,7 @@
     position: absolute;
     top: 0; left: 0; right: 0;
     height: 3px;
-    background: var(--gradient-primary, linear-gradient(135deg, #aefc6e, #9ee85d));
+    background: var(--gradient-primary, linear-gradient(135deg, #58dc83, #37d56b));
     border-radius: 20px 20px 0 0;
 }
 
@@ -114,7 +114,7 @@
 .ln-screenshot-title {
     font-size: 1.05rem;
     font-weight: 600;
-    color: var(--primary-color, #aefc6e);
+    color: var(--primary-color, #58dc83);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -147,17 +147,17 @@
     align-items: center;
     gap: 8px;
     font-size: 13px;
-    color: var(--primary-color, #aefc6e);
-    background: rgba(174, 252, 110, 0.08);
-    border: 1px solid rgba(174, 252, 110, 0.2);
+    color: var(--primary-color, #58dc83);
+    background: rgba(88,220,131, 0.08);
+    border: 1px solid rgba(88,220,131, 0.2);
     border-radius: 8px;
     padding: 8px 12px;
     margin-bottom: 14px;
 }
 [data-theme="light"] .ln-screenshot-hint {
-    background: rgba(40, 167, 69, 0.08);
-    border-color: rgba(40, 167, 69, 0.2);
-    color: #28a745;
+    background: rgba(9,139,56, 0.08);
+    border-color: rgba(9,139,56, 0.2);
+    color: #098b38;
 }
 
 .ln-screenshot-img-wrap {
@@ -198,16 +198,11 @@
     font-family: inherit;
 }
 .ln-ss-btn-primary {
-    background: var(--primary-color, #aefc6e);
+    background: var(--primary-color, #58dc83);
     color: #000;
 }
 .ln-ss-btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
-.ln-ss-btn-secondary {
-    background: var(--button-bg, #1a1a1a);
-    color: var(--button-text, #fff);
-    border: 1px solid var(--border-color, #272727);
-}
-.ln-ss-btn-secondary:hover { background: var(--button-hover, #272727); transform: translateY(-1px); }
+
 .ln-ss-btn-cancel {
     background: var(--button-bg, #1a1a1a);
     color: var(--text-secondary, #888);
@@ -237,13 +232,11 @@
     background: #ffffff;
     border-color: #dee2e6;
 }
-[data-theme="light"] .ln-ss-btn-secondary,
 [data-theme="light"] .ln-ss-btn-cancel {
     background: #f8f9fa;
     color: #212529;
     border-color: #dee2e6;
 }
-[data-theme="light"] .ln-ss-btn-secondary:hover,
 [data-theme="light"] .ln-ss-btn-cancel:hover {
     background: #e9ecef;
 }

@@ -11,11 +11,6 @@ Crawl-delay: 0
 # that disallowing render-critical resources actively harms how well its
 # algorithms can render and index the page, which outweighs any crawl-budget
 # savings from blocking them (https://developers.google.com/search/blog/2014/10/updating-our-technical-webmaster).
-Disallow: /editor_news/
-Disallow: /lottiesnimstion/
-Disallow: /json/
-Disallow: /.vscode/
-Disallow: /cookies_banner_universal/
 Disallow: /landing/
 
 # Specific rules for Google

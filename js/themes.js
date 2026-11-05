@@ -57,31 +57,6 @@ class ThemeManager {
         
         // Обновление активной опции в модальном окне
         this.updateActiveThemeOption();
-        
-        // Обновление стилей TinyMCE
-        setTimeout(() => {
-            if (typeof applyThemeToTinyMCE === 'function') {
-                applyThemeToTinyMCE();
-            }
-        if (typeof forceUpdateSplitButtonStyles === 'function') {
-            forceUpdateSplitButtonStyles(theme);
-        }
-        
-        // Добавляем обработчики кликов для split button
-        if (typeof addSplitButtonClickHandlers === 'function') {
-            addSplitButtonClickHandlers();
-        }
-            if (typeof adjustEditorHeight === 'function') {
-                adjustEditorHeight();
-            }
-        }, 100);
-        
-        // Обновление темы TinyMCE редактора
-        if (typeof updateTinyMCETheme === 'function') {
-            setTimeout(() => {
-                updateTinyMCETheme();
-            }, 100);
-        }
     }
 
     // Создание кнопки переключения тем

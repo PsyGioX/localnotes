@@ -84,7 +84,9 @@ class LocalNotesEditor {
 
     init() {
         this._buildDOM();
+        LocalNotesEditor._applyPrefs();
         this._buildToolbar();
+        this._wireZoom();
         this._wireEditor();
         this._ctplUpdateBadge();
         // Start with clean history
@@ -117,7 +119,11 @@ class LocalNotesEditor {
             '<div class="lne-body">' +
             '<div class="lne-editor" contenteditable="true" role="textbox" aria-multiline="true" spellcheck="true" autocorrect="on"></div>' +
             '</div>' +
-            (this.options.statusbar ? '<div class="lne-statusbar"></div>' : '') +
+            (this.options.statusbar ? '<div class="lne-statusbar"><div class="lne-sb-stats"></div><div class="lne-zoom">' +
+            '<button type="button" class="lne-zoom-out" aria-label="Zoom out"><i class="bi bi-dash"></i></button>' +
+            '<input type="range" class="lne-zoom-range" min="50" max="200" step="10" value="100" aria-label="Zoom">' +
+            '<button type="button" class="lne-zoom-in" aria-label="Zoom in"><i class="bi bi-plus"></i></button>' +
+            '<button type="button" class="lne-zoom-val" title="100%">100%</button></div></div>' : '') +
             '</div>';
         this.wrapper   = this.container.querySelector('.lne-wrapper');
         this.toolbar   = this.container.querySelector('.lne-toolbar');
@@ -157,111 +163,153 @@ class LocalNotesEditor {
         var SEP = '<div class="lne-sep"></div>';
         var GS = '<div class="lne-grp">'; var GE = '</div>';
 
-        this.toolbarScroll.innerHTML =
-        /* Row 1 */
-        '<div class="lne-toolbar-row">' +
-        GS + B('undo','bi bi-arrow-counterclockwise',_('undo','Undo'),'Ctrl+Z') + B('redo','bi bi-arrow-clockwise',_('redo','Redo'),'Ctrl+Y') + GE + SEP +
-        GS +
-        '<select class="lne-sel lne-sel-heading" title="' + _('paragraphStyle','Style') + '">' +
-        '<option value="">' + _('paragraphStyle','Style') + '</option>' +
-        '<option value="p">' + _('paragraph','Paragraph') + '</option>' +
-        '<option value="h1">' + _('heading1','Heading 1') + '</option><option value="h2">' + _('heading2','Heading 2') + '</option>' +
-        '<option value="h3">' + _('heading3','Heading 3') + '</option><option value="h4">' + _('heading4','Heading 4') + '</option>' +
-        '<option value="h5">' + _('heading5','Heading 5') + '</option><option value="h6">' + _('heading6','Heading 6') + '</option>' +
-        '<option value="pre">' + _('preformatted','Preformatted') + '</option><option value="blockquote">' + _('blockquote','Blockquote') + '</option>' +
-        '<option value="div">Div</option>' +
-        '</select>' +
-        '<select class="lne-sel lne-sel-font" title="' + _('fontFamily','Font') + '">' +
-        '<option value="">' + _('fontFamily','Font') + '</option>' +
-        '<option value="Montserrat,sans-serif">Montserrat</option>' +
-        '<option value="Arial,sans-serif">Arial</option>' +
-        '<option value="Times New Roman,serif">Times New Roman</option>' +
-        '<option value="Courier New,monospace">Courier New</option>' +
-        '<option value="Georgia,serif">Georgia</option>' +
-        '<option value="Verdana,sans-serif">Verdana</option>' +
-        '<option value="Roboto,sans-serif">Roboto</option>' +
-        '<option value="Open Sans,sans-serif">Open Sans</option>' +
-        '<option value="Lato,sans-serif">Lato</option>' +
-        '<option value="Trebuchet MS,sans-serif">Trebuchet MS</option>' +
-        '<option value="Impact,sans-serif">Impact</option>' +
-        '</select>' +
-        '<select class="lne-sel lne-sel-size" title="' + _('fontSize','Size') + '">' +
-        '<option value="">' + _('fontSize','Size') + '</option>' +
-        '<option value="8">8</option><option value="9">9</option><option value="10">10</option>' +
-        '<option value="11">11</option><option value="12">12</option><option value="13">13</option>' +
-        '<option value="14">14</option><option value="16">16</option><option value="18">18</option>' +
-        '<option value="20">20</option><option value="22">22</option><option value="24">24</option>' +
-        '<option value="26">26</option><option value="28">28</option><option value="32">32</option>' +
-        '<option value="36">36</option><option value="40">40</option><option value="48">48</option>' +
-        '<option value="60">60</option><option value="72">72</option><option value="96">96</option>' +
-        '</select>' +
-        GE + SEP +
-        GS +
-        B('bold','bi bi-type-bold',_('bold','Bold'),'Ctrl+B') +
-        B('italic','bi bi-type-italic',_('italic','Italic'),'Ctrl+I') +
-        B('underline','bi bi-type-underline',_('underline','Underline'),'Ctrl+U') +
-        B('strikeThrough','bi bi-type-strikethrough',_('strikethrough','Strikethrough')) +
-        B('superscript','bi bi-superscript',_('superscript','Superscript')) +
-        B('subscript','bi bi-subscript',_('subscript','Subscript')) +
-        GE + SEP +
-        GS +
-        '<button class="lne-btn lne-color-btn" data-cmd="foreColor" title="' + _('textColor','Text color') + '"><i class="bi bi-fonts"></i><span class="lne-cbar lne-cbar-fg"></span></button>' +
-        '<button class="lne-btn lne-color-btn" data-cmd="hiliteColor" title="' + _('highlightColor','Highlight') + '"><i class="bi bi-highlighter"></i><span class="lne-cbar lne-cbar-bg"></span></button>' +
-        B('removeFormat','bi bi-eraser',_('clearFormat','Clear formatting')) +
-        GE +
+        // ── Office-style ribbon ─────────────────────────────────────────────
+        // Tabs (Home / Insert / View) each own one `.lne-toolbar-row` panel.
+        // Every button is still a plain `.lne-btn[data-cmd]`, so the wiring in
+        // _wireToolbar()/_exec()/_syncState() is unchanged. On desktop only the
+        // active panel is shown; on touch / narrow screens CSS hides the tab
+        // strip and shows all panels as before (single scrolling toolbar).
+        var BL = function(cmd, icon, title, label, shortcut, extra) {
+            return '<button class="lne-btn lne-btn-lg" data-cmd="' + cmd + '" title="' + title + '" aria-label="' + title + '"' +
+                (shortcut ? ' data-shortcut="' + shortcut + '"' : '') + (extra||'') +
+                '><i class="' + icon + '"></i><span class="lne-lg-label">' + label + '</span></button>';
+        };
+        var BT = function(cmd, icon, title, label, shortcut, extra) {
+            return '<button class="lne-btn lne-btn-txt" data-cmd="' + cmd + '" title="' + title + '" aria-label="' + title + '"' +
+                (shortcut ? ' data-shortcut="' + shortcut + '"' : '') + (extra||'') +
+                '><i class="' + icon + '"></i><span class="lne-txt-label">' + label + '</span></button>';
+        };
+        var DD = function(cmd, icon, title, shortcut) { // button that opens a small dropdown menu
+            return '<button class="lne-btn lne-btn-dd" data-cmd="' + cmd + '" title="' + title + '" aria-label="' + title + '" aria-haspopup="true"' +
+                (shortcut ? ' data-shortcut="' + shortcut + '"' : '') +
+                '><i class="' + icon + '"></i><i class="bi bi-chevron-down lne-dd-caret"></i></button>';
+        };
+        var TILE = function(block, cls, label) {
+            return '<button class="lne-btn lne-style-tile ' + cls + '" data-cmd="style_' + block + '" data-block="' + block + '" title="' + label + '" aria-label="' + label + '"><span class="lne-tile-prev">Aa</span><span class="lne-tile-name">' + label + '</span></button>';
+        };
+        var G = function(label, lines, cls) {
+            return '<div class="lne-grp' + (cls ? ' ' + cls : '') + '"><div class="lne-grp-body">' +
+                lines.map(function(l) { return '<div class="lne-line">' + l + '</div>'; }).join('') +
+                '</div><div class="lne-grp-label">' + label + '</div></div>';
+        };
+        var HIN = {
+            home:   _('ribbonHome','Home'),
+            insert: _('ribbonInsert','Insert'),
+            view:   _('ribbonView','View')
+        };
+        var TABS = '<div class="lne-ribbon-tabs" role="tablist">' +
+            '<button class="lne-rtab active" type="button" role="tab" data-tab="home" aria-selected="true">' + HIN.home + '</button>' +
+            '<button class="lne-rtab" type="button" role="tab" data-tab="insert" aria-selected="false">' + HIN.insert + '</button>' +
+            '<button class="lne-rtab" type="button" role="tab" data-tab="view" aria-selected="false">' + HIN.view + '</button>' +
+            '</div>';
+        var fontOpts =
+            '<option value="">' + _('fontFamily','Font') + '</option>' +
+            '<option value="Aptos,sans-serif">Aptos</option>' +
+            '<option value="Segoe UI,sans-serif">Segoe UI</option>' +
+            '<option value="Calibri,sans-serif">Calibri</option>' +
+            '<option value="Arial,sans-serif">Arial</option>' +
+            '<option value="Verdana,sans-serif">Verdana</option>' +
+            '<option value="Tahoma,sans-serif">Tahoma</option>' +
+            '<option value="Trebuchet MS,sans-serif">Trebuchet MS</option>' +
+            '<option value="Times New Roman,serif">Times New Roman</option>' +
+            '<option value="Cambria,serif">Cambria</option>' +
+            '<option value="Georgia,serif">Georgia</option>' +
+            '<option value="Palatino Linotype,serif">Palatino</option>' +
+            '<option value="Consolas,monospace">Consolas</option>' +
+            '<option value="Courier New,monospace">Courier New</option>' +
+            '<option value="Impact,sans-serif">Impact</option>';
+        var sizeOpts = '<option value="">' + _('fontSize','Size') + '</option>' +
+            [8,9,10,11,12,14,16,18,20,22,24,26,28,32,36,40,48,60,72,96].map(function(n) { return '<option value="' + n + '">' + n + '</option>'; }).join('');
+
+        this.toolbarScroll.innerHTML = TABS +
+
+        /* ═══════════ HOME ═══════════ */
+        '<div class="lne-toolbar-row lne-panel active" data-tab="home" role="tabpanel">' +
+        G(_('grpUndo','Undo'), [
+            B('undo','bi bi-arrow-counterclockwise',_('undo','Undo'),'Ctrl+Z') + B('redo','bi bi-arrow-clockwise',_('redo','Redo'),'Ctrl+Y'),
+            B('formatPainter','bi bi-paint-bucket',_('formatPainter','Format painter — copy formatting, then select text to apply it'))
+        ]) +
+        G(_('grpFont','Font'), [
+            '<select class="lne-sel lne-sel-font" title="' + _('fontFamily','Font') + '">' + fontOpts + '</select>' +
+            '<select class="lne-sel lne-sel-size" title="' + _('fontSize','Size') + '">' + sizeOpts + '</select>' +
+            B('growFont','bi bi-fonts lne-ico-grow',_('growFont','Increase font size'),'Ctrl+Shift+>') +
+            B('shrinkFont','bi bi-fonts lne-ico-shrink',_('shrinkFont','Decrease font size'),'Ctrl+Shift+<') +
+            DD('changeCase','bi bi-type',_('changeCase','Change case')),
+            B('bold','bi bi-type-bold',_('bold','Bold'),'Ctrl+B') +
+            B('italic','bi bi-type-italic',_('italic','Italic'),'Ctrl+I') +
+            B('underline','bi bi-type-underline',_('underline','Underline'),'Ctrl+U') +
+            B('strikeThrough','bi bi-type-strikethrough',_('strikethrough','Strikethrough'),'Ctrl+Shift+X') +
+            B('subscript','bi bi-subscript',_('subscript','Subscript'),'Ctrl+=') +
+            B('superscript','bi bi-superscript',_('superscript','Superscript'),'Ctrl+Shift+=') +
+            '<div class="lne-vsep"></div>' +
+            '<button class="lne-btn lne-color-btn" data-cmd="hiliteColor" title="' + _('highlightColor','Highlight') + '"><i class="bi bi-highlighter"></i><span class="lne-cbar lne-cbar-bg"></span></button>' +
+            '<button class="lne-btn lne-color-btn" data-cmd="foreColor" title="' + _('textColor','Text color') + '"><i class="bi bi-fonts"></i><span class="lne-cbar lne-cbar-fg"></span></button>' +
+            B('removeFormat','bi bi-eraser',_('clearFormat','Clear formatting'),'Ctrl+\\')
+        ], 'lne-grp-font') +
+        G(_('grpParagraph','Paragraph'), [
+            B('insertUnorderedList','bi bi-list-ul',_('bulletList','Bullet list'),'Ctrl+Shift+L') +
+            B('insertOrderedList','bi bi-list-ol',_('numberedList','Numbered list')) +
+            B('insertChecklist','bi bi-check2-square',_('checklist','Checklist')) +
+            '<div class="lne-vsep"></div>' +
+            B('outdent','bi bi-text-indent-right',_('outdent','Outdent'),'Shift+Tab') +
+            B('indent','bi bi-text-indent-left',_('indent','Indent'),'Tab') +
+            '<div class="lne-vsep"></div>' +
+            DD('lineSpacing','bi bi-arrows-expand',_('lineSpacing','Line and paragraph spacing')),
+            B('justifyLeft','bi bi-text-left',_('alignLeft','Align left'),'Ctrl+L') +
+            B('justifyCenter','bi bi-text-center',_('alignCenter','Center'),'Ctrl+E') +
+            B('justifyRight','bi bi-text-right',_('alignRight','Align right'),'Ctrl+R') +
+            B('justifyFull','bi bi-justify',_('alignJustify','Justify'),'Ctrl+J')
+        ], 'lne-grp-para') +
+        G(_('grpStyles','Styles'), [
+            TILE('p','lne-tile-normal',_('styleNormal','Normal')) +
+            TILE('h1','lne-tile-h1',_('styleHeading1','Heading 1')) +
+            TILE('h2','lne-tile-h2',_('styleHeading2','Heading 2')) +
+            TILE('blockquote','lne-tile-quote',_('styleQuote','Quote')),
+            '<select class="lne-sel lne-sel-heading" title="' + _('paragraphStyle','Style') + '">' +
+            '<option value="">' + _('paragraphStyle','Style') + '</option>' +
+            '<option value="p">' + _('paragraph','Paragraph') + '</option>' +
+            '<option value="h1">' + _('heading1','Heading 1') + '</option><option value="h2">' + _('heading2','Heading 2') + '</option>' +
+            '<option value="h3">' + _('heading3','Heading 3') + '</option><option value="h4">' + _('heading4','Heading 4') + '</option>' +
+            '<option value="h5">' + _('heading5','Heading 5') + '</option><option value="h6">' + _('heading6','Heading 6') + '</option>' +
+            '<option value="pre">' + _('preformatted','Preformatted') + '</option><option value="blockquote">' + _('blockquote','Blockquote') + '</option>' +
+            '<option value="div">Div</option>' +
+            '</select>'
+        ], 'lne-grp-styles') +
+        G(_('grpEditing','Editing'), [
+            BT('findReplace','bi bi-search',_('findReplace','Find & Replace'),_('find','Find'),'Ctrl+H'),
+            BT('selectAll','bi bi-cursor-text',_('selectAll','Select all'),_('selectAllShort','Select'),'Ctrl+A')
+        ]) +
         '</div>' +
 
-        /* Row 2 */
-        '<div class="lne-toolbar-row">' +
-        GS +
-        B('justifyLeft','bi bi-text-left',_('alignLeft','Align left')) +
-        B('justifyCenter','bi bi-text-center',_('alignCenter','Center')) +
-        B('justifyRight','bi bi-text-right',_('alignRight','Align right')) +
-        B('justifyFull','bi bi-justify',_('alignJustify','Justify')) +
-        GE + SEP +
-        GS +
-        B('insertUnorderedList','bi bi-list-ul',_('bulletList','Bullet list')) +
-        B('insertOrderedList','bi bi-list-ol',_('numberedList','Numbered list')) +
-        B('insertChecklist','bi bi-check2-square',_('checklist','Checklist')) +
-        B('indent','bi bi-text-indent-left',_('indent','Indent'),'Tab') +
-        B('outdent','bi bi-text-indent-right',_('outdent','Outdent'),'Shift+Tab') +
-        GE + SEP +
-        GS +
-        B('insertLink','bi bi-link-45deg',_('insertLink','Insert link'),'Ctrl+K') +
-        (this.options.onWikiLinkSearch ? B('insertWikiLink','bi bi-journal-richtext',_('insertWikiLink','Link to another note'),'[[') : '') +
-        B('insertImage','bi bi-image',_('insertImage','Insert image')) +
-        B('insertVideo','bi bi-play-circle',_('insertVideo','Insert video')) +
-        B('insertTable','bi bi-table',_('createTable','Insert table')) +
-        B('insertHorizontalRule','bi bi-dash-lg',_('horizontalLine','Horizontal rule')) +
-        B('insertDateTime','bi bi-calendar-event',_('insertDateTime','Insert date/time')) +
-        B('insertFormula','bi bi-plus-slash-minus',_('insertFormula','Insert formula')) +
-        B('insertDrawing','bi bi-brush',_('insertDrawing','Insert drawing')) +
-        GE + SEP +
-        GS +
-        B('insertCode','bi bi-code-slash',_('codeBlock','Code block')) +
-        B('insertBlockquote','bi bi-chat-quote',_('blockquote','Blockquote')) +
-        B('insertCallout','bi bi-info-square',_('insertCallout','Callout box')) +
-        B('insertEmoji','bi bi-emoji-smile',_('emoji','Emoji')) +
-        B('insertSpecialChar','bi bi-alphabet',_('specialChars','Special characters')) +
-        GE + SEP +
-        GS +
-        B('findReplace','bi bi-search',_('findReplace','Find & Replace'),'Ctrl+H') +
-        B('wordCount','bi bi-bar-chart-line',_('wordCount','Word count')) +
-        B('showBlocks','bi bi-layout-text-window',_('showBlocks','Show blocks')) +
-        B('viewSource','bi bi-braces',_('viewSource','HTML source')) +
-        B('focusMode','bi bi-eye',_('focusMode','Focus mode'),'F12') +
-        B('fullscreen','bi bi-fullscreen',_('fullscreen','Fullscreen'),'F11') +
-        B('shortcutsHelp','bi bi-keyboard',_('shortcutsHelp','Keyboard shortcuts'),'Ctrl+/') +
-        GE +
-        '</div>' +
-
-        /* Row 3 — Templates
-           `.lne-tpl-menu` flattens into the row via display:contents on
-           wide screens (same markup/behaviour as before). On small or
-           square screens it becomes a real dropdown panel opened by
-           `.lne-tpl-toggle`, so nothing stays unreachable off-screen —
-           same pattern as the app's own "More actions" (⋯) menu. */
-        '<div class="lne-toolbar-row lne-templates-row">' +
+        /* ═══════════ INSERT ═══════════ */
+        '<div class="lne-toolbar-row lne-panel" data-tab="insert" role="tabpanel">' +
+        G(_('grpTables','Tables'), [
+            BL('insertTable','bi bi-table',_('createTable','Insert table'),_('table','Table'))
+        ]) +
+        G(_('grpMedia','Illustrations'), [
+            BL('insertImage','bi bi-image',_('insertImage','Insert image'),_('image','Image')) +
+            BL('insertVideo','bi bi-play-circle',_('insertVideo','Insert video'),_('video','Video')) +
+            BL('insertDrawing','bi bi-brush',_('insertDrawing','Insert drawing'),_('drawing','Drawing'))
+        ]) +
+        G(_('grpLinks','Links'), [
+            BL('insertLink','bi bi-link-45deg',_('insertLink','Insert link'),_('link','Link'),'Ctrl+K') +
+            (this.options.onWikiLinkSearch ? BL('insertWikiLink','bi bi-journal-richtext',_('insertWikiLink','Link to another note'),_('noteLink','Note link'),'[[') : '')
+        ]) +
+        G(_('grpBlocks','Blocks'), [
+            BL('insertCode','bi bi-code-slash',_('codeBlock','Code block'),_('code','Code')) +
+            BL('insertBlockquote','bi bi-chat-quote',_('blockquote','Blockquote'),_('quote','Quote')) +
+            BL('insertCallout','bi bi-info-square',_('insertCallout','Callout box'),_('callout','Callout'))
+        ]) +
+        G(_('grpSymbols','Symbols'), [
+            BL('insertFormula','bi bi-plus-slash-minus',_('insertFormula','Insert formula'),_('formula','Formula')) +
+            '<div class="lne-stack">' +
+              '<div class="lne-line">' + B('insertEmoji','bi bi-emoji-smile',_('emoji','Emoji')) + B('insertSpecialChar','bi bi-alphabet',_('specialChars','Special characters')) + '</div>' +
+              '<div class="lne-line">' + B('insertDateTime','bi bi-calendar-event',_('insertDateTime','Insert date/time')) + B('insertHorizontalRule','bi bi-dash-lg',_('horizontalLine','Horizontal rule')) + '</div>' +
+            '</div>'
+        ]) +
+        G(_('grpTemplates','Templates'), [
+        /* Templates — dropdown portal, see _wireToolbar. */
+        '<div class="lne-templates-row">' +
         '<span class="lne-tpl-label">' + _('tplTemplates','Templates') + ':</span>' +
         '<button class="lne-btn lne-tpl-toggle" type="button" aria-haspopup="true" aria-expanded="false" title="' + _('tplTemplates','Templates') + '"><i class="bi bi-collection"></i><span class="lne-btn-label">' + _('tplTemplates','Templates') + '</span><i class="bi bi-chevron-down lne-tpl-toggle-caret"></i></button>' +
         '<div class="lne-tpl-menu">' +
@@ -293,10 +341,32 @@ class LocalNotesEditor {
         '<span class="lne-tpl-group-label"><i class="bi bi-bookmark-star"></i><span class="lne-tpl-group-text">' + _('tplGroupCustom','My') + '</span></span>' +
         '<button class="lne-btn lne-tpl-btn lne-tpl-btn-custom" data-cmd="tplCustomManage" title="' + _('tplCustomManage','My templates') + '"><i class="bi bi-collection"></i><span class="lne-btn-label">' + _('tplCustom','My') + '</span><span class="lne-tpl-count" style="display:none">0</span></button>' +
         '</div>' +
+        '</div>'
+        ], 'lne-grp-tpl') +
+        '</div>' +
+
+        /* ═══════════ VIEW ═══════════ */
+        '<div class="lne-toolbar-row lne-panel" data-tab="view" role="tabpanel">' +
+        G(_('grpShow','Show'), [
+            BL('showBlocks','bi bi-layout-text-window',_('showBlocks','Show blocks'),_('blocks','Blocks')) +
+            BL('wordCount','bi bi-bar-chart-line',_('wordCount','Word count'),_('wordCountShort','Word count')) +
+            BL('viewSource','bi bi-braces',_('viewSource','HTML source'),_('source','Source'))
+        ]) +
+        G(_('grpFocus','Window'), [
+            BL('focusMode','bi bi-eye',_('focusMode','Focus mode'),_('focus','Focus'),'F12') +
+            BL('fullscreen','bi bi-fullscreen',_('fullscreen','Fullscreen'),_('fullscreenShort','Full screen'),'F11') +
+            BL('shortcutsHelp','bi bi-keyboard',_('shortcutsHelp','Keyboard shortcuts'),_('shortcutsShort','Shortcuts'),'Ctrl+/')
+        ]) +
+        G(_('grpDefaults','Defaults'), [
+            BL('docDefaults','bi bi-sliders',_('docDefaults','Document defaults'),_('docDefaultsShort','Defaults')) +
+            BL('smartTypo','bi bi-quote',_('smartTypoTip','Smart typography: -- → —, ... → …, (c) → ©, quotes'),_('smartTypoShort','Typography'))
+        ]) +
         '</div>';
 
         this._colorBars();
         this._wireToolbar();
+        this._wireRibbon();
+        this._syncTypoBtn();
         this._initTooltips();
     }
 
@@ -509,6 +579,7 @@ class LocalNotesEditor {
 
     _exec(cmd, btn) {
         this._restoreRange();
+        if (cmd.indexOf('style_') === 0) { this._applyBlockStyle(cmd.slice(6)); var _t = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0); if (!_t) this.ed.focus(); return; }
         // Commands that open a modal — don't refocus editor after
         var modalCmds = {
             insertLink:        function() { this._modalLink(); },
@@ -541,6 +612,14 @@ class LocalNotesEditor {
             undo:             function() { this.undo(); },
             redo:             function() { this.redo(); },
             insertChecklist:  function() { this._insertChecklist(); },
+            formatPainter:    function() { this._toggleFormatPainter(btn); },
+            growFont:         function() { this._stepFontSize(1); },
+            shrinkFont:       function() { this._stepFontSize(-1); },
+            changeCase:       function() { this._menuCase(btn); },
+            lineSpacing:      function() { this._menuLineSpacing(btn); },
+            docDefaults:      function() { this._modalDefaults(); },
+            smartTypo:        function() { this._toggleSmartTypo(); },
+            selectAll:        function() { this.ed.focus(); document.execCommand('selectAll'); this._saveRange(); this._syncState(); },
             insertWikiLink:   function() { this._triggerWikiLinkPopup(); },
             insertCode:       function() { this._insertCodeBlock(); },
             insertBlockquote: function() { this._insertBlockquote(); },
@@ -646,6 +725,10 @@ class LocalNotesEditor {
                     cur = cur.parentNode;
                 }
             }
+            // Style gallery (Normal / Heading 1 / ...) mirrors the current block
+            var galTag = headingSel ? headingSel.value : '';
+            if (galTag === 'div') galTag = 'p';
+            self.toolbar.querySelectorAll('.lne-style-tile').forEach(function(t) { t.classList.toggle('active', t.dataset.block === galTag); });
             // Font / size from computed
             if (node && node.nodeType === 1) {
                 var cs = window.getComputedStyle(node);
@@ -1027,6 +1110,501 @@ class LocalNotesEditor {
         this._syncState();
     }
 
+    // ── Ribbon (tabs, dropdown menus, zoom) ──────────────────────────────
+
+    _wireRibbon() {
+        var self = this;
+        var tabs = this.toolbar.querySelectorAll('.lne-rtab');
+        var panels = this.toolbar.querySelectorAll('.lne-panel');
+        var show = function(name) {
+            tabs.forEach(function(t) {
+                var on = t.dataset.tab === name;
+                t.classList.toggle('active', on);
+                t.setAttribute('aria-selected', on ? 'true' : 'false');
+                t.tabIndex = on ? 0 : -1;
+            });
+            panels.forEach(function(p) { p.classList.toggle('active', p.dataset.tab === name); });
+        };
+        tabs.forEach(function(t, i) {
+            t.addEventListener('mousedown', function(e) { e.preventDefault(); self._saveRange(); });
+            t.addEventListener('click', function() { show(t.dataset.tab); });
+            t.addEventListener('keydown', function(e) {
+                var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+                if (!d) return;
+                e.preventDefault();
+                var n = tabs[(i + d + tabs.length) % tabs.length];
+                n.focus(); show(n.dataset.tab);
+            });
+        });
+        show('home');
+    }
+
+    _wireZoom() {
+        if (!this.statusbar) return;
+        var self = this;
+        var rng = this.statusbar.querySelector('.lne-zoom-range');
+        var lbl = this.statusbar.querySelector('.lne-zoom-val');
+        if (!rng || !lbl) return;
+        var set = function(v) {
+            v = Math.max(50, Math.min(200, Math.round(v / 10) * 10));
+            rng.value = v; lbl.textContent = v + '%';
+            self.ed.style.zoom = v === 100 ? '' : String(v / 100);
+            self._zoom = v;
+            LocalNotesEditor._setPrefs({ zoom: v === 100 ? null : v });
+        };
+        this._setZoom = set;
+        var _zp = LocalNotesEditor._prefs().zoom;
+        if (_zp) { rng.value = _zp; lbl.textContent = _zp + '%'; self.ed.style.zoom = String(_zp / 100); self._zoom = _zp; }
+        // Clicking the grey canvas around the "paper" puts the caret at the end, like Word
+        this.body.addEventListener('mousedown', function(e) {
+            if (e.target !== self.body) return;
+            e.preventDefault();
+            self.ed.focus();
+            var rg = document.createRange(); rg.selectNodeContents(self.ed); rg.collapse(false);
+            var sl = window.getSelection(); sl.removeAllRanges(); sl.addRange(rg);
+            self._saveRange(); self._syncState();
+        });
+        rng.addEventListener('input', function() { set(+rng.value); });
+        this.statusbar.querySelector('.lne-zoom-out').addEventListener('click', function() { set(+rng.value - 10); });
+        this.statusbar.querySelector('.lne-zoom-in').addEventListener('click', function() { set(+rng.value + 10); });
+        lbl.addEventListener('click', function() { set(100); });
+        // Ctrl + wheel over the page zooms the document, like Office
+        this.body.addEventListener('wheel', function(e) {
+            if (!(e.ctrlKey || e.metaKey)) return;
+            e.preventDefault();
+            set(+rng.value + (e.deltaY < 0 ? 10 : -10));
+        }, { passive: false });
+    }
+
+    /** Small dropdown anchored under a ribbon button. items: [{label,icon,action,active,hint}|'sep'] */
+    _popMenu(anchor, items) {
+        var self = this;
+        this._closePopMenu();
+        var m = document.createElement('div');
+        m.className = 'lne-pop';
+        m.setAttribute('role', 'menu');
+        items.forEach(function(it) {
+            if (it === 'sep') { var s = document.createElement('div'); s.className = 'lne-pop-sep'; m.appendChild(s); return; }
+            if (it.heading) { var h = document.createElement('div'); h.className = 'lne-pop-head'; h.textContent = it.heading; m.appendChild(h); return; }
+            var b = document.createElement('button');
+            b.type = 'button'; b.className = 'lne-pop-item' + (it.active ? ' active' : '');
+            b.setAttribute('role', 'menuitem');
+            b.innerHTML = '<span class="lne-pop-ico">' + (it.icon ? '<i class="' + it.icon + '"></i>' : (it.active ? '<i class="bi bi-check2"></i>' : '')) + '</span>' +
+                          '<span class="lne-pop-lbl"></span>' + (it.hint ? '<span class="lne-pop-hint"></span>' : '');
+            b.querySelector('.lne-pop-lbl').textContent = it.label;
+            if (it.hint) b.querySelector('.lne-pop-hint').textContent = it.hint;
+            b.addEventListener('mousedown', function(e) { e.preventDefault(); });
+            b.addEventListener('click', function(e) {
+                e.preventDefault(); e.stopPropagation();
+                self._closePopMenu();
+                self._restoreRange();
+                it.action.call(self);
+                var isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+                if (!isTouch) self.ed.focus();
+            });
+            m.appendChild(b);
+        });
+        document.body.appendChild(m);
+        var r = anchor.getBoundingClientRect();
+        var w = m.offsetWidth, h = m.offsetHeight, mg = 8;
+        var left = Math.min(Math.max(mg, r.left), window.innerWidth - w - mg);
+        var top = r.bottom + 4;
+        if (top + h > window.innerHeight - mg) top = Math.max(mg, r.top - 4 - h);
+        m.style.left = left + 'px'; m.style.top = top + 'px';
+        anchor.setAttribute('aria-expanded', 'true');
+        this._pop = { el: m, anchor: anchor };
+        var off = function(e) {
+            if (m.contains(e.target) || anchor.contains(e.target)) return;
+            self._closePopMenu();
+        };
+        var esc = function(e) { if (e.key === 'Escape') self._closePopMenu(); };
+        setTimeout(function() { document.addEventListener('mousedown', off, true); document.addEventListener('keydown', esc, true); }, 0);
+        this._pop.off = off; this._pop.esc = esc;
+    }
+
+    _closePopMenu() {
+        var p = this._pop; if (!p) return;
+        if (p.el.parentNode) p.el.parentNode.removeChild(p.el);
+        if (p.anchor) p.anchor.setAttribute('aria-expanded', 'false');
+        document.removeEventListener('mousedown', p.off, true);
+        document.removeEventListener('keydown', p.esc, true);
+        this._pop = null;
+    }
+
+    // ── Text formatting additions ────────────────────────────────────────
+
+    /** Apply a block style (Normal / Heading / Quote) — clicking the active style resets to Normal. */
+    _applyBlockStyle(tag) {
+        this._saveSnap();
+        var sel = window.getSelection();
+        var cur = sel && sel.anchorNode;
+        if (cur && cur.nodeType === 3) cur = cur.parentNode;
+        while (cur && cur !== this.ed && !/^(P|H[1-6]|PRE|BLOCKQUOTE|DIV)$/.test(cur.tagName)) cur = cur.parentNode;
+        var curTag = (cur && cur !== this.ed) ? cur.tagName.toLowerCase() : 'p';
+        if (curTag === 'div') curTag = 'p';
+        var target = (curTag === tag && tag !== 'p') ? 'p' : tag;
+        document.execCommand('formatBlock', false, target);
+        this._syncState();
+        this._notifyChange();
+    }
+
+    _notifyChange() { this.ed.dispatchEvent(new Event('input', { bubbles: true })); }
+
+    _selectionBlocks() {
+        var sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0 || !this.ed.contains(sel.anchorNode)) return [];
+        var r = sel.getRangeAt(0);
+        var list = [];
+        this.ed.querySelectorAll('p,h1,h2,h3,h4,h5,h6,li,blockquote,pre').forEach(function(el) {
+            if (!r.intersectsNode(el)) return;
+            list.push(el);
+        });
+        if (!list.length) {
+            var n = sel.anchorNode; if (n.nodeType === 3) n = n.parentNode;
+            while (n && n.parentNode !== this.ed) n = n.parentNode;
+            if (n && n !== this.ed && n.nodeType === 1) list.push(n);
+        }
+        // drop containers whose descendant block is also in the list (e.g. li containing blockquote)
+        return list.filter(function(el) { return !list.some(function(o) { return o !== el && el.contains(o) && o.tagName !== 'LI'; }); });
+    }
+
+    _setLineSpacing(v) {
+        this._saveSnap();
+        var blocks = this._selectionBlocks();
+        blocks.forEach(function(el) { if (v) el.style.lineHeight = v; else el.style.removeProperty('line-height'); if (!el.getAttribute('style')) el.removeAttribute('style'); });
+        this._syncState(); this._notifyChange();
+    }
+
+    _setParaSpacing(side, em) {
+        this._saveSnap();
+        var prop = side === 'before' ? 'margin-top' : 'margin-bottom';
+        this._selectionBlocks().forEach(function(el) {
+            if (em === null) el.style.removeProperty(prop); else el.style.setProperty(prop, em + 'em');
+            if (!el.getAttribute('style')) el.removeAttribute('style');
+        });
+        this._syncState(); this._notifyChange();
+    }
+
+    _menuLineSpacing(btn) {
+        var self = this;
+        var blocks = this._selectionBlocks();
+        var cur = blocks.length ? (blocks[0].style.lineHeight || '') : '';
+        var ls = function(v, label) { return { label: label || v, active: cur === v, action: function() { self._setLineSpacing(v); } }; };
+        this._popMenu(btn, [
+            { heading: this._('lineSpacingHead','Line spacing') },
+            ls('1', '1.0'), ls('1.15', '1.15'), ls('1.5', '1.5'), ls('2', '2.0'), ls('2.5', '2.5'), ls('3', '3.0'),
+            { label: this._('spacingDefault','Default'), active: cur === '', action: function() { self._setLineSpacing(''); } },
+            'sep',
+            { heading: this._('paraSpacingHead','Paragraph spacing') },
+            { label: this._('spaceBefore','Add space before paragraph'), icon: 'bi bi-arrow-bar-up', action: function() { self._setParaSpacing('before', 0.9); } },
+            { label: this._('removeSpaceBefore','Remove space before paragraph'), icon: 'bi bi-x', action: function() { self._setParaSpacing('before', 0); } },
+            { label: this._('spaceAfter','Add space after paragraph'), icon: 'bi bi-arrow-bar-down', action: function() { self._setParaSpacing('after', 0.9); } },
+            { label: this._('removeSpaceAfter','Remove space after paragraph'), icon: 'bi bi-x', action: function() { self._setParaSpacing('after', 0); } },
+            { label: this._('resetSpacing','Reset paragraph spacing'), icon: 'bi bi-arrow-counterclockwise', action: function() { self._setParaSpacing('before', null); self._setParaSpacing('after', null); } }
+        ]);
+    }
+
+    _menuCase(btn) {
+        var self = this;
+        this._popMenu(btn, [
+            { label: this._('caseSentence','Sentence case.'), hint: 'Aa', action: function() { self._changeCase('sentence'); } },
+            { label: this._('caseLower','lowercase'), hint: 'aa', action: function() { self._changeCase('lower'); } },
+            { label: this._('caseUpper','UPPERCASE'), hint: 'AA', action: function() { self._changeCase('upper'); } },
+            { label: this._('caseTitle','Capitalize Each Word'), hint: 'Ab', action: function() { self._changeCase('title'); } },
+            { label: this._('caseToggle','tOGGLE cASE'), hint: 'aB', action: function() { self._changeCase('toggle'); } }
+        ]);
+    }
+
+    /** Change the case of the selected text, preserving all inline markup. */
+    _changeCase(mode) {
+        var sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0) return;
+        var r = sel.getRangeAt(0);
+        if (r.collapsed) { this._expandWordIfCollapsed(); sel = window.getSelection(); r = sel.getRangeAt(0); }
+        if (r.collapsed) return;
+        this._saveSnap();
+        var root = r.commonAncestorContainer;
+        var nodes = [];
+        if (root.nodeType === 3) nodes.push(root);
+        else {
+            var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+            while (w.nextNode()) { if (r.intersectsNode(w.currentNode)) nodes.push(w.currentNode); }
+        }
+        var sc = r.startContainer, so = r.startOffset, ec = r.endContainer, eo = r.endOffset;
+        var startsSentence = true;
+        var LET = /\p{L}/u;
+        var conv = function(s) {
+            var out = '';
+            for (var ch of s) {
+                if (mode === 'upper') out += ch.toUpperCase();
+                else if (mode === 'lower') out += ch.toLowerCase();
+                else if (mode === 'toggle') out += (ch === ch.toUpperCase() ? ch.toLowerCase() : ch.toUpperCase());
+                else if (mode === 'title') { out += (startsSentence && LET.test(ch)) ? ch.toUpperCase() : ch; startsSentence = !LET.test(ch) && !/[0-9'’_]/.test(ch); }
+                else if (mode === 'sentence') {
+                    if (LET.test(ch)) { out += startsSentence ? ch.toUpperCase() : ch.toLowerCase(); startsSentence = false; }
+                    else { out += ch; if (/[.!?…]/.test(ch)) startsSentence = true; }
+                } else out += ch;
+            }
+            return out;
+        };
+        var newEo = eo;
+        nodes.forEach(function(n) {
+            var txt = n.nodeValue;
+            var s = (n === sc) ? so : 0, e = (n === ec) ? eo : txt.length;
+            if (e <= s) return;
+            var mid = conv(txt.slice(s, e));
+            n.nodeValue = txt.slice(0, s) + mid + txt.slice(e);
+            if (n === ec) newEo = eo + (mid.length - (e - s));
+        });
+        var nr = document.createRange();
+        try { nr.setStart(sc, so); nr.setEnd(ec, newEo); sel.removeAllRanges(); sel.addRange(nr); this._range = nr.cloneRange(); } catch (err) {}
+        this._syncState(); this._notifyChange();
+    }
+
+    _stepFontSize(dir) {
+        var sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0) return;
+        var n = sel.anchorNode; if (n && n.nodeType === 3) n = n.parentNode;
+        if (!n || !this.ed.contains(n)) return;
+        var cur = parseFloat(getComputedStyle(n).fontSize) || 15;
+        var ladder = [8,9,10,11,12,14,16,18,20,22,24,26,28,32,36,40,48,60,72,96];
+        var next = cur;
+        if (dir > 0) { for (var i = 0; i < ladder.length; i++) if (ladder[i] > cur + 0.5) { next = ladder[i]; break; } if (next === cur) next = Math.min(144, Math.round(cur + 8)); }
+        else { for (var j = ladder.length - 1; j >= 0; j--) if (ladder[j] < cur - 0.5) { next = ladder[j]; break; } if (next === cur) next = Math.max(6, Math.round(cur - 1)); }
+        this._applySize(next + 'px');
+        this._notifyChange();
+    }
+
+    /** Format painter: first click copies the formatting at the caret/selection, the next selection receives it. */
+    _toggleFormatPainter(btn) {
+        var self = this;
+        if (this._painter) { this._endPainter(); return; }
+        var sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0 || !this.ed.contains(sel.anchorNode)) return;
+        var node = sel.anchorNode; if (node.nodeType === 3) node = node.parentNode;
+        var cs = getComputedStyle(node), edCs = getComputedStyle(this.ed);
+        var st = function(c) { try { return document.queryCommandState(c); } catch (e) { return false; } };
+        var bg = null, c = node;
+        while (c && c !== this.ed) { var b = c.style && c.style.backgroundColor; if (b && b !== 'transparent' && b !== 'rgba(0, 0, 0, 0)') { bg = b; break; } c = c.parentNode; }
+        this._painter = {
+            bold: st('bold'), italic: st('italic'), underline: st('underline'), strike: st('strikeThrough'),
+            sup: st('superscript'), sub: st('subscript'),
+            color: cs.color !== edCs.color ? cs.color : null,
+            bg: bg,
+            font: cs.fontFamily !== edCs.fontFamily ? cs.fontFamily.split(',')[0].replace(/['"]/g, '').trim() : null,
+            size: cs.fontSize !== edCs.fontSize ? cs.fontSize : null
+        };
+        this._painterBtn = btn;
+        btn.classList.add('active');
+        this.ed.classList.add('lne-painting');
+        if (!this._painterHandler) {
+            this._painterHandler = function() { setTimeout(function() { if (self._painter) self._applyPainter(); }, 0); };
+            this.ed.addEventListener('mouseup', this._painterHandler);
+            this.ed.addEventListener('touchend', this._painterHandler);
+        }
+    }
+
+    _endPainter() {
+        this._painter = null;
+        if (this._painterBtn) this._painterBtn.classList.remove('active');
+        this.ed.classList.remove('lne-painting');
+    }
+
+    _applyPainter() {
+        var sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0 || sel.isCollapsed || !this.ed.contains(sel.anchorNode)) return;
+        var f = this._painter; if (!f) return;
+        this._saveSnap();
+        var st = function(c) { try { return document.queryCommandState(c); } catch (e) { return false; } };
+        document.execCommand('removeFormat');
+        var want = [['bold', f.bold], ['italic', f.italic], ['underline', f.underline], ['strikeThrough', f.strike], ['superscript', f.sup], ['subscript', f.sub]];
+        want.forEach(function(w) { if (w[1] && !st(w[0])) document.execCommand(w[0]); });
+        if (f.color) document.execCommand('foreColor', false, f.color);
+        if (f.bg) document.execCommand('hiliteColor', false, f.bg);
+        if (f.font) document.execCommand('fontName', false, f.font);
+        if (f.size) this._applySize(f.size);
+        this._endPainter();
+        this._saveRange(); this._syncState(); this._notifyChange();
+    }
+
+
+    // ── Preferences (zoom, default font/spacing, smart typography) ───────
+
+    static _prefs() {
+        try { return JSON.parse(localStorage.getItem('lne-prefs') || '{}') || {}; } catch (e) { return {}; }
+    }
+    static _setPrefs(patch) {
+        var p = LocalNotesEditor._prefs();
+        Object.keys(patch).forEach(function(k) { if (patch[k] === null || patch[k] === '') delete p[k]; else p[k] = patch[k]; });
+        try { localStorage.setItem('lne-prefs', JSON.stringify(p)); } catch (e) {}
+        return p;
+    }
+    /** Push the saved document defaults into CSS custom properties (used by editor AND note cards). */
+    static _applyPrefs() {
+        var p = LocalNotesEditor._prefs(), st = document.documentElement.style;
+        var set = function(k, v) { if (v) st.setProperty(k, v); else st.removeProperty(k); };
+        set('--doc-font', p.font || '');
+        set('--doc-size', p.size ? p.size + 'px' : '');
+        set('--doc-lh', p.lh ? String(p.lh) : '');
+        set('--doc-pgap', (p.pgap !== undefined && p.pgap !== '') ? p.pgap + 'em' : '');
+    }
+
+    _modalDefaults() {
+        var self = this, P = LocalNotesEditor._prefs();
+        var sel = function(id, label, opts, cur) {
+            return '<div class="lne-fg" style="flex:1"><label>' + label + '</label><select id="' + id + '" class="lne-inp">' +
+                opts.map(function(o) { return '<option value="' + o[0] + '"' + (String(o[0]) === String(cur === undefined ? '' : cur) ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') +
+                '</select></div>';
+        };
+        var fonts = [['', this._('defaultFontSystem','Default (Aptos / Segoe UI)')],
+            ['Segoe UI,sans-serif','Segoe UI'],['Calibri,sans-serif','Calibri'],['Arial,sans-serif','Arial'],['Verdana,sans-serif','Verdana'],['Tahoma,sans-serif','Tahoma'],
+            ['Times New Roman,serif','Times New Roman'],['Cambria,serif','Cambria'],['Georgia,serif','Georgia'],['Palatino Linotype,serif','Palatino'],
+            ['Consolas,monospace','Consolas'],['Courier New,monospace','Courier New']];
+        var sizes = [['', '15 (' + this._('spacingDefault','Default') + ')']].concat([12,13,14,16,17,18,20].map(function(n) { return [n, n]; }));
+        var lhs = [['', '1.55 (' + this._('spacingDefault','Default') + ')'], [1.15,'1.15'], [1.3,'1.3'], [1.5,'1.5'], [1.75,'1.75'], [2,'2.0']];
+        var gaps = [['', '0.67 em (' + this._('spacingDefault','Default') + ')'], [0,'0'], [0.4,'0.4 em'], [1,'1 em'], [1.3,'1.3 em']];
+        var r = this._modal(this._('docDefaults','Document defaults'), 'bi bi-sliders',
+            '<p class="lne-hint">' + this._('docDefaultsHint','Applies to all notes in the editor and on the cards. Formatting set on a selection always wins.') + '</p>' +
+            '<div class="lne-row">' + sel('lne-df-font', this._('fontFamily','Font'), fonts, P.font || '') + sel('lne-df-size', this._('fontSize','Size'), sizes, P.size || '') + '</div>' +
+            '<div class="lne-row">' + sel('lne-df-lh', this._('lineSpacingHead','Line spacing'), lhs, P.lh || '') + sel('lne-df-gap', this._('paraSpacingHead','Paragraph spacing'), gaps, P.pgap === undefined ? '' : P.pgap) + '</div>' +
+            '<div class="lne-checks"><label class="lne-chk"><input type="checkbox" id="lne-df-typo"' + (P.typo === false ? '' : ' checked') + '><span>' + this._('smartTypo','Smart typography (— … © « »)') + '</span></label></div>' +
+            '<button type="button" class="lne-mbtn lne-mbtn-sec" id="lne-df-reset" style="align-self:flex-start"><i class="bi bi-arrow-counterclockwise"></i> ' + this._('resetSpacing','Reset') + '</button>',
+        function(ov, close) {
+            var v = function(id) { return ov.querySelector(id).value; };
+            LocalNotesEditor._setPrefs({
+                font: v('#lne-df-font') || null, size: v('#lne-df-size') ? +v('#lne-df-size') : null,
+                lh: v('#lne-df-lh') ? +v('#lne-df-lh') : null, pgap: v('#lne-df-gap') !== '' ? +v('#lne-df-gap') : null,
+                typo: ov.querySelector('#lne-df-typo').checked ? null : false
+            });
+            LocalNotesEditor._applyPrefs(); self._syncTypoBtn(); close();
+        });
+        r.ov.querySelector('#lne-df-reset').addEventListener('click', function() {
+            ['#lne-df-font', '#lne-df-size', '#lne-df-lh', '#lne-df-gap'].forEach(function(id) { r.ov.querySelector(id).value = ''; });
+            r.ov.querySelector('#lne-df-typo').checked = true;
+        });
+    }
+
+    _toggleSmartTypo() {
+        var on = LocalNotesEditor._prefs().typo !== false;
+        LocalNotesEditor._setPrefs({ typo: on ? false : null });
+        this._syncTypoBtn();
+    }
+    _syncTypoBtn() {
+        if (!this.toolbar) return;
+        var b = this.toolbar.querySelector('[data-cmd="smartTypo"]');
+        if (b) b.classList.toggle('active', LocalNotesEditor._prefs().typo !== false);
+    }
+
+    // ── Smart typography ─────────────────────────────────────────────────
+
+    _quotePair() {
+        var lang = (document.documentElement.lang || (function() { try { return localStorage.getItem('preferredLanguage'); } catch (e) { return ''; } })() || 'en').toLowerCase().slice(0, 2);
+        var map = { ru: '«»', uk: '«»', ua: '«»', be: '«»', pl: '„”', hr: '„”', bs: '„”', cs: '„“', sk: '„“', bg: '„“', sl: '„“', sr: '„“', mk: '„“' };
+        return map[lang] || '“”';
+    }
+
+    /** Handles `beforeinput`: returns true when it replaced the typed character. */
+    _smartTypo(e) {
+        if (e.inputType !== 'insertText' || !e.data || e.data.length !== 1 || this._composing || e.isComposing) return false;
+        if (LocalNotesEditor._prefs().typo === false) return false;
+        var sel = window.getSelection();
+        if (!sel || !sel.rangeCount) return false;
+        var r = sel.getRangeAt(0);
+        if (!r.collapsed) return false;
+        var n = r.startContainer;
+        var el = n.nodeType === 3 ? n.parentNode : n;
+        if (!el || !this.ed.contains(el)) return false;
+        if (el.closest && el.closest('pre, code, .lne-code-wrapper, .lne-code-block, .lne-formula-wrap, [contenteditable="false"]')) return false;
+        var txt = n.nodeType === 3 ? n.nodeValue.slice(0, r.startOffset) : '';
+        var ch = e.data, rep = null, del = 0, m;
+        if (ch === '"') {
+            var q = this._quotePair();
+            rep = (!txt || /[\s(\[{—– -]$/.test(txt)) ? q.charAt(0) : q.charAt(1);
+        } else if (ch === "'") {
+            if (/[\p{L}\d]$/u.test(txt)) rep = '’'; else return false;
+        } else if (ch === '.' && /[^.]\.\.$/.test(txt)) { rep = '…'; del = 2; }
+        else if (ch === '-' && /[^-]-$/.test(txt) && !/^\s*-$/.test(txt)) { rep = '—'; del = 1; }
+        else if (ch === '>' && /[^-]-$/.test(txt) && !/^\s*-$/.test(txt)) { rep = '→'; del = 1; }
+        else if (ch === ')' && (m = txt.match(/\((c|r|tm)$/i))) { rep = { c: '©', r: '®', tm: '™' }[m[1].toLowerCase()]; del = m[0].length; }
+        else return false;
+        e.preventDefault();
+        if (del) {
+            var nr = document.createRange();
+            nr.setStart(n, r.startOffset - del); nr.setEnd(n, r.startOffset);
+            sel.removeAllRanges(); sel.addRange(nr);
+        }
+        document.execCommand('insertText', false, rep);
+        return true;
+    }
+
+    // ── Table styles ─────────────────────────────────────────────────────
+
+    _tableStyles() {
+        return [
+            ['grid',    this._('tblStyleGrid','Grid')],
+            ['lines',   this._('tblStyleLines','Light lines')],
+            ['banded',  this._('tblStyleBanded','Banded rows')],
+            ['accent',  this._('tblStyleAccent','Accent header')],
+            ['minimal', this._('tblStyleMinimal','Minimal')]
+        ];
+    }
+
+    /** HTML for the style gallery + border colour/width pickers (used by both table dialogs). */
+    _tableStyleUI(cur) {
+        var c = cur.color, w = cur.width;
+        var tiles = this._tableStyles().map(function(s) {
+            var tmp = document.createElement('table');
+            tmp.innerHTML = '<thead><tr><th>&nbsp;</th><th>&nbsp;</th><th>&nbsp;</th></tr></thead><tbody><tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr><tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr></tbody>';
+            LocalNotesEditor._styleTable(tmp, { style: s[0], color: '#8a8886', width: 1, zebra: false, header: true, pad: '2px 6px' });
+            tmp.style.width = '100%';
+            return '<button type="button" class="lne-tstyle' + (s[0] === cur.style ? ' sel' : '') + '" data-s="' + s[0] + '"><span class="lne-tprev">' + tmp.outerHTML + '</span><span class="lne-tname">' + s[1] + '</span></button>';
+        }).join('');
+        return '<div class="lne-fg"><label>' + this._('tblStyle','Table style') + '</label><div class="lne-tgallery">' + tiles + '</div></div>' +
+            '<div class="lne-row" style="align-items:flex-end">' +
+            '<div class="lne-fg" style="flex:1"><label>' + this._('tblBorderColor','Border colour') + '</label><input type="color" id="lne-tcol" value="' + c + '" class="lne-inp" style="padding:2px;height:34px"></div>' +
+            '<div class="lne-fg" style="flex:1"><label>' + this._('tblBorderWidth','Border width') + '</label><select id="lne-tbw" class="lne-inp">' +
+            [1, 2, 3, 4].map(function(n) { return '<option value="' + n + '"' + (n === w ? ' selected' : '') + '>' + n + ' px</option>'; }).join('') + '</select></div></div>';
+    }
+    _wireTableStyleUI(ov) {
+        ov.querySelectorAll('.lne-tstyle').forEach(function(b) {
+            b.addEventListener('click', function() { ov.querySelectorAll('.lne-tstyle').forEach(function(x) { x.classList.remove('sel'); }); b.classList.add('sel'); });
+        });
+    }
+    _readTableStyleUI(ov) {
+        var s = ov.querySelector('.lne-tstyle.sel');
+        return { style: s ? s.dataset.s : 'grid', color: ov.querySelector('#lne-tcol').value, width: parseInt(ov.querySelector('#lne-tbw').value) || 1 };
+    }
+
+    /** Apply a table style as inline CSS (inline so it survives export, sanitising and the note cards). */
+    static _styleTable(table, o) {
+        var bc = o.color || '#8a8886', bw = (o.width || 1) + 'px', line = bw + ' solid ' + bc, none = '0';
+        var accent = '#098b38';
+        table.style.borderCollapse = 'collapse';
+        table.setAttribute('data-lne-tstyle', o.style);
+        var cells = table.querySelectorAll('th, td');
+        Array.prototype.forEach.call(cells, function(c) {
+            c.style.border = ''; c.style.background = ''; c.style.color = ''; c.style.fontWeight = '';
+            c.style.padding = o.pad || '8px 12px';
+        });
+        Array.prototype.forEach.call(table.querySelectorAll('tr'), function(tr) { tr.style.background = ''; });
+        Array.prototype.forEach.call(cells, function(c) {
+            var th = c.tagName === 'TH';
+            if (o.style === 'grid' || o.style === 'accent') c.style.border = line;
+            else if (o.style === 'lines') { c.style.border = none; c.style.borderBottom = line; if (th) c.style.borderTop = line; }
+            else if (o.style === 'banded') c.style.border = none;
+            else if (o.style === 'minimal') { c.style.border = none; if (th) c.style.borderBottom = (2 * (o.width || 1)) + 'px solid ' + bc; }
+            if (th) {
+                c.style.fontWeight = '600';
+                if (o.style === 'accent' || o.style === 'banded') { c.style.background = accent; c.style.color = '#ffffff'; }
+                else if (o.style === 'grid') c.style.background = 'rgba(128,128,128,.16)';
+            }
+        });
+        var zebra = o.zebra || o.style === 'banded';
+        Array.prototype.forEach.call(table.querySelectorAll('tbody tr'), function(tr, i) {
+            if (zebra && i % 2 === 1) Array.prototype.forEach.call(tr.children, function(td) { td.style.background = 'rgba(128,128,128,.12)'; });
+        });
+    }
+
     // ── Editor wiring ────────────────────────────────────────────────────
 
     _wireEditor() {
@@ -1036,6 +1614,7 @@ class LocalNotesEditor {
         this.ed.addEventListener('keydown',   function(e) { self._onKey(e); });
         // Mobile virtual keyboards fire 'beforeinput' instead of reliable keydown
         this.ed.addEventListener('beforeinput', function(e) {
+            if (self._smartTypo(e)) return;
             if (e.inputType === 'deleteContentBackward' || e.inputType === 'deleteContentForward') {
                 if (self._tryRemoveEmptyChecklist()) { e.preventDefault(); }
             }
@@ -1169,7 +1748,7 @@ class LocalNotesEditor {
         // breaks every one of these shortcuts on non-Latin layouts). e.code
         // reflects the physical key position regardless of layout — map the
         // ones used below and prefer that when present.
-        var codeMap = { KeyZ: 'z', KeyY: 'y', KeyB: 'b', KeyI: 'i', KeyU: 'u', KeyK: 'k', KeyH: 'h' };
+        var codeMap = { KeyZ: 'z', KeyY: 'y', KeyB: 'b', KeyI: 'i', KeyU: 'u', KeyK: 'k', KeyH: 'h', KeyE: 'e', KeyL: 'l', KeyR: 'r', KeyJ: 'j', KeyX: 'x' };
         if (e.code && codeMap[e.code]) c = codeMap[e.code];
         // Hide context toolbar on any keypress
         if (this._removeCtx) this._removeCtx();
@@ -1181,6 +1760,20 @@ class LocalNotesEditor {
             if (c === 'u') { e.preventDefault(); this._expandWordIfCollapsed(); this._saveSnap(); document.execCommand('underline'); this._syncState(); return; }
                 if (c === 'k') { e.preventDefault(); this._modalLink(); return; }
             if (c === 'h') { e.preventDefault(); this._toggleFindBar(); return; }
+            // Word-style formatting shortcuts (physical keys, so they work on any layout)
+            var _fmt = function(self, cmd, expand) { e.preventDefault(); if (expand) self._expandWordIfCollapsed(); self._saveSnap(); document.execCommand(cmd); self._syncState(); self._notifyChange(); };
+            if (!e.altKey) {
+                if (!e.shiftKey && c === 'e') { _fmt(this, 'justifyCenter'); return; }
+                if (!e.shiftKey && c === 'l') { _fmt(this, 'justifyLeft'); return; }
+                if (!e.shiftKey && c === 'r') { _fmt(this, 'justifyRight'); return; }
+                if (!e.shiftKey && c === 'j') { _fmt(this, 'justifyFull'); return; }
+                if (e.shiftKey && c === 'l') { _fmt(this, 'insertUnorderedList'); return; }
+                if (e.shiftKey && c === 'x') { _fmt(this, 'strikeThrough', true); return; }
+                if (e.code === 'Backslash') { _fmt(this, 'removeFormat', true); return; }
+                if (e.code === 'Equal') { _fmt(this, e.shiftKey ? 'superscript' : 'subscript', true); return; }
+                if (e.shiftKey && e.code === 'Period') { e.preventDefault(); this._stepFontSize(1); return; }
+                if (e.shiftKey && e.code === 'Comma')  { e.preventDefault(); this._stepFontSize(-1); return; }
+            }
             if (c === 'f') { e.preventDefault(); this._toggleFindBar(); return; }
             if (e.code === 'Slash') { e.preventDefault(); this._modalShortcuts(); return; }
         }
@@ -1482,7 +2075,7 @@ class LocalNotesEditor {
         var colors = [
             { v: '',        reset: true,  title: this._('clColorDefault','Default') },
             { v: '#aefc6e', title: this._('clColorGreen','Green') },
-            { v: '#60a5fa', title: this._('clColorBlue','Blue') },
+            { v: '#47d877', title: this._('clColorBlue','Blue') },
             { v: '#f87171', title: this._('clColorRed','Red') },
             { v: '#fbbf24', title: this._('clColorYellow','Yellow') },
             { v: '#c084fc', title: this._('clColorPurple','Purple') },
@@ -2216,7 +2809,7 @@ class LocalNotesEditor {
         var h = function(tag, cls, text) {
             return '<' + tag + (cls ? ' style="' + cls + '"' : '') + '>' + text + '</' + tag + '>';
         };
-        var hr = '<hr style="border:none;border-top:1px solid rgba(174,252,110,.2);margin:12px 0;">';
+        var hr = '<hr style="border:none;border-top:1px solid rgba(9,139,56,.2);margin:12px 0;">';
         var br = '<p><br></p>';
         var meta = 'color:var(--text-secondary,#888);font-size:.9em';
         var thStyle = 'border:1px solid var(--border-color,#333);padding:6px 10px;background:var(--bg-secondary,#111)';
@@ -2301,7 +2894,7 @@ class LocalNotesEditor {
                 h('h3','','<i class="bi bi-filetype-md"></i> ' + _('tplNotes','Notes')),
                 h('p','',''),
                 h('h3','','💡 ' + _('tplImportantQuotes','Important Quotes')),
-                '<blockquote style="border-left:3px solid rgba(174,252,110,.5);margin:8px 0;padding:6px 12px;color:var(--text-secondary,#aaa)"><em>' + _('tplQuoteHere','Quote here') + '</em></blockquote>',
+                '<blockquote style="border-left:3px solid rgba(9,139,56,.5);margin:8px 0;padding:6px 12px;color:var(--text-secondary,#aaa)"><em>' + _('tplQuoteHere','Quote here') + '</em></blockquote>',
                 h('h3','','❓ ' + _('tplQuestions','Questions')),
                 '<ul><li></li></ul>',
                 h('h3','','📚 ' + _('tplReferences','References')),
@@ -2313,9 +2906,9 @@ class LocalNotesEditor {
                 h('h2','','🃏 ' + _('tplFlashcardTitle','Flashcard')),
                 h('p',meta,'📅 ' + today + ' &nbsp;|&nbsp; ' + _('tplTopic','Topic') + ': '),
                 hr,
-                h('h3','color:rgba(174,252,110,.9)','❓ ' + _('tplQuestion','Question')),
+                h('h3','color:#2bc960','❓ ' + _('tplQuestion','Question')),
                 h('p','min-height:3em;padding:10px;background:var(--bg-secondary,#111);border-radius:8px;border:1px solid var(--border-color,#333)',''),
-                h('h3','color:rgba(174,252,110,.9)','✅ ' + _('tplAnswer','Answer')),
+                h('h3','color:#2bc960','✅ ' + _('tplAnswer','Answer')),
                 h('p','min-height:3em;padding:10px;background:var(--bg-secondary,#111);border-radius:8px;border:1px solid var(--border-color,#333)',''),
                 h('h3','','<i class="bi bi-link-45deg"></i> ' + _('tplRelated','Related')),
                 h('p','',''),
@@ -2379,7 +2972,7 @@ class LocalNotesEditor {
                 h('p',meta,'📅 ' + today + ' &nbsp;|&nbsp; ' + _('tplQuarter','Quarter') + ': '),
                 hr,
                 h('h3','','🎯 ' + _('tplObjective','Objective')),
-                h('p','padding:10px;background:var(--bg-secondary,#111);border-radius:8px;border-left:3px solid rgba(174,252,110,.6)',''),
+                h('p','padding:10px;background:var(--bg-secondary,#111);border-radius:8px;border-left:3px solid rgba(9,139,56,.6)',''),
                 h('h3','','📏 ' + _('tplKeyResults','Key Results')),
                 '<ol>' +
                 '<li>KR1: <strong>' + _('tplTarget','Target') + ':</strong> &nbsp; <strong>' + _('tplCurrent','Current') + ':</strong> </li>' +
@@ -3343,7 +3936,7 @@ class LocalNotesEditor {
         var self = this;
         var _ = this._.bind(this);
         var editing = !!existingImg;
-        var COLORS = ['#000000', '#a020f0', '#e02020', '#5ad600', '#4a9cf5', '#ff8c00', '#ffd60a', '#ffffff'];
+        var COLORS = ['#000000', '#a020f0', '#e02020', '#5ad600', '#2dd262', '#ff8c00', '#ffd60a', '#ffffff'];
         var RATIOS = { '16:9': [1280, 720], '4:3': [1200, 900], '3:2': [1200, 800], '1:1': [1000, 1000], '3:4': [900, 1200] };
         var MAX_OBJS = 4000, MAX_JSON = 400000, HIST_LIMIT = 80;
         var SHAPES = { r: 1, o: 1, t: 1, l: 1, a: 1 };
@@ -4014,9 +4607,9 @@ class LocalNotesEditor {
             ctx.lineWidth = Math.max(1, 1.5 * k);
             ctx.strokeStyle = '#ffffff'; ctx.setLineDash([]);
             ctx.strokeRect(b[0] - pad, b[1] - pad, b[2] - b[0] + pad * 2, b[3] - b[1] + pad * 2);
-            ctx.strokeStyle = '#2f80ed'; ctx.setLineDash([6 * k, 4 * k]);
+            ctx.strokeStyle = '#1ebc53'; ctx.setLineDash([6 * k, 4 * k]);
             ctx.strokeRect(b[0] - pad, b[1] - pad, b[2] - b[0] + pad * 2, b[3] - b[1] + pad * 2);
-            ctx.setLineDash([]); ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#2f80ed'; ctx.lineWidth = Math.max(1, 2 * k);
+            ctx.setLineDash([]); ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#1ebc53'; ctx.lineWidth = Math.max(1, 2 * k);
             var hs = 5 * k;
             handlesOf(o).forEach(function(h) {
                 ctx.beginPath();
@@ -4620,7 +5213,8 @@ class LocalNotesEditor {
             '<label class="lne-chk"><input type="checkbox" id="lne-tzebra"><span>' + this._('tableZebra','Zebra striping') + '</span></label>' +
             '</div>' +
             '<div class="lne-fg"><label>' + this._('tableWidth','Width') + '</label>' +
-            '<select id="lne-twid" class="lne-inp"><option value="100%">Full width (100%)</option><option value="auto">Auto</option><option value="50%">50%</option><option value="75%">75%</option></select></div>',
+            '<select id="lne-twid" class="lne-inp"><option value="100%">Full width (100%)</option><option value="auto">Auto</option><option value="50%">50%</option><option value="75%">75%</option></select></div>' +
+            this._tableStyleUI({ style: 'grid', color: '#8a8886', width: 1 }),
         function(ov, close) {
             var rows = parseInt(ov.querySelector('#lne-trows').value)||3;
             var cols = parseInt(ov.querySelector('#lne-tcols').value)||3;
@@ -4628,24 +5222,28 @@ class LocalNotesEditor {
             var zebra = ov.querySelector('#lne-tzebra').checked;
             var wid = ov.querySelector('#lne-twid').value;
             var hdLbl = self._('tableHeader','Header');
-            var html = '<div class="table-responsive"><table style="border-collapse:collapse;width:' + wid + ';">';
+            var html = '<div class="table-responsive"><table style="width:' + wid + ';">';
             if (hdr) {
                 html += '<thead><tr>';
-                for (var c=0;c<cols;c++) html += '<th style="border:1px solid var(--border-color,#272727);padding:8px 12px;background:var(--bg-secondary,#111);font-weight:600;">' + hdLbl + ' ' + (c+1) + '</th>';
+                for (var c=0;c<cols;c++) html += '<th>' + hdLbl + ' ' + (c+1) + '</th>';
                 html += '</tr></thead>';
             }
             html += '<tbody>';
             for (var row=0;row<rows;row++) {
-                var rowStyle = (zebra && row%2===1) ? 'background:rgba(255,255,255,0.03);' : '';
-                html += '<tr style="' + rowStyle + '">';
-                for (var c=0;c<cols;c++) html += '<td style="border:1px solid var(--border-color,#272727);padding:8px 12px;">&nbsp;</td>';
+                html += '<tr>';
+                for (var c=0;c<cols;c++) html += '<td>&nbsp;</td>';
                 html += '</tr>';
             }
             html += '</tbody></table></div><p><br></p>';
+            var holder = document.createElement('div'); holder.innerHTML = html;
+            var so = self._readTableStyleUI(ov); so.zebra = zebra; so.header = hdr;
+            LocalNotesEditor._styleTable(holder.querySelector('table'), so);
+            html = holder.innerHTML;
             self._insertHTML(html);
             self._initContextToolbars();
             close();
         });
+        this._wireTableStyleUI(r.ov);
     }
 
     // ── Color modal ──────────────────────────────────────────────────────
@@ -4653,8 +5251,8 @@ class LocalNotesEditor {
     _modalColor(cmd, btn) {
         var self = this;
         var colors = ['#000000','#434343','#666666','#999999','#b7b7b7','#cccccc','#d9d9d9','#ffffff',
-            '#ff0000','#ff4500','#ff9900','#ffff00','#00ff00','#00ffff','#4a86e8','#0000ff',
-            '#9900ff','#ff00ff','#e74c3c','#e67e22','#f1c40f','#2ecc71','#1abc9c','#3498db',
+            '#ff0000','#ff4500','#ff9900','#ffff00','#00ff00','#00ffff','#2ac660','#0000ff',
+            '#9900ff','#ff00ff','#e74c3c','#e67e22','#f1c40f','#2ecc71','#1abc9c','#1fb04a',
             '#9b59b6','#34495e','#aefc6e','#28a745','#007bff','#dc3545','#ffc107','#17a2b8',
             '#ffffff00'];
         var swatches = colors.map(function(c) {
@@ -5595,10 +6193,15 @@ class LocalNotesEditor {
     _modalTableEdit(table) {
         var self = this;
         var curW = table.style.width || '100%';
-        var hasBorder = table.style.borderCollapse === 'collapse' || !!table.querySelector('td[style*="border"]');
-        var hasZebra = !!table.querySelector('tr:nth-child(even) td');
-
-        this._modal(this._('createTable','Table Properties'), 'bi bi-table',
+        var hasZebra = !!table.querySelector('tbody tr:nth-child(even) td[style*="background"]');
+        var firstCell = table.querySelector('th, td');
+        var bcol = '#8a8886', bw = 1;
+        if (firstCell) {
+            var m = (firstCell.style.border || firstCell.style.borderBottom || '').match(/(\d+)px\s+solid\s+(#[0-9a-f]{3,8}|rgba?\([^)]*\))/i);
+            if (m) { bw = parseInt(m[1]) || 1; if (m[2].charAt(0) === '#' && (m[2].length === 7)) bcol = m[2]; }
+        }
+        var curStyle = table.getAttribute('data-lne-tstyle') || 'grid';
+        var r = this._modal(this._('tableProps','Table Properties'), 'bi bi-table',
             '<div class="lne-fg"><label>' + this._('tableWidth','Width') + '</label>' +
             '<select id="lne-mt-w" class="lne-inp">' +
             '<option value="100%"' + (curW==='100%'?' selected':'') + '>Full (100%)</option>' +
@@ -5609,19 +6212,17 @@ class LocalNotesEditor {
             '<div class="lne-checks">' +
             '<label class="lne-chk"><input type="checkbox" id="lne-mt-zebra"' + (hasZebra?' checked':'') + '>' +
             '<span>' + this._('tableZebra','Zebra striping') + '</span></label>' +
-            '</div>',
+            '</div>' + this._tableStyleUI({ style: curStyle, color: bcol, width: bw }),
         function(ov, close) {
-            var w = ov.querySelector('#lne-mt-w').value;
             self._saveSnap();
-            table.style.width = w;
-            var zebra = ov.querySelector('#lne-mt-zebra').checked;
-            Array.from(table.querySelectorAll('tbody tr')).forEach(function(row, i) {
-                Array.from(row.querySelectorAll('td')).forEach(function(td) {
-                    td.style.background = (zebra && i % 2 === 1) ? 'rgba(255,255,255,0.03)' : '';
-                });
-            });
+            table.style.width = ov.querySelector('#lne-mt-w').value;
+            var so = self._readTableStyleUI(ov);
+            so.zebra = ov.querySelector('#lne-mt-zebra').checked;
+            LocalNotesEditor._styleTable(table, so);
+            self._notifyChange();
             close();
         });
+        this._wireTableStyleUI(r.ov);
     }
 
     _showVideoCtx(vw) {
@@ -6272,7 +6873,16 @@ class LocalNotesEditor {
         var paragraphs = this.ed.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li').length;
         var readingTime = Math.max(1, Math.ceil(words / 200)); // 200 WPM average
         
-        this.statusbar.innerHTML = `
+        var selInfo = '';
+        var _sel = window.getSelection();
+        if (_sel && _sel.rangeCount && !_sel.isCollapsed && this.ed.contains(_sel.anchorNode)) {
+            var _st = _sel.toString().replace(/\u200B/g, '').trim();
+            var _sw = _st ? _st.split(/\s+/).length : 0;
+            if (_sw) selInfo = `<span class="lne-sb-sel">${this._('statusSelected','Selected')}: <b>${_sw}</b></span>`;
+        }
+        var _box = this.statusbar.querySelector('.lne-sb-stats') || this.statusbar;
+        _box.innerHTML = `
+            ${selInfo}
             <span>${this._('words','Words')}: <b>${words}</b></span>
             <span>${this._('characters','Characters')}: <b>${chars}</b></span>
             <span>${this._('charsNoSpaces','Chars (no spaces)')}: <b>${charsNoSpaces}</b></span>

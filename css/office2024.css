@@ -1,0 +1,700 @@
+/*
+ * Local Notes — Microsoft Office 2024 look & feel
+ * ------------------------------------------------------------------------
+ * Loaded LAST (see index.html + js/page-init.js). It restyles the app chrome
+ * (title bar, command bar, view bar, workspace tabs, note cards, dialogs) and the
+ * rich-text editor (ribbon with tabs/groups, paper canvas, status bar with zoom)
+ * in the spirit of Word / OneNote 2024: Segoe UI, Fluent grey ramp, Word-blue
+ * accent, 4px controls, flat surfaces with soft Fluent shadows.
+ *
+ * Design tokens live in css/index.css (:root / [data-theme]).
+ * Everything here is plain CSS — remove this file (and its two <link>/page-init
+ * entries) to get the previous look back.
+ */
+
+/* ── Local tokens ─────────────────────────────────────────────────────── */
+:root {
+    --accent-fg: #58dc83;                 /* accent when used as TEXT on a dark surface */
+    --accent-soft: rgba(88, 220, 131, .16);
+    --heading-color: #74e297;
+    --paper-bg: #292929;
+    --paper-shadow: 0 0 0 1px rgba(255,255,255,.06), 0 3px 10px rgba(0,0,0,.45);
+    --focus-ring: #58dc83;
+}
+[data-theme="light"] {
+    --accent-fg: #098b38;
+    --accent-soft: rgba(9, 139, 56, .10);
+    --heading-color: #08471a;
+    --paper-bg: #ffffff;
+    --paper-shadow: 0 0 0 1px rgba(0,0,0,.06), 0 2px 8px rgba(0,0,0,.10);
+    --focus-ring: #098b38;
+}
+
+/* ── Base ─────────────────────────────────────────────────────────────── */
+html[data-theme] body {
+    font-family: var(--font-ui);
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: 0;
+}
+html[data-theme] body a { color: var(--accent-fg); }
+html[data-theme] body :focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+html[data-theme] body ::selection { background: rgba(9, 139, 56, .28); }
+html[data-theme="dark"] body ::selection { background: rgba(88, 220, 131, .35); }
+* { scrollbar-width: thin; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { border-radius: 0; border: 2px solid transparent; background-clip: padding-box; background-color: var(--scrollbar-thumb); }
+::-webkit-scrollbar-thumb:hover { background-color: color-mix(in srgb, var(--scrollbar-thumb) 70%, var(--text-color)); }
+
+/* ── Title bar (app header) ───────────────────────────────────────────── */
+html[data-theme] body .info-app {
+    background: var(--titlebar-bg) !important;
+    color: var(--titlebar-text);
+    height: 44px !important;
+    min-height: 44px;
+    padding: 0 16px !important;
+    margin: 0 !important;
+    gap: 10px !important;
+    justify-content: flex-start !important;
+    align-items: center;
+    border: 0 !important;
+    box-shadow: none !important;
+    flex-direction: row !important;
+}
+html[data-theme] body .info-app .logo {
+    width: 22px !important; height: 22px !important;
+    filter: brightness(0) invert(1) !important;
+    flex: none;
+}
+html[data-theme] body .info-app .name-app {
+    font-family: var(--font-ui) !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+    color: var(--titlebar-text) !important;
+    margin: 0 !important;
+    line-height: 1 !important;
+    text-shadow: none !important;
+}
+html[data-theme] body .info-app .beta-badge {
+    background: rgba(255,255,255,.18) !important;
+    color: #fff !important;
+    border: 1px solid rgba(255,255,255,.35) !important;
+    border-radius: 3px !important;
+    box-shadow: none !important;
+    font-size: 10px !important;
+    font-weight: 600;
+    padding: 2px 6px !important;
+    letter-spacing: .06em !important;
+}
+
+/* ── Command bar: [+ Add a note] [⋯] [Search] ─────────────────────────── */
+html[data-theme] body .center_nav { background: var(--ribbon-bg) !important; border-bottom: 1px solid var(--border-color); box-shadow: none !important; }
+html[data-theme] body .center_nav .sticky { background: transparent !important; }
+html[data-theme] body #addNoteButton {
+    background: var(--office-blue) !important;
+    background-image: none !important;
+    color: #fff !important;
+    border: 1px solid var(--office-blue) !important;
+    border-radius: 4px !important;
+    font-family: var(--font-ui) !important;
+    font-weight: 600 !important;
+    font-size: 13px !important;
+    box-shadow: none !important;
+    height: 34px !important;
+    letter-spacing: 0 !important;
+    transform: none !important;
+}
+html[data-theme="dark"] body #addNoteButton { background: #1da84b !important; border-color: #1da84b !important; }
+html[data-theme] body #addNoteButton:hover { background: var(--office-blue-dark) !important; border-color: var(--office-blue-dark) !important; }
+html[data-theme="dark"] body #addNoteButton:hover { background: #2bca5f !important; border-color: #2bca5f !important; }
+html[data-theme] body #addNoteButton:active { filter: brightness(.92); transform: none !important; }
+html[data-theme] body .block_btn button:not(#addNoteButton),
+html[data-theme] body .more-actions-toggle {
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    border-radius: 4px !important;
+    color: var(--text-color) !important;
+    box-shadow: none !important;
+    font-family: var(--font-ui) !important;
+    font-weight: 400 !important;
+    height: 34px !important;
+}
+html[data-theme] body .block_btn button:not(#addNoteButton):hover,
+html[data-theme] body .more-actions-toggle:hover { background: var(--ribbon-hover) !important; transform: none !important; }
+html[data-theme] body .more-actions-menu { background: var(--modal-bg) !important; border: 1px solid var(--border-color) !important; border-radius: 6px !important; box-shadow: var(--shadow-strong) !important; }
+html[data-theme] body #searchInput {
+    background: var(--input-bg) !important;
+    border: 1px solid var(--button-border) !important;
+    border-bottom-color: color-mix(in srgb, var(--text-secondary) 70%, transparent) !important;
+    border-radius: 4px !important;
+    height: 34px !important;
+    box-shadow: none !important;
+    font-family: var(--font-ui) !important;
+    font-size: 13px !important;
+    color: var(--input-text) !important;
+}
+html[data-theme] body #searchInput:focus { border-color: var(--office-blue) !important; border-bottom: 2px solid var(--office-blue) !important; background: var(--input-bg) !important; }
+html[data-theme="dark"] body #searchInput:focus { border-color: var(--accent-fg) !important; }
+html[data-theme] body .search-shortcut-hint { border-radius: 3px; background: var(--ribbon-bg); border: 1px solid var(--border-color); font-family: var(--font-ui); font-size: 11px; color: var(--text-secondary); }
+
+/* ── View bar (List / Task board / Calendar / Graph / Publish / Protect) ─ */
+html[data-theme] body .btn_view_div {
+    background: var(--card-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 6px !important;
+    box-shadow: var(--shadow-soft) !important;
+    padding: 4px !important;
+}
+html[data-theme] body .btn_view_div button,
+html[data-theme] body .btn_view_div #viewCalendarBtn,
+html[data-theme] body .btn_view_div #graphViewBtn,
+html[data-theme] body .btn_view_div #siteExportBtn {
+    background: transparent !important;
+    background-image: none !important;
+    color: var(--text-color) !important;
+    border-radius: 4px !important;
+    font-family: var(--font-ui) !important;
+    font-weight: 400 !important;
+    font-size: 13px !important;
+    height: 36px !important;
+    box-shadow: none !important;
+}
+html[data-theme] body .btn_view_div button:hover,
+html[data-theme] body .btn_view_div #viewCalendarBtn:hover,
+html[data-theme] body .btn_view_div #graphViewBtn:hover,
+html[data-theme] body .btn_view_div #siteExportBtn:hover { background: var(--ribbon-hover) !important; }
+html[data-theme] body .btn_view_div button.active,
+html[data-theme] body .btn_view_div #toggleTaskBoardButton.active,
+html[data-theme] body .btn_view_div #appLockBtn.ln-lock-active {
+    background: var(--ribbon-active-bg) !important;
+    color: var(--accent-fg) !important;
+}
+html[data-theme] body .btn_view_div button i { color: inherit; }
+
+/* ── Workspace tabs ───────────────────────────────────────────────────── */
+html[data-theme] body .workspace-tabs-wrapper { background: var(--ribbon-bg) !important; border-bottom: 1px solid var(--border-color) !important; }
+html[data-theme] body .workspace-tab {
+    font-family: var(--font-ui) !important;
+    border-radius: 4px 4px 0 0 !important;
+    box-shadow: none !important;
+}
+html[data-theme] body .workspace-tab.active, html[data-theme] body .workspace-tab[aria-selected="true"] {
+    background: var(--card-bg) !important;
+    box-shadow: inset 0 3px 0 var(--ws-color, var(--office-blue)) !important;
+}
+
+/* ── Note cards ───────────────────────────────────────────────────────── */
+html[data-theme] body .note {
+    background: var(--note-bg) !important;
+    border: 1px solid var(--note-border) !important;
+    border-radius: 6px !important;
+    box-shadow: var(--shadow-soft) !important;
+    transition: box-shadow .15s ease, border-color .15s ease;
+}
+html[data-theme] body .note:hover { box-shadow: var(--shadow-medium) !important; border-color: color-mix(in srgb, var(--accent-fg) 45%, var(--note-border)) !important; transform: none !important; }
+html[data-theme] body .noteContent { font-family: var(--font-doc); font-size: 14.5px; line-height: 1.55; }
+html[data-theme] body .note-footer { background: var(--note-footer-bg) !important; border-top: 1px solid var(--note-border) !important; border-radius: 0 0 6px 6px !important; }
+html[data-theme] body .editBtn, html[data-theme] body .deleteBtn, html[data-theme] body .exportBtn,
+html[data-theme] body .note-buttons button {
+    background: transparent !important;
+    border: 1px solid var(--button-border) !important;
+    border-radius: 4px !important;
+    color: var(--text-color) !important;
+    font-family: var(--font-ui) !important;
+    font-size: 12.5px !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+html[data-theme] body .editBtn:hover, html[data-theme] body .deleteBtn:hover, html[data-theme] body .exportBtn:hover,
+html[data-theme] body .note-buttons button:hover { background: var(--ribbon-hover) !important; border-color: var(--button-border) !important; }
+html[data-theme] body .deleteBtn:hover { color: #c42b1c !important; }
+html[data-theme] body .note-tag-pill { border-radius: 3px !important; }
+
+/* Rich text inside cards and editor: Office 2024 document typography */
+html[data-theme] body .noteContent h1, html[data-theme] body .noteContent h2,
+html[data-theme] body .noteContent h3, html[data-theme] body .noteContent h4 {
+    color: var(--heading-color); border: 0 !important; padding-bottom: 0 !important;
+    font-family: var(--font-doc); font-weight: 400;
+}
+html[data-theme] body .noteContent h1 { font-size: 1.7em; margin: 12px 0 8px; line-height: 1.2; }
+html[data-theme] body .noteContent h2 { font-size: 1.38em; margin: 12px 0 6px; line-height: 1.25; }
+html[data-theme] body .noteContent h3 { font-size: 1.15em; margin: 10px 0 4px; font-weight: 600; }
+html[data-theme] body .noteContent blockquote {
+    background: transparent !important;
+    border: 0 !important;
+    border-left: 3px solid var(--accent-fg) !important;
+    border-radius: 0 !important;
+    color: var(--text-secondary);
+}
+html[data-theme] body .noteContent blockquote::before { display: none !important; }
+
+/* ── Footer / welcome area ────────────────────────────────────────────── */
+html[data-theme] body footer { background: var(--footer-bg) !important; border-top: 1px solid var(--border-color); border-radius: 0 !important; box-shadow: none !important; }
+html[data-theme] body footer::before { display: none !important; }
+
+/* ── Dialogs (note editor modal, confirm, settings) ───────────────────── */
+html[data-theme] body .modal-content {
+    background: var(--modal-bg) !important;
+    border: 1px solid var(--modal-border) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 25.6px 57.6px rgba(0,0,0,.30), 0 4.8px 14.4px rgba(0,0,0,.24) !important;
+}
+html[data-theme] body .modal-content::before { display: none !important; }
+html[data-theme] body .modal-buttons-container { background: var(--ribbon-bg) !important; border-top: 1px solid var(--border-color) !important; }
+html[data-theme] body .modal-buttons-container button,
+html[data-theme] body .modal-content .btn {
+    border-radius: 4px !important;
+    font-family: var(--font-ui) !important;
+    font-weight: 600 !important;
+    font-size: 13px !important;
+    min-height: 32px !important;
+    box-shadow: none !important;
+    transform: none !important;
+    letter-spacing: 0 !important;
+}
+html[data-theme] body #saveNoteButton, html[data-theme] body #confirmYes {
+    background: var(--office-blue) !important; border: 1px solid var(--office-blue) !important; color: #fff !important;
+}
+html[data-theme="dark"] body #saveNoteButton, html[data-theme="dark"] body #confirmYes { background: #1da84b !important; border-color: #1da84b !important; }
+html[data-theme] body #saveNoteButton:hover, html[data-theme] body #confirmYes:hover { background: var(--office-blue-dark) !important; }
+html[data-theme] body #cancelNoteButton, html[data-theme] body #confirmNo, html[data-theme] body #noteSettingsBtn {
+    background: var(--button-bg) !important; border: 1px solid var(--button-border) !important; color: var(--text-color) !important;
+}
+html[data-theme] body #cancelNoteButton:hover, html[data-theme] body #confirmNo:hover, html[data-theme] body #noteSettingsBtn:hover { background: var(--ribbon-hover) !important; }
+
+/* ═════════════════════════════════════════════════════════════════════════
+   EDITOR — Office ribbon
+   ═════════════════════════════════════════════════════════════════════════ */
+html[data-theme] body .lne-wrapper {
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    box-shadow: none;
+    background: var(--canvas-bg);
+    font-family: var(--font-ui);
+}
+html[data-theme] body .lne-wrapper:focus-within { border-color: var(--border-color); box-shadow: none; }
+html[data-theme] body #editModal .lne-editor-wrapper { background: transparent !important; }
+html[data-theme] body #editModal .lne-toolbar { border-radius: 0 !important; clip-path: none !important; overflow: visible; }
+
+html[data-theme] body .lne-toolbar {
+    background: var(--ribbon-bg) !important;
+    -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+    border-bottom: 1px solid var(--border-color);
+    padding: 0 !important;
+}
+
+/* Tab strip */
+.lne-ribbon-tabs { display: flex; gap: 2px; padding: 4px 8px 0; align-items: flex-end; }
+.lne-rtab {
+    position: relative;
+    font: 400 13px/1 var(--font-ui);
+    color: var(--text-color);
+    background: transparent;
+    border: 0;
+    border-radius: 4px 4px 0 0;
+    padding: 8px 14px 9px;
+    cursor: pointer;
+}
+.lne-rtab:hover { background: var(--ribbon-hover); }
+.lne-rtab.active { font-weight: 600; color: var(--accent-fg); }
+.lne-rtab.active::after {
+    content: ""; position: absolute; left: 10px; right: 10px; bottom: 0; height: 3px;
+    border-radius: 3px 3px 0 0; background: var(--accent-fg);
+}
+.lne-rtab:focus-visible { outline-offset: -2px; }
+
+/* Panels */
+.lne-toolbar .lne-panel { display: none; }
+.lne-toolbar .lne-panel.active {
+    display: flex; flex-wrap: wrap; align-items: stretch; gap: 0;
+    padding: 6px 8px 4px;
+    border-top: 1px solid var(--border-color);
+    background: var(--ribbon-panel, var(--ribbon-bg));
+    min-height: 0;
+}
+[data-theme="light"] { --ribbon-panel: #fbfbfb; }
+[data-theme="dark"]  { --ribbon-panel: #2b2b2b; }
+
+/* Groups */
+html[data-theme] body .lne-toolbar .lne-grp {
+    display: flex; flex-direction: column;
+    padding: 0 10px; gap: 0;
+    background: transparent;
+    border-radius: 0;
+    border-right: 1px solid var(--border-color);
+}
+html[data-theme] body .lne-toolbar .lne-grp:last-child { border-right: 0; }
+html[data-theme] body .lne-toolbar .lne-grp:first-child { padding-left: 4px; }
+.lne-grp-body { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 3px; }
+.lne-line { display: flex; align-items: center; gap: 1px; flex-wrap: nowrap; }
+.lne-stack { display: flex; flex-direction: column; justify-content: center; gap: 2px; }
+.lne-grp-body > .lne-line:only-child { flex: 1; }
+.lne-grp-label { font-size: 11px; line-height: 1; color: var(--text-secondary); text-align: center; padding: 3px 0 0; white-space: nowrap; user-select: none; }
+.lne-vsep { width: 1px; height: 18px; background: var(--border-color); margin: 0 4px; flex: none; }
+
+/* Buttons */
+html[data-theme] body .lne-toolbar .lne-btn:not(.lne-btn-lg):not(.lne-btn-txt):not(.lne-btn-dd):not(.lne-style-tile):not(.lne-tpl-toggle) {
+    width: 28px !important; height: 28px !important; min-width: 0 !important; min-height: 0 !important;
+}
+html[data-theme] body .lne-toolbar .lne-btn {
+    border-radius: 4px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-color);
+    box-shadow: none;
+    transform: none;
+}
+html[data-theme] body .lne-toolbar .lne-btn i { font-size: 15px; }
+html[data-theme] body .lne-toolbar .lne-btn:hover { background: var(--ribbon-hover); border-color: transparent; transform: none; box-shadow: none; }
+html[data-theme] body .lne-toolbar .lne-btn:active { background: var(--ribbon-pressed); color: var(--text-color); transform: none; }
+html[data-theme] body .lne-toolbar .lne-btn.active,
+html[data-theme] body .lne-toolbar .lne-btn.lne-btn-active,
+html[data-theme] body .lne-toolbar .lne-btn[aria-expanded="true"] {
+    background: var(--ribbon-active-bg);
+    border-color: var(--ribbon-active-border);
+    color: var(--accent-fg);
+    box-shadow: none;
+}
+html[data-theme] body .lne-toolbar .lne-btn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; box-shadow: none; }
+
+/* Large button: icon over label */
+html[data-theme] body .lne-toolbar .lne-btn-lg {
+    width: auto !important; height: 58px !important; min-width: 54px; padding: 4px 8px;
+    flex-direction: column; justify-content: center; gap: 5px;
+}
+html[data-theme] body .lne-toolbar .lne-btn-lg i { font-size: 24px; }
+html[data-theme] body .lne-toolbar .lne-btn-lg .lne-lg-label { font: 400 12px/1.1 var(--font-ui); white-space: nowrap; }
+html[data-theme] body .lne-toolbar .lne-btn-lg:hover i { color: var(--accent-fg); }
+
+/* Icon + text button */
+html[data-theme] body .lne-toolbar .lne-btn-txt {
+    width: auto; min-width: 84px; padding: 0 8px; flex-direction: row; justify-content: flex-start; gap: 7px;
+}
+html[data-theme] body .lne-toolbar .lne-btn-txt .lne-txt-label { font: 400 12.5px/1 var(--font-ui); white-space: nowrap; }
+
+/* Dropdown button (Change case, Line spacing) */
+html[data-theme] body .lne-toolbar .lne-btn-dd { width: auto; padding: 0 3px 0 6px; flex-direction: row; gap: 2px; }
+html[data-theme] body .lne-toolbar .lne-btn-dd .lne-dd-caret { font-size: 8px; opacity: .7; }
+
+/* "A▲ / A▼" font size steppers */
+.lne-ico-grow, .lne-ico-shrink { position: relative; }
+.lne-ico-grow::after, .lne-ico-shrink::after {
+    position: absolute; right: -5px; top: -3px; font-family: var(--font-ui); font-style: normal; font-size: 7px; line-height: 1;
+}
+.lne-ico-grow::after { content: "▲"; }
+.lne-ico-shrink::after { content: "▼"; top: auto; bottom: -3px; }
+
+/* Colour buttons: Office keeps the colour bar under the glyph */
+html[data-theme] body .lne-toolbar .lne-color-btn { flex-direction: column; gap: 1px; justify-content: center; }
+html[data-theme] body .lne-toolbar .lne-color-btn .lne-cbar {
+    position: static; width: 16px; height: 3px; border-radius: 0; box-shadow: none; border: 0;
+}
+html[data-theme] body .lne-toolbar .lne-color-btn .lne-cbar-bg { border: 1px dashed var(--border-color); box-sizing: border-box; }
+html[data-theme] body .lne-toolbar .lne-color-btn i { font-size: 14px; }
+
+/* Selects */
+html[data-theme] body .lne-toolbar .lne-sel {
+    height: 26px; border-radius: 4px; border: 1px solid var(--button-border);
+    background-color: var(--input-bg); color: var(--text-color);
+    font: 400 12.5px var(--font-ui);
+    padding: 0 22px 0 8px;
+    box-shadow: none;
+}
+html[data-theme] body .lne-toolbar .lne-sel:hover { background-color: var(--input-bg); border-color: var(--text-secondary); }
+html[data-theme] body .lne-toolbar .lne-sel:focus { border-color: var(--accent-fg); box-shadow: none; outline: 1px solid var(--accent-fg); }
+html[data-theme] body .lne-toolbar .lne-sel-font { width: 128px; min-width: 128px; }
+html[data-theme] body .lne-toolbar .lne-sel-size { width: 58px; min-width: 58px; max-width: 58px; }
+html[data-theme] body .lne-toolbar .lne-sel-heading { width: 100%; max-width: none; margin-top: 2px; }
+
+/* Style gallery */
+.lne-style-tile.lne-btn {
+    width: auto !important; min-width: 62px; height: 30px !important; padding: 0 9px !important;
+    border: 1px solid var(--button-border) !important; background: var(--input-bg) !important;
+    margin-right: 3px; flex-direction: row;
+}
+.lne-style-tile .lne-tile-prev { display: none; }
+.lne-style-tile .lne-tile-name { font: 400 12.5px/1 var(--font-doc); white-space: nowrap; color: var(--text-color); }
+.lne-tile-h1 .lne-tile-name { font-size: 14px; color: var(--heading-color); }
+.lne-tile-h2 .lne-tile-name { font-size: 13px; color: var(--heading-color); }
+.lne-tile-h3 .lne-tile-name { font-weight: 600; color: var(--heading-color); }
+.lne-tile-quote .lne-tile-name { font-style: italic; color: var(--text-secondary); }
+html[data-theme] body .lne-toolbar .lne-style-tile.lne-btn:hover { background: var(--ribbon-hover) !important; }
+html[data-theme] body .lne-toolbar .lne-style-tile.lne-btn.active { border: 2px solid var(--accent-fg) !important; background: var(--accent-soft) !important; padding: 0 8px !important; }
+
+/* Templates group (dropdown) inside the Insert tab */
+html[data-theme] body .lne-toolbar .lne-templates-row { display: block; padding: 0; overflow: visible; background: transparent; border: 0 !important; }
+html[data-theme] body .lne-toolbar button.lne-tpl-toggle.lne-btn {
+    height: 58px !important; width: auto !important; min-width: 64px; flex-direction: column !important; gap: 5px !important; padding: 4px 8px !important;
+    border: 1px solid transparent !important; background: transparent !important; border-radius: 4px !important; color: var(--text-color) !important;
+}
+html[data-theme] body .lne-toolbar button.lne-tpl-toggle.lne-btn:hover { background: var(--ribbon-hover) !important; }
+html[data-theme] body .lne-toolbar button.lne-tpl-toggle.lne-btn[aria-expanded="true"] { background: var(--ribbon-active-bg) !important; border-color: var(--ribbon-active-border) !important; color: var(--accent-fg) !important; }
+.lne-tpl-toggle > i:first-child { font-size: 24px !important; }
+.lne-tpl-toggle .lne-btn-label { font-size: 12px !important; }
+.lne-tpl-toggle .lne-tpl-toggle-caret { display: none; }
+
+/* Dropdown menus (templates, case, spacing) */
+.lne-pop, html[data-theme] body .lne-tpl-menu {
+    background: var(--modal-bg); color: var(--text-color);
+    border: 1px solid var(--border-color); border-radius: 6px;
+    box-shadow: 0 6.4px 14.4px rgba(0,0,0,.20), 0 1.2px 3.6px rgba(0,0,0,.16);
+    font-family: var(--font-ui);
+}
+.lne-pop { position: fixed; z-index: 100001; min-width: 230px; padding: 4px; animation: lnePopIn .12s ease-out; }
+@keyframes lnePopIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+.lne-pop-item {
+    display: flex; align-items: center; gap: 8px; width: 100%;
+    height: 30px; padding: 0 10px 0 4px; border: 0; border-radius: 3px; background: transparent;
+    font: 400 13px var(--font-ui); color: var(--text-color); text-align: left; cursor: pointer;
+}
+.lne-pop-item:hover { background: var(--ribbon-hover); }
+.lne-pop-item.active { background: var(--accent-soft); }
+.lne-pop-ico { width: 20px; text-align: center; color: var(--accent-fg); font-size: 13px; flex: none; }
+.lne-pop-lbl { flex: 1; white-space: nowrap; }
+.lne-pop-hint { color: var(--text-secondary); font-size: 12px; }
+.lne-pop-sep { height: 1px; background: var(--border-color); margin: 4px 2px; }
+.lne-pop-head { font: 600 11px var(--font-ui); color: var(--text-secondary); padding: 6px 8px 2px; }
+html[data-theme] body .lne-tpl-menu .lne-tpl-group-text { color: var(--text-secondary) !important; }
+html[data-theme] body .lne-tpl-menu button.lne-tpl-btn.lne-btn { border-radius: 3px !important; border: 0 !important; background: transparent !important; color: var(--text-color) !important; height: 32px !important; }
+html[data-theme] body .lne-tpl-menu button.lne-tpl-btn.lne-btn:hover { background: var(--ribbon-hover) !important; }
+
+/* Tooltips look like Office ScreenTips */
+html[data-theme] body .lne-tooltip { border-radius: 4px; font-family: var(--font-ui); }
+
+/* Format painter cursor */
+.lne-editor.lne-painting { cursor: copy; }
+
+/* ── Paper canvas ─────────────────────────────────────────────────────── */
+html[data-theme] body .lne-body { background: var(--canvas-bg) !important; scrollbar-color: var(--scrollbar-thumb) transparent; }
+html[data-theme] body #editModal .lne-body { background: var(--canvas-bg) !important; }
+@media (min-width: 769px) {
+    html[data-theme] body .lne-body { padding: 18px 20px 28px; }
+    html[data-theme] body #editModal .lne-body { padding: 18px 20px 28px; }
+    html[data-theme] body .lne-body .lne-editor {
+        max-width: 860px;
+        margin: 0 auto;
+        background: var(--paper-bg);
+        box-shadow: var(--paper-shadow);
+        border-radius: 0;
+        padding: 40px 56px 56px;
+        min-height: max(var(--lne-editor-min-h, 400px), 420px);
+    }
+}
+html[data-theme] body .lne-editor {
+    font-family: var(--font-doc);
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--text-color);
+    caret-color: var(--text-color);
+}
+html[data-theme] body .lne-editor p { margin: 0 0 10px; line-height: inherit; }
+
+/* Headings — Office 2024 theme (light weight, deep teal-blue, no rules) */
+html[data-theme] body .lne-editor h1, html[data-theme] body .lne-editor h2, html[data-theme] body .lne-editor h3,
+html[data-theme] body .lne-editor h4, html[data-theme] body .lne-editor h5, html[data-theme] body .lne-editor h6 {
+    font-family: var(--font-doc);
+    color: var(--heading-color);
+    border: 0; padding-bottom: 0; font-weight: 400;
+}
+html[data-theme] body .lne-editor h1 { font-size: 1.8em; margin: 22px 0 8px; line-height: 1.2; }
+html[data-theme] body .lne-editor h2 { font-size: 1.45em; margin: 18px 0 6px; line-height: 1.25; }
+html[data-theme] body .lne-editor h3 { font-size: 1.2em; margin: 14px 0 4px; font-weight: 600; line-height: 1.3; }
+html[data-theme] body .lne-editor h4 { font-size: 1.05em; margin: 12px 0 4px; font-weight: 600; font-style: italic; }
+html[data-theme] body .lne-editor h5 { font-size: 1em; margin: 10px 0 4px; font-weight: 600; }
+html[data-theme] body .lne-editor h6 { font-size: .95em; margin: 10px 0 4px; font-weight: 600; color: var(--text-secondary); }
+html[data-theme] body .lne-editor > :first-child { margin-top: 0; }
+html[data-theme] body .lne-editor blockquote {
+    background: transparent !important;
+    border: 0; border-left: 3px solid var(--accent-fg); border-radius: 0;
+    margin: 12px 0; padding: 2px 0 2px 16px;
+    color: var(--text-secondary);
+}
+html[data-theme] body .lne-editor blockquote::before { display: none; }
+html[data-theme] body .lne-editor a { color: var(--accent-fg); text-underline-offset: 2px; }
+html[data-theme] body .lne-editor hr { border: 0; border-top: 1px solid var(--border-color); margin: 18px 0; }
+
+/* ── Status bar (blue Office bar with zoom) ───────────────────────────── */
+html[data-theme] body .lne-wrapper .lne-statusbar, html[data-theme] body #editModal .modal-content .lne-statusbar {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 0 12px; height: 26px; min-height: 26px;
+    background: var(--office-blue) !important; color: #fff !important;
+    border-top: 0 !important; font: 400 12px var(--font-ui);
+}
+html[data-theme="dark"] body .lne-wrapper .lne-statusbar { background: #075a22 !important; }
+html[data-theme] body .lne-wrapper .lne-statusbar b, html[data-theme] body .lne-wrapper .lne-statusbar span { color: #fff !important; }
+.lne-sb-stats { display: flex; gap: 16px; overflow-x: auto; white-space: nowrap; scrollbar-width: none; min-width: 0; }
+.lne-sb-stats::-webkit-scrollbar { display: none; }
+.lne-sb-sel { padding-right: 12px; border-right: 1px solid rgba(255,255,255,.35); }
+.lne-zoom { display: flex; align-items: center; gap: 4px; flex: none; }
+.lne-zoom button { background: transparent; border: 0; color: #fff; cursor: pointer; border-radius: 3px; height: 20px; min-width: 20px; padding: 0 3px; font: 400 12px var(--font-ui); display: inline-flex; align-items: center; justify-content: center; }
+.lne-zoom button:hover { background: rgba(255,255,255,.2); }
+.lne-zoom .lne-zoom-val { min-width: 42px; }
+.lne-zoom-range { -webkit-appearance: none; appearance: none; width: 110px; height: 18px; background: transparent; cursor: pointer; }
+.lne-zoom-range::-webkit-slider-runnable-track { height: 2px; background: rgba(255,255,255,.55); border-radius: 1px; }
+.lne-zoom-range::-moz-range-track { height: 2px; background: rgba(255,255,255,.55); border-radius: 1px; }
+.lne-zoom-range::-webkit-slider-thumb { -webkit-appearance: none; width: 8px; height: 14px; margin-top: -6px; background: #fff; border-radius: 2px; border: 0; }
+.lne-zoom-range::-moz-range-thumb { width: 8px; height: 14px; background: #fff; border-radius: 2px; border: 0; }
+
+/* ── Editor dialogs (links, images, tables…) ──────────────────────────── */
+html[data-theme] body .lne-modal { border-radius: 8px; border: 1px solid var(--border-color); box-shadow: 0 25.6px 57.6px rgba(0,0,0,.30), 0 4.8px 14.4px rgba(0,0,0,.24); font-family: var(--font-ui); }
+html[data-theme] body .lne-mhd { background: var(--modal-bg); }
+html[data-theme] body .lne-mhd h3 { font-size: 16px; font-weight: 600; }
+html[data-theme] body .lne-mft { background: var(--ribbon-bg); }
+html[data-theme] body .lne-inp { border-radius: 4px; border: 1px solid var(--button-border); border-bottom-color: var(--text-secondary); background: var(--input-bg); font-family: var(--font-ui); }
+html[data-theme] body .lne-inp:focus { border-color: var(--accent-fg); box-shadow: none; outline: 1px solid var(--accent-fg); }
+html[data-theme] body .lne-mbtn { border-radius: 4px; font-family: var(--font-ui); font-weight: 600; font-size: 13px; padding: 6px 16px; background: var(--button-bg); border: 1px solid var(--button-border); color: var(--text-color); }
+html[data-theme] body .lne-mbtn:hover { background: var(--ribbon-hover); }
+html[data-theme] body .lne-mbtn-pri { background: var(--office-blue); border-color: var(--office-blue); color: #fff; }
+html[data-theme="dark"] body .lne-mbtn-pri { background: #1da84b; border-color: #1da84b; }
+html[data-theme] body .lne-mbtn-pri:hover { background: var(--office-blue-dark); }
+html[data-theme] body .lne-tab { border-radius: 4px; }
+html[data-theme] body .lne-tab-a { background: var(--accent-soft); color: var(--accent-fg); border-color: var(--ribbon-active-border); }
+
+/* ═════════════════════════════════════════════════════════════════════════
+   Touch / narrow screens — keep the single scrolling toolbar
+   ═════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+    .lne-grp-label, .lne-vsep, .lne-zoom, .lne-style-tile { display: none !important; }
+    /* compact tab strip + one scrolling tool row for the active tab */
+    html[data-theme] body .lne-toolbar .lne-ribbon-tabs { display: flex !important; height: 36px; padding: 0 6px; gap: 2px; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--border-color); background: var(--ribbon-bg); }
+    .lne-ribbon-tabs::-webkit-scrollbar { display: none; }
+    html[data-theme] body .lne-toolbar .lne-rtab { flex: 1 0 auto; min-width: 72px; height: 36px; padding: 0 14px; font-size: 13.5px; }
+    .lne-toolbar .lne-panel { display: none !important; }
+    .lne-toolbar .lne-panel.active { display: flex !important; flex-wrap: nowrap; min-height: 0; padding: 3px 6px; border-top: 0; background: transparent; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; }
+    .lne-toolbar .lne-panel.active::-webkit-scrollbar { display: none; }
+    .lne-toolbar .lne-panel .lne-grp { flex: none; scroll-snap-align: start; }
+    html[data-theme] body .lne-editor-wrap, html[data-theme] body .lne-body { overscroll-behavior: contain; }
+    html[data-theme] body .lne-toolbar .lne-grp { flex-direction: row; border-right: 1px solid var(--border-color); padding: 0 4px; }
+    .lne-grp-body, .lne-line, .lne-stack { display: contents; }
+    html[data-theme] body .lne-toolbar .lne-btn-lg,
+    html[data-theme] body .lne-toolbar .lne-btn-txt { width: 40px !important; min-width: 40px; height: 40px !important; padding: 0 !important; }
+    html[data-theme] body .lne-toolbar .lne-btn-lg i { font-size: 17px; }
+    .lne-lg-label, .lne-txt-label { display: none !important; }
+    html[data-theme] body .lne-toolbar .lne-sel-font, html[data-theme] body .lne-toolbar .lne-sel-heading { width: 96px; min-width: 96px; margin: 0; }
+    html[data-theme] body .lne-toolbar .lne-sel-size { width: 54px; min-width: 54px; max-width: 54px; }
+    html[data-theme] body .lne-toolbar .lne-templates-row { display: contents; }
+    html[data-theme] body .lne-toolbar button.lne-tpl-toggle.lne-btn { height: 38px !important; flex-direction: row !important; }
+    html[data-theme] body .lne-statusbar { height: 24px; min-height: 24px; font-size: 11px; padding: 0 10px; gap: 10px; }
+    .lne-sb-stats > :nth-child(n+3):not(:last-child) { display: none; }
+    html[data-theme] body .lne-body { padding: 0 !important; background: var(--paper-bg) !important; }
+    html[data-theme] body .lne-body .lne-editor { max-width: none; box-shadow: none; padding: 16px 16px 52px; min-height: 100%; font-size: max(var(--doc-size, 15px), 16px); }
+    html[data-theme] body #editModal .lne-actions, html[data-theme] body #editModal .modal-footer { padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+}
+
+@media print {
+    .lne-ribbon-tabs, .lne-pop { display: none !important; }
+}
+
+/* View-bar segments carry ID-level gradients in older sheets — flatten them */
+html[data-theme] body .btn_view_div #toggleViewButton,
+html[data-theme] body .btn_view_div #toggleTaskBoardButton,
+html[data-theme] body .btn_view_div #viewCalendarBtn,
+html[data-theme] body .btn_view_div #graphViewBtn,
+html[data-theme] body .btn_view_div #siteExportBtn,
+html[data-theme] body .btn_view_div #appLockBtn,
+html[data-theme] body .btn_view_div #appLockSettingsBtn {
+    background: transparent !important; background-image: none !important; box-shadow: none !important;
+}
+html[data-theme] body .btn_view_div #toggleViewButton::before, html[data-theme] body .btn_view_div #toggleViewButton::after,
+html[data-theme] body .btn_view_div #viewCalendarBtn::before, html[data-theme] body .btn_view_div #viewCalendarBtn::after { background: none !important; }
+html[data-theme] body .btn_view_div #toggleViewButton:hover, html[data-theme] body .btn_view_div #toggleTaskBoardButton:hover,
+html[data-theme] body .btn_view_div #viewCalendarBtn:hover, html[data-theme] body .btn_view_div #graphViewBtn:hover,
+html[data-theme] body .btn_view_div #siteExportBtn:hover, html[data-theme] body .btn_view_div #appLockBtn:hover { background: var(--ribbon-hover) !important; }
+html[data-theme] body .btn_view_div #toggleTaskBoardButton.active, html[data-theme] body .btn_view_div #appLockBtn.ln-lock-active { background: var(--ribbon-active-bg) !important; }
+
+/* ── Document defaults (set via View ▸ Defaults; see LocalNotesEditor._applyPrefs) ── */
+html[data-theme] body .lne-editor { font-family: var(--doc-font, var(--font-doc)); font-size: var(--doc-size, 15px); line-height: var(--doc-lh, 1.55); }
+html[data-theme] body .noteContent { font-family: var(--doc-font, var(--font-doc)); font-size: var(--doc-size, 14.5px); line-height: var(--doc-lh, 1.55); }
+html[data-theme] body .lne-editor p, html[data-theme] body .noteContent p { margin-bottom: var(--doc-pgap, 10px); }
+
+/* ── Table style gallery ───────────────────────────────────────────────── */
+.lne-tgallery { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.lne-tstyle { display: flex; flex-direction: column; gap: 5px; padding: 6px; background: var(--input-bg); border: 1px solid var(--button-border); border-radius: 4px; cursor: pointer; color: var(--text-color); font-family: var(--font-ui); }
+.lne-tstyle:hover { background: var(--ribbon-hover); }
+.lne-tstyle.sel { border: 2px solid var(--accent-fg); padding: 5px; background: var(--accent-soft); }
+.lne-tprev { display: block; pointer-events: none; }
+.lne-tprev table { font-size: 6px; width: 100%; }
+.lne-tname { font-size: 11px; text-align: center; line-height: 1.2; }
+@media (max-width: 520px) { .lne-tgallery { grid-template-columns: repeat(3, 1fr); } }
+
+/* ===== Theme defect fixes + note content refresh ===== */
+html[data-theme] body input[type="datetime-local"], html[data-theme] body input[type="date"], html[data-theme] body input[type="time"] { font-family: var(--font-ui); font-size: 13px; color: var(--text-color); color-scheme: light; }
+html[data-theme="dark"] body input[type="datetime-local"], html[data-theme="dark"] body input[type="date"], html[data-theme="dark"] body input[type="time"] { color-scheme: dark; }
+html[data-theme] body .nc-swatch.selected, html[data-theme] body .tc-swatch.selected { border-color: var(--text-color); box-shadow: 0 0 0 2px var(--bg-color, #fff), 0 0 0 4px var(--accent-fg); }
+html[data-theme] body .nc-swatch[data-c=""] { background: repeating-linear-gradient(45deg, var(--border-color) 0, var(--border-color) 2px, transparent 2px, transparent 6px); border: 1px solid var(--border-color); }
+
+/* tables inside notes/editor: readable header text in both themes */
+html[data-theme] body .lne-editor table, html[data-theme] body .noteContent table { border-collapse: collapse; }
+html[data-theme] body .lne-editor th, html[data-theme] body .noteContent th { color: var(--text-color); background: var(--ribbon-hover); font-weight: 600; }
+html[data-theme] body .lne-editor td, html[data-theme] body .noteContent td { color: inherit; }
+/* flat dividers */
+html[data-theme] body .lne-editor hr, html[data-theme] body .noteContent hr { border: 0; height: 1px; background: var(--border-color); margin: 14px 0; }
+/* code: light variant in light theme */
+html[data-theme="light"] body .lne-editor pre, html[data-theme="light"] body .noteContent pre { background: #f6f8fa; color: #1f2328; border: 1px solid #d0d7de; }
+html[data-theme="light"] body .lne-editor :not(pre) > code, html[data-theme="light"] body .noteContent :not(pre) > code { background: #eff1f3; color: #1f2328; }
+html[data-theme="dark"] body .lne-editor pre, html[data-theme="dark"] body .noteContent pre { background: #151515; color: #e6e6e6; border: 1px solid #3a3a3a; }
+html[data-theme] body .lne-editor pre, html[data-theme] body .noteContent pre { border-radius: 4px; padding: 10px 12px; font-size: .9em; overflow: auto; }
+html[data-theme] body .noteContent img { border-radius: 4px; max-width: 100%; height: auto; }
+html[data-theme] body .noteContent a { color: var(--accent-fg); }
+html[data-theme] body .noteContent ul, html[data-theme] body .noteContent ol { padding-left: 1.6em; margin: 0 0 var(--doc-pgap, 10px); }
+html[data-theme="light"] body .lne-code-wrapper, html[data-theme="light"] body .lne-code-wrapper pre, html[data-theme="light"] body .lne-code-wrapper .hljs,
+html[data-theme="light"] body .noteContent .lne-code-wrapper pre, html[data-theme="light"] body .noteContent .lne-code-wrapper .hljs { background: #f6f8fa !important; color: #1f2328 !important; border-color: #d0d7de !important; }
+html[data-theme="light"] body .lne-code-header { background: #eaeef2 !important; color: #57606a !important; border-color: #d0d7de !important; }
+html[data-theme="light"] body .lne-code-header button { color: #1f2328; }
+html[data-theme="dark"] body .lne-code-wrapper, html[data-theme="dark"] body .lne-code-header { border-color: #3a3a3a !important; }
+
+/* ===== Accent (blue) buttons: always white text, both themes ===== */
+html[data-theme] body {
+    --on-primary: #ffffff;
+    --primary-hover: #06762c;
+}
+html[data-theme="dark"] body { --primary-hover: #28c25a; }
+html[data-theme] body .ln-ss-btn-primary,
+html[data-theme] body #addNoteButton,
+html[data-theme] body #ok, html[data-theme] body #confirmYes, html[data-theme] body #customPromptOk,
+html[data-theme] body .welcome-dismiss-btn, html[data-theme] body .quick-edit-save,
+html[data-theme] body #quickEditToggle.active, html[data-theme] body #pwaToastUpdate,
+html[data-theme] body .ln-lock-btn-primary, html[data-theme] body .ln-lss-btn-primary,
+html[data-theme] body .ln-lss-g, html[data-theme] body .welcome-message .welcome-quick-btn.primary,
+html[data-theme] body .lnse-btn.primary, html[data-theme] body .beta-badge,
+html[data-theme] body .cal-today .cal-day-num, html[data-theme] body .btn-primary,
+html[data-theme] body .nsm-btn-primary, html[data-theme] body .dcm-btn-primary {
+    color: var(--on-primary) !important;
+}
+html[data-theme] body .ln-ss-btn-primary i, html[data-theme] body #addNoteButton i,
+html[data-theme] body .lnse-btn.primary i, html[data-theme] body .ln-lock-btn-primary i { color: inherit !important; }
+html[data-theme] body .ln-ss-btn-primary, html[data-theme] body .lnse-btn.primary, html[data-theme] body .welcome-dismiss-btn,
+html[data-theme] body .quick-edit-save, html[data-theme] body .ln-lock-btn-primary, html[data-theme] body .ln-lss-btn-primary {
+    background: var(--primary-color) !important; background-image: none !important; border-color: transparent !important;
+}
+html[data-theme] body .ln-ss-btn-primary:hover, html[data-theme] body .lnse-btn.primary:hover, html[data-theme] body .welcome-dismiss-btn:hover,
+html[data-theme] body .quick-edit-save:hover, html[data-theme] body .ln-lock-btn-primary:hover, html[data-theme] body .ln-lss-btn-primary:hover { background: var(--primary-hover) !important; filter: none; }
+html[data-theme] body .welcome-content ::selection { color: #fff; }
+
+/* ===== Phones: editor fills the whole screen ===== */
+@media (max-width: 768px) {
+    html[data-theme] body #editModal { align-items: stretch; justify-content: stretch; padding: 0 !important; overflow: hidden; }
+    html[data-theme] body #editModal .modal-content {
+        width: 100% !important; max-width: none !important; margin: 0 !important;
+        height: 100vh !important; height: 100dvh !important;
+        max-height: none !important; border-radius: 0 !important; border: 0 !important; box-shadow: none !important;
+        padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px) !important;
+        grid-template-rows: minmax(0, 1fr) auto;
+        background: var(--paper-bg) !important;
+    }
+    html[data-theme] body #editModal .modal_h2 { display: none; }
+    html[data-theme] body #editModal .lne-editor-wrapper { height: 100% !important; max-height: none !important; display: flex !important; flex-direction: column; }
+    html[data-theme] body #editModal .lne-wrapper { flex: 1 1 auto; min-height: 0; height: 100%; display: flex; flex-direction: column; }
+    html[data-theme] body #editModal .lne-body { flex: 1 1 auto; max-height: none !important; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    html[data-theme] body #editModal .modal-buttons-container {
+        padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px)) !important; gap: 8px;
+        background: var(--ribbon-bg); border-top: 1px solid var(--border-color);
+    }
+}
+@media (max-width: 768px) {
+    html[data-theme] body #editModal .lne-body { background: var(--paper-bg) !important; padding: 0 !important; }
+    html[data-theme] body #editModal .lne-body .lne-editor { min-height: 100%; box-shadow: none; }
+    html[data-theme] body .lne-toolbar select.lne-sel-size, html[data-theme] body .lne-toolbar .lne-sel-size { width: 64px; min-width: 64px; max-width: 64px; padding-left: 8px; padding-right: 22px; text-overflow: clip; }
+}

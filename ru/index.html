@@ -16,12 +16,10 @@
 <head>
     <meta charset="UTF-8">
     <!-- Preconnect to external origins -->
-    <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin>
-    <link rel="dns-prefetch" href="https://www.google-analytics.com">
     <meta http-equiv="Permissions-Policy" content="browsing-topics=(), run-ad-auction=(), camera=(), microphone=(), geolocation=()">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.googletagmanager.com https://www.google-analytics.com; script-src-elem 'self' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: cid: https:; font-src 'self' data: https://fonts.gstatic.com chrome-extension:; connect-src 'self' blob: https://www.google-analytics.com https://analytics.google.com; frame-src 'self' https://www.youtube.com https://youtu.be https://www.youtube-nocookie.com https://rutube.ru https://vk.com https://vkvideo.ru https://vk.ru https://ok.ru https://www.tiktok.com https://player.vimeo.com https://www.dailymotion.com https://player.twitch.tv https://clips.twitch.tv; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self'; upgrade-insecure-requests;">
     <!-- Google Analytics — Consent Mode v2 + loader (no inline scripts) -->
-    <script src="/js/ga-init.js?v=1.9.19"></script>
+    <script src="/js/ga-init.js?v=2024.1"></script>
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <meta http-equiv="X-XSS-Protection" content="1; mode=block">
     <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
@@ -244,23 +242,24 @@
     </script>
 
     <!-- Critical CSS -->
-    <link rel="stylesheet" href="../css/index.css?v=1.9.19">
-    <link rel="stylesheet" href="../css/adaptive.css?v=1.9.19">
+    <link rel="stylesheet" href="../css/index.css?v=2024.1">
+    <link rel="stylesheet" href="../css/adaptive.css?v=2024.1">
+    <link rel="stylesheet" href="../css/office2024.css?v=2024.1">
     <!-- Screenshot & App Lock -->
-    <link rel="stylesheet" href="../css/screenshot.css?v=1.9.19">
-    <link rel="stylesheet" href="../css/app-lock.css?v=1.12.0">
+    <link rel="stylesheet" href="../css/screenshot.css?v=2024.1">
+    <link rel="stylesheet" href="../css/app-lock.css?v=2024.1">
 
     <!-- Non-critical CSS — loaded async via page-init.js (no onload= handlers) -->
     <noscript>
-        <link rel="stylesheet" href="../css/img.css?v=1.9.19">
+        <link rel="stylesheet" href="../css/img.css?v=2024.1">
         <link rel="stylesheet" href="/localnoteseditor/bootstrap-icons/font/bootstrap-icons.min.css">
-        <link rel="stylesheet" href="../css/highlight.css?v=1.9.19">
-        <link rel="stylesheet" href="../localnoteseditor/styles.css?v=1.9.21">
-        <link rel="stylesheet" href="../css/editor-modal.css?v=1.9.19">
-        <link rel="stylesheet" href="../css/apple.css?v=1.9.19">
-        <link rel="stylesheet" href="../css/tags-calendar.css?v=1.9.19">
-        <link rel="stylesheet" href="../css/workspaces.css?v=1.9.19">
-        <link rel="stylesheet" href="../css/task-board.css?v=1.9.19">
+        <link rel="stylesheet" href="../css/highlight.css?v=2024.1">
+        <link rel="stylesheet" href="../localnoteseditor/styles.css?v=2024.1">
+        <link rel="stylesheet" href="../css/editor-modal.css?v=2024.1">
+        <link rel="stylesheet" href="../css/apple.css?v=2024.1">
+        <link rel="stylesheet" href="../css/tags-calendar.css?v=2024.1">
+        <link rel="stylesheet" href="../css/workspaces.css?v=2024.1">
+        <link rel="stylesheet" href="../css/task-board.css?v=2024.1">
     </noscript>
     
     <!-- Prevent FOUC: hide only main content, NOT the preloader -->
@@ -274,25 +273,25 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: radial-gradient(circle at 50% 42%, rgba(174,252,110,.09), transparent 34%), #0a0a0a;
+            background: radial-gradient(circle at 50% 42%, rgba(88,220,131,.09), transparent 34%), #0a0a0a;
             transition: opacity 0.45s ease, visibility 0.45s ease;
         }
         @media (prefers-color-scheme: light) {
             #app-preloader { background: #ffffff; }
-            #app-preloader-spinner { border-top-color: #28a745 !important; }
+            #app-preloader-spinner { border-top-color: #098b38 !important; }
             #app-preloader-text { color: #212529 !important; }
         }
         #app-preloader-spinner {
             width: clamp(54px, 14vw, 76px); height: clamp(54px, 14vw, 76px);
-            border: 2px solid rgba(174,252,110,.18);
-            border-top-color: #aefc6e; border-right-color: rgba(174,252,110,.7);
+            border: 2px solid rgba(88,220,131,.18);
+            border-top-color: #58dc83; border-right-color: rgba(88,220,131,.7);
             border-radius: 50%;
-            box-shadow: 0 0 30px rgba(174,252,110,.18), inset 0 0 18px rgba(174,252,110,.08);
+            box-shadow: 0 0 30px rgba(88,220,131,.18), inset 0 0 18px rgba(88,220,131,.08);
             animation: none;
         }
         .app-preloader-inner { display:flex; flex-direction:column; align-items:center; gap:16px; width:min(86vw,280px); }
-        .app-preloader-progress { width:100%; height:3px; margin-top:4px; overflow:hidden; border-radius:3px; background:rgba(174,252,110,.14); }
-        #app-preloader-bar { width:0; height:100%; border-radius:3px; background:linear-gradient(90deg,#aefc6e,#20c997); transition:width .3s ease; }
+        .app-preloader-progress { width:100%; height:3px; margin-top:4px; overflow:hidden; border-radius:3px; background:rgba(88,220,131,.14); }
+        #app-preloader-bar { width:0; height:100%; border-radius:3px; background:linear-gradient(90deg,#58dc83,#1ea44a); transition:width .3s ease; }
         #app-preloader-status { min-height:18px; color:rgba(255,255,255,.5); font:12px/1.4 sans-serif; text-align:center; }
         @keyframes _counterSpin { to { transform:rotate(-360deg); } }
         @media (prefers-reduced-motion: reduce) { #app-preloader-spinner, #app-preloader-spinner::before { animation:none; } }
@@ -310,8 +309,8 @@
         body.styles-loading footer { visibility: hidden; }
     </style>
     <!-- Page init: styles-loading class, cache cleanup, async CSS loading -->
-    <link rel="stylesheet" href="/css/scroll-top.css?v=1.9.19">
-    <script src="/js/page-init.js?v=1.9.19"></script>
+    <link rel="stylesheet" href="/css/scroll-top.css?v=2024.1">
+    <script src="/js/page-init.js?v=2024.1"></script>
     
     <link rel="apple-touch-icon" sizes="180x180" href="../favicon/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="../favicon/favicon-32x32.png">
@@ -329,7 +328,7 @@
     </div>
 
     <!-- Google Tag Manager (noscript) -->
-    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MVKPW88F" height="0" width="0"
+    <noscript><iframe title="Google Tag Manager" src="https://www.googletagmanager.com/ns.html?id=GTM-MVKPW88F" height="0" width="0"
             style="display:none;visibility:hidden"></iframe></noscript>
     <!-- End Google Tag Manager (noscript) -->
 
@@ -448,7 +447,7 @@
                 <br><br>
                 <a href="/ru/beta.html" target="_blank" id="betaInfoLink">Beta</a>
                 <br><br>
-                <a class="author" href="https://psygiox-dev.vercel.app/" target="_blank" id="byAuthorLink">By PsyGioX</a></p>
+                <a class="author" href="https://psygiox-dev.vercel.app/" target="_blank" id="byAuthorLink">By PsyGioX</a>
                 <br><br>
                 <p>&copy; <span id="currentYear"></span><span class="footerCopyRight" id="allRightsReserved">All rights reserved. Local Notes</span></p>
             </div>
@@ -459,33 +458,33 @@
 
 
     <!-- Critical JavaScript loaded first with cache busting -->
-    <script src="../js/purify.min.js?v=1.9.19"></script>
-    <script src="../js/utils.js?v=1.9.19"></script>
-    <script src="../js/selectors.js?v=1.9.19"></script>
-    <script src="../js/translate.js?v=1.12.0"></script>
-    <script src="../js/themes.js?v=1.9.19"></script>
-    <script src="../js/performance.js?v=1.9.19"></script>
-    <script src="../js/security.js?v=1.9.19"></script>
-    <script src="../js/preloader.js?v=1.9.19"></script>
+    <script src="../js/purify.min.js?v=2024.1"></script>
+    <script src="../js/utils.js?v=2024.1"></script>
+    <script src="../js/selectors.js?v=2024.1"></script>
+    <script src="../js/translate.js?v=2024.1"></script>
+    <script src="../js/themes.js?v=2024.1"></script>
+    <script src="../js/performance.js?v=2024.1"></script>
+    <script src="../js/security.js?v=2024.1"></script>
+    <script src="../js/preloader.js?v=2024.1"></script>
     
     <!-- LocalNotesEditor -->
-    <script src="../localnoteseditor/core.js?v=1.9.21" defer></script>
+    <script src="../localnoteseditor/core.js?v=2024.1" defer></script>
     
     <!-- Non-critical JavaScript loaded asynchronously -->
-    <script src="/js/script-loader.js?v=1.9.19"></script>
-    <script src="/js/scroll-top.js?v=1.9.19" defer></script>
+    <script src="/js/script-loader.js?v=2024.1"></script>
+    <script src="/js/scroll-top.js?v=2024.1" defer></script>
     
     <!-- Workspaces System -->
-    <script src="/js/workspaces.js?v=1.9.19"></script>
-    <script src="/js/workspaces-integration.js?v=1.9.19"></script>
+    <script src="/js/workspaces.js?v=2024.1"></script>
+    <script src="/js/workspaces-integration.js?v=2024.1"></script>
     
     <!-- Service Worker + PWA Modal -->
-    <script src="../js/pwa.js?v=1.9.19"></script>
-    <script src="../js/network-mode.js?v=1.9.19"></script>
+    <script src="../js/pwa.js?v=2024.1"></script>
+    <script src="../js/network-mode.js?v=2024.1"></script>
 
     <!-- Screenshot & App Lock -->
-    <script src="../js/screenshot.js?v=1.9.19"></script>
-    <script src="../js/app-lock.js?v=1.12.0"></script>
+    <script src="../js/screenshot.js?v=2024.1"></script>
+    <script src="../js/app-lock.js?v=2024.1"></script>
 
     <!-- Universal Cookies Banner -->
     <script src="../cookies_banner_universal/cookies-banner.js"></script>

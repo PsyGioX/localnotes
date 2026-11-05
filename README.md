@@ -3,12 +3,12 @@
 ![Local Notes Screenshot](https://github.com/PsyGioX/localnotes/blob/main/sccc.png?raw=true)
 
 [![Version](https://img.shields.io/badge/Version-1.12.0-brightgreen.svg)](https://github.com/PsyGioX/localnotes/releases)
-[![Security](https://img.shields.io/badge/Security-AES--256--GCM%20%2B%20HMAC--SHA--512-blue.svg)](https://github.com/PsyGioX/localnotes)
+[![Security](https://img.shields.io/badge/Security-AES--256--GCM%20%2B%20HMAC--SHA--512-green.svg)](https://github.com/PsyGioX/localnotes)
 [![DOMPurify](https://img.shields.io/badge/XSS-DOMPurify-red.svg)](https://github.com/cure53/DOMPurify)
 [![PWA](https://img.shields.io/badge/PWA-Enabled-purple.svg)](https://github.com/PsyGioX/localnotes)
 [![Offline](https://img.shields.io/badge/Offline-Supported-orange.svg)](https://github.com/PsyGioX/localnotes)
 [![Languages](https://img.shields.io/badge/Languages-12-yellow.svg)](https://github.com/PsyGioX/localnotes)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 
 ### 📖 README in other languages
@@ -16,7 +16,7 @@
 
 ### 🌍 Choose App Language
 
-[![EN](https://img.shields.io/badge/🇺🇸_English-blue)](https://localnotes-three.vercel.app/)
+[![EN](https://img.shields.io/badge/🇺🇸_English-green)](https://localnotes-three.vercel.app/)
 [![RU](https://img.shields.io/badge/🇷🇺_Русский-red)](https://localnotes-three.vercel.app/ru/)
 [![UA](https://img.shields.io/badge/🇺🇦_Українська-yellow)](https://localnotes-three.vercel.app/ua/)
 [![PL](https://img.shields.io/badge/🇵🇱_Polski-green)](https://localnotes-three.vercel.app/pl/)
@@ -509,9 +509,9 @@ localnotes/
 ├── sw.js                           # Service Worker (precache, network modes, origin validation)
 ├── vercel.json / robots.txt / sitemap*.xml
 ├── privacy_policy.html / usage_policy.html / cookie_policy.html / cookie.html
-├── README.md / README_RU.md / WORKSPACES_README.md / release-checklist.md
+├── README.md / README_RU.md
 │
-├── css/                            # index, adaptive, apple, page, print, highlight, modal-system,
+├── css/                            # index, adaptive, apple, page, highlight, modal-system,
 │                                   # editor-modal, app-lock, action-bar, sidebar, tags-calendar,
 │                                   # task-board, workspaces, onboarding-tour, screenshot, scroll-top, img
 │
@@ -547,8 +547,8 @@ localnotes/
 ├── locales/                        # <lang>.json (in-app) and site/<lang>.json (static pages); README.md
 ├── scripts/verify-locales.js       # Checks every language has the same keys
 │
-├── localnoteseditor/               # Editor: core.js, styles.css, bootstrap-icons/, docs (*.md)
-├── cookies_banner_universal/       # GDPR cookie banner (Consent Mode v2) + README
+├── localnoteseditor/               # Editor: core.js, styles.css, bootstrap-icons/
+├── cookies_banner_universal/       # GDPR cookie banner (Consent Mode v2)
 ├── landing/                        # Static multilingual landing pages
 ├── fonts/ favicon/ resources/
 │
@@ -613,7 +613,6 @@ Click the install icon in Chrome/Edge address bar and confirm.
 - **🧭 Calmer interface** — slim one-row header; the secondary actions (Import, Calendar, Quick Edit) now sit in the "⋯" menu on desktop too, with **Clear all notes** last, in red and set apart; Calendar joins Grid/List and Tasks in the view switcher; the empty state is a compact card with *Add a note / Import notes / Show instructions* and a collapsible "About" instead of a full-page wall of text.
 - **🐛 Onboarding tour** — the tour now actually opens the "⋯" menu for its Import / Calendar / Quick Edit steps (the Next button re-rendered the tooltip and the outside-click handler closed the menu immediately; this also affected phones).
 - **🌍 12 languages** — 16 new strings (883 keys per language)
-- **🧪 Tests** — `tests/` adds real-browser (Playwright/Chromium) tests for first run, device mode, adding / removing a password and the idle timeout, plus a locale check
 
 ### v1.11.1
 - **🎨 Drawing pad — parameters for finished shapes.** With the **Move** tool, the option panel now edits the *selected* object (colour, size, fill, fill colour, line style, arrow heads, opacity); one undo step per edit
@@ -747,7 +746,7 @@ No — `js/purify.min.js` is served locally. This keeps the CSP `script-src 'sel
 3. Make changes and test
 4. Open a Pull Request
 
-Especially welcome: new language translations, accessibility improvements, tests.
+Especially welcome: new language translations and accessibility improvements.
 
 ---
 

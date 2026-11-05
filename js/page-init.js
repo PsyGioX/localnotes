@@ -35,24 +35,27 @@ document.addEventListener('DOMContentLoaded', function() {
 // Load non-critical CSS asynchronously (replaces onload= event handlers on <link> tags)
 (function() {
     var sheets = [
-        '/css/img.css?v=1.9.19',
+        '/css/img.css?v=2024.2',
         '/localnoteseditor/bootstrap-icons/font/bootstrap-icons.min.css',
-        '/css/highlight.css?v=1.9.19',
-        '/localnoteseditor/styles.css?v=1.9.19',
-        '/css/editor-modal.css?v=1.9.19',
-        '/css/apple.css?v=1.9.19',
-        '/css/tags-calendar.css?v=1.9.19',
-        '/css/workspaces.css?v=1.9.19',
-        '/css/task-board.css?v=1.9.19',
-        '/css/action-bar.css?v=1.9.19',
-        '/css/onboarding-tour.css?v=1.9.19',
-        '/css/sidebar.css?v=1.9.19',
-        '/css/modal-system.css?v=1.9.19'
+        '/css/highlight.css?v=2024.2',
+        '/localnoteseditor/styles.css?v=2024.2',
+        '/css/editor-modal.css?v=2024.2',
+        '/css/apple.css?v=2024.2',
+        '/css/tags-calendar.css?v=2024.2',
+        '/css/workspaces.css?v=2024.2',
+        '/css/task-board.css?v=2024.2',
+        '/css/action-bar.css?v=2024.2',
+        '/css/onboarding-tour.css?v=2024.2',
+        '/css/sidebar.css?v=2024.2',
+        '/css/modal-system.css?v=2024.2'
     ];
     sheets.forEach(function(href) {
         var link = document.createElement('link');
         link.rel = 'stylesheet';
         link.href = href;
-        document.head.appendChild(link);
+        // Insert BEFORE the static office2024.css link so that sheet always stays last (wins the cascade)
+        var anchor = document.querySelector('link[href*="office2024.css"]');
+        if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(link, anchor);
+        else document.head.appendChild(link);
     });
 })();

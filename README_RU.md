@@ -3,20 +3,20 @@
 ![Local Notes Screenshot](https://github.com/PsyGioX/localnotes/blob/main/sccc.png?raw=true)
 
 [![Version](https://img.shields.io/badge/Version-1.12.0-brightgreen.svg)](https://github.com/PsyGioX/localnotes/releases)
-[![Security](https://img.shields.io/badge/Security-AES--256--GCM%20%2B%20HMAC--SHA--512-blue.svg)](https://github.com/PsyGioX/localnotes)
+[![Security](https://img.shields.io/badge/Security-AES--256--GCM%20%2B%20HMAC--SHA--512-green.svg)](https://github.com/PsyGioX/localnotes)
 [![DOMPurify](https://img.shields.io/badge/XSS-DOMPurify-red.svg)](https://github.com/cure53/DOMPurify)
 [![PWA](https://img.shields.io/badge/PWA-Enabled-purple.svg)](https://github.com/PsyGioX/localnotes)
 [![Offline](https://img.shields.io/badge/Offline-Supported-orange.svg)](https://github.com/PsyGioX/localnotes)
 [![Languages](https://img.shields.io/badge/Languages-12-yellow.svg)](https://github.com/PsyGioX/localnotes)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 
 ### 📖 README на других языках
-[![README EN](https://img.shields.io/badge/📖_README_English-blue)](README.md)
+[![README EN](https://img.shields.io/badge/📖_README_English-green)](README.md)
 
 ### 🌍 Выберите язык приложения
 
-[![EN](https://img.shields.io/badge/🇺🇸_English-blue)](https://localnotes-three.vercel.app/)
+[![EN](https://img.shields.io/badge/🇺🇸_English-green)](https://localnotes-three.vercel.app/)
 [![RU](https://img.shields.io/badge/🇷🇺_Русский-red)](https://localnotes-three.vercel.app/ru/)
 [![UA](https://img.shields.io/badge/🇺🇦_Українська-yellow)](https://localnotes-three.vercel.app/ua/)
 [![PL](https://img.shields.io/badge/🇵🇱_Polski-green)](https://localnotes-three.vercel.app/pl/)
@@ -472,9 +472,9 @@ localnotes/
 ├── sw.js                           # Service Worker (precache, сетевые режимы, проверка origin)
 ├── vercel.json / robots.txt / sitemap*.xml
 ├── privacy_policy.html / usage_policy.html / cookie_policy.html / cookie.html
-├── README.md / README_RU.md / WORKSPACES_README.md / release-checklist.md
+├── README.md / README_RU.md
 │
-├── css/                            # index, adaptive, apple, page, print, highlight, modal-system,
+├── css/                            # index, adaptive, apple, page, highlight, modal-system,
 │                                   # editor-modal, app-lock, action-bar, sidebar, tags-calendar,
 │                                   # task-board, workspaces, onboarding-tour, screenshot, scroll-top, img
 │
@@ -576,7 +576,6 @@ python -m http.server 8000
 - **🧭 Спокойнее интерфейс** — тонкая шапка в одну строку; второстепенные действия (Импорт, Календарь, Quick Edit) теперь и на десктопе лежат в меню «⋯», а **Очистить все заметки** — последним, красным и отдельно; Календарь встал рядом с Сеткой/Списком и Задачами в переключателе видов; пустое состояние — компактная карточка с кнопками *Добавить / Импорт / Показать инструкцию* и сворачиваемым блоком «О программе» вместо стены текста.
 - **🐛 Тур онбординга** — тур теперь действительно открывает меню «⋯» на шагах Импорт / Календарь / Quick Edit (кнопка «Далее» перерисовывала подсказку, и обработчик клика вне меню сразу его закрывал; это касалось и телефонов).
 - **🌍 12 языков** — 16 новых строк (883 ключа на язык)
-- **🧪 Тесты** — в `tests/` добавлены тесты в реальном браузере (Playwright/Chromium): первый запуск, режим устройства, добавление и удаление пароля, таймаут; плюс проверка локалей
 
 ### v1.11.1
 - **🎨 Рисование — параметры для готовых фигур.** С инструментом «Переместить» панель параметров теперь редактирует *выбранный* объект (цвет, размер, заливка, цвет заливки, стиль линии, стрелки, прозрачность); одно изменение — один шаг Undo

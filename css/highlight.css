@@ -12,7 +12,7 @@
  */
 .hljs {
     background: #0d0d0d !important;
-    color: #aefc6e !important;
+    color: #58dc83 !important;
     padding: 14px 16px !important;
     border-radius: 8px !important;
     font-family: 'Courier New', Consolas, 'Monaco', monospace !important;
@@ -24,7 +24,7 @@
     display: block !important;
 }
 .hljs-keyword, .hljs-selector-tag, .hljs-deletion { color: #ff7b7b !important; }
-.hljs-string, .hljs-attribute, .hljs-addition      { color: #aefc6e !important; }
+.hljs-string, .hljs-attribute, .hljs-addition      { color: #58dc83 !important; }
 .hljs-comment, .hljs-quote                         { color: #6a9955 !important; font-style: italic !important; }
 .hljs-number, .hljs-literal                        { color: #f1c40f !important; }
 .hljs-title, .hljs-section, .hljs-name             { color: #4ec9b0 !important; }
@@ -48,7 +48,7 @@
 .noteContent .lne-code-wrapper .hljs,
 .noteContent .lne-code-wrapper pre {
     background: #0d0d0d !important;
-    color: #aefc6e !important;
+    color: #58dc83 !important;
     border-color: #222 !important;
     box-shadow: none !important;
 }
@@ -60,14 +60,14 @@
 [data-theme="light"] .lne-code-header {
     background: #0d0d0d !important;
     border-color: #222 !important;
-    color: #aefc6e !important;
+    color: #58dc83 !important;
 }
 [data-theme="light"] .hljs-keyword, [data-theme="light"] .hljs-selector-tag { color: #d73a49 !important; }
-[data-theme="light"] .hljs-string, [data-theme="light"] .hljs-addition       { color: #28a745 !important; }
+[data-theme="light"] .hljs-string, [data-theme="light"] .hljs-addition       { color: #098b38 !important; }
 [data-theme="light"] .hljs-comment, [data-theme="light"] .hljs-quote         { color: #6a737d !important; }
 [data-theme="light"] .hljs-number, [data-theme="light"] .hljs-literal        { color: #005cc5 !important; }
 [data-theme="light"] .hljs-title, [data-theme="light"] .hljs-section         { color: #6f42c1 !important; }
 [data-theme="light"] .hljs-type, [data-theme="light"] .hljs-built_in         { color: #e36209 !important; }
 [data-theme="light"] .hljs-variable, [data-theme="light"] .hljs-template-variable { color: #24292e !important; }
 [data-theme="light"] .hljs-tag, [data-theme="light"] .hljs-name              { color: #22863a !important; }
-[data-theme="light"] .hljs-meta                                               { color: #e36209 !important; }
+[data-theme="light"] .hljs-meta                                               { color: #e36209 !important; }

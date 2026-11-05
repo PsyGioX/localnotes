@@ -92,14 +92,14 @@
             // css/index.css: 16px box, rounded corners, accent-green fill +
             // checkmark on :checked) instead of the bare native control.
             '.lngv-hd input[type="checkbox"]{appearance:none;-webkit-appearance:none;width:16px;height:16px;' +
-                'min-width:16px;border:2px solid rgba(174,252,110,.55);border-radius:4px;background:transparent;' +
+                'min-width:16px;border:2px solid rgba(88,220,131,.55);border-radius:4px;background:transparent;' +
                 'cursor:pointer;position:relative;flex-shrink:0;transition:background .15s,border-color .15s;margin:0;}' +
-            '.lngv-hd input[type="checkbox"]:checked{background:#aefc6e;border-color:#aefc6e;}' +
+            '.lngv-hd input[type="checkbox"]:checked{background:#58dc83;border-color:#58dc83;}' +
             '.lngv-hd input[type="checkbox"]:checked::after{content:"";position:absolute;top:1px;left:4px;' +
                 'width:5px;height:8px;border:2px solid #000;border-top:none;border-left:none;transform:rotate(45deg);}' +
-            '.lngv-hd input[type="checkbox"]:hover{border-color:#aefc6e;box-shadow:0 0 0 3px rgba(174,252,110,.15);}' +
-            '[data-theme="light"] .lngv-hd input[type="checkbox"]{border-color:rgba(40,167,69,.5);}' +
-            '[data-theme="light"] .lngv-hd input[type="checkbox"]:checked{background:#28a745;border-color:#28a745;}' +
+            '.lngv-hd input[type="checkbox"]:hover{border-color:#58dc83;box-shadow:0 0 0 3px rgba(88,220,131,.15);}' +
+            '[data-theme="light"] .lngv-hd input[type="checkbox"]{border-color:rgba(9,139,56,.5);}' +
+            '[data-theme="light"] .lngv-hd input[type="checkbox"]:checked{background:#098b38;border-color:#098b38;}' +
             '[data-theme="light"] .lngv-hd input[type="checkbox"]:checked::after{border-color:#fff;}';
         var style = document.createElement('style');
         style.id = 'lngv-style';
@@ -311,7 +311,7 @@
 
         var isDark = document.documentElement.getAttribute('data-theme') !== 'light';
         var edgeColor = isDark ? 'rgba(255,255,255,.12)' : 'rgba(0,0,0,.14)';
-        var accent = '#aefc6e';
+        var accent = '#58dc83';
 
         ctx.lineWidth = 1;
         edges.forEach(function (e) {

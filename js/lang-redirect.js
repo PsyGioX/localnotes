@@ -150,7 +150,7 @@ function showMainPage() {
     originalLog('%c   ✓ All data stored locally', 'color: #666; font-size: 12px;');
     originalLog('%c   ✓ No data sent to servers', 'color: #666; font-size: 12px;');
 
-    originalLog('%c\n🌍 FEATURES', 'color: #2196F3; font-size: 16px; font-weight: bold;');
+    originalLog('%c\n🌍 FEATURES', 'color: #1bb94b; font-size: 16px; font-weight: bold;');
     originalLog('%c   ✓ 12 interface languages', 'color: #666; font-size: 12px;');
     originalLog('%c   ✓ PWA - works as an app', 'color: #666; font-size: 12px;');
     originalLog('%c   ✓ Offline mode', 'color: #666; font-size: 12px;');

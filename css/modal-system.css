@@ -16,7 +16,7 @@
     --modal-system-scrim: rgba(7, 10, 9, .68);
     --modal-system-blur: blur(8px) saturate(1.08);
     --modal-system-radius: 16px;
-    --modal-system-border: color-mix(in srgb, var(--border-color, #272727) 82%, var(--primary-color, #28a745) 18%);
+    --modal-system-border: color-mix(in srgb, var(--border-color, #272727) 82%, var(--primary-color, #098b38) 18%);
     --modal-system-shadow: 0 24px 70px rgba(0, 0, 0, .38), 0 2px 8px rgba(0, 0, 0, .16);
     --modal-system-surface: var(--modal-bg, #1a1a1a);
 }
@@ -31,9 +31,7 @@
 .lngv-ov,
 .lnse-ov,
 .theme-modal,
-.import-modal,
 .ln-import-progress-overlay,
-.pwa-modal-overlay,
 .cnp-overlay,
 .ws-selector-overlay {
     background: var(--modal-system-scrim) !important;
@@ -52,7 +50,6 @@
 .lngv-box,
 .lnse-box,
 .theme-modal-content,
-.import-modal-content,
 .ln-import-progress-panel,
 .cnp-panel,
 .lne-modal {
@@ -76,7 +73,6 @@
 .modal-content-error h3,
 .modal-content-warning h3,
 .cal-title,
-.nsm-title,
 .dcm-title,
 .ln-screenshot-title,
 .lne-mhd h3 {
@@ -87,14 +83,14 @@
     transition: background-color .16s ease, border-color .16s ease, color .16s ease, transform .12s ease, box-shadow .16s ease;
 }
 .lnse-box .lnse-btn.primary:hover {
-    background: #c5ff91 !important;
-    box-shadow: 0 6px 18px rgba(174, 252, 110, .22);
+    background: var(--primary-hover, #06762c) !important;
+    box-shadow: 0 6px 18px rgba(88,220,131, .22);
     transform: translateY(-1px);
 }
 .lnse-box .lnse-btn.secondary:hover {
     background: var(--button-hover, #2a2a2a) !important;
-    border-color: var(--primary-color, #28a745) !important;
-    color: var(--primary-color, #28a745) !important;
+    border-color: var(--primary-color, #098b38) !important;
+    color: var(--primary-color, #098b38) !important;
     transform: translateY(-1px);
 }
 .lnse-box .lnse-btn:active { transform: translateY(0) scale(.98); }
@@ -109,30 +105,28 @@
 .lngv-box button:focus-visible,
 .lnse-box button:focus-visible,
 .theme-modal-content button:focus-visible,
-.import-modal-content button:focus-visible,
 .ln-import-progress-panel button:focus-visible,
 .cnp-panel button:focus-visible,
 .lne-modal button:focus-visible {
-    outline: 2px solid var(--primary-color, #28a745);
+    outline: 2px solid var(--primary-color, #098b38);
     outline-offset: 2px;
 }
 
 /* The app's mobile dialogs become comfortable sheets with one shared edge. */
 @media (max-width: 768px) {
     .modal:not(#editModal) > .modal-content-error,
-    .modal:not(#editModal) > .modal-content-warning,
-    .cal-modal,
-    .nsm-panel,
-    .dcm-panel,
-    .ln-screenshot-panel,
-    .lnp-box,
-    .lngv-box,
-    .lnse-box,
-    .theme-modal-content,
-    .import-modal-content,
-    .ln-import-progress-panel,
-    .cnp-panel,
-    .lne-modal {
+.modal:not(#editModal) > .modal-content-warning,
+.cal-modal,
+.nsm-panel,
+.dcm-panel,
+.ln-screenshot-panel,
+.lnp-box,
+.lngv-box,
+.lnse-box,
+.theme-modal-content,
+.ln-import-progress-panel,
+.cnp-panel,
+.lne-modal {
         border-radius: 14px !important;
     }
     .modal:not(#editModal) .modal-buttons-container,
@@ -149,39 +143,36 @@
 [data-theme="light"] {
     --modal-system-scrim: rgba(24, 32, 28, .34);
     --modal-system-border: #dce3e8;
-    --modal-system-shadow: 0 24px 70px rgba(34, 50, 60, .18), 0 2px 8px rgba(34, 50, 60, .08);
+    --modal-system-shadow: 0 24px 70px rgba(23, 43, 29, .18), 0 2px 8px rgba(23, 43, 29, .08);
     --modal-system-surface: #fff;
 }
 
 @media (prefers-reduced-motion: reduce) {
     .modal:not(#editModal),
-    .cal-overlay,
-    .nsm-overlay,
-    .dcm-overlay,
-    .ln-screenshot-overlay,
-    .lnp-ov,
-    .lngv-ov,
-    .lnse-ov,
-    .theme-modal,
-    .import-modal,
-    .ln-import-progress-overlay,
-    .pwa-modal-overlay,
-    .cnp-overlay,
-    .ws-selector-overlay,
-    .modal:not(#editModal) > .modal-content-error,
-    .modal:not(#editModal) > .modal-content-warning,
-    .cal-modal,
-    .nsm-panel,
-    .dcm-panel,
-    .ln-screenshot-panel,
-    .lnp-box,
-    .lngv-box,
-    .lnse-box,
-    .theme-modal-content,
-    .import-modal-content,
-    .ln-import-progress-panel,
-    .cnp-panel,
-    .lne-modal {
+.cal-overlay,
+.nsm-overlay,
+.dcm-overlay,
+.ln-screenshot-overlay,
+.lnp-ov,
+.lngv-ov,
+.lnse-ov,
+.theme-modal,
+.ln-import-progress-overlay,
+.cnp-overlay,
+.ws-selector-overlay,
+.modal:not(#editModal) > .modal-content-error,
+.modal:not(#editModal) > .modal-content-warning,
+.cal-modal,
+.nsm-panel,
+.dcm-panel,
+.ln-screenshot-panel,
+.lnp-box,
+.lngv-box,
+.lnse-box,
+.theme-modal-content,
+.ln-import-progress-panel,
+.cnp-panel,
+.lne-modal {
         animation: none !important;
         transition: none !important;
     }

@@ -113,9 +113,9 @@
 .ln-tour-back:hover { background: var(--button-hover); }
 
 .ln-tour-next {
-    background: var(--primary-color, #28a745);
+    background: var(--primary-color, #098b38);
     color: #fff;
-    border-color: var(--primary-color, #28a745);
+    border-color: var(--primary-color, #098b38);
 }
 .ln-tour-next:hover { filter: brightness(1.08); }
 

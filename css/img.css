@@ -86,7 +86,7 @@ body.ln-dv-open { overflow: hidden; }
 }
 .ln-dv-btn:hover:not(:disabled) { background: rgba(255, 255, 255, .16); }
 .ln-dv-btn:disabled { opacity: .3; cursor: default; }
-.ln-dv-btn:focus-visible, .ln-dv-thumb:focus-visible { outline: 2px solid #aefc6e; outline-offset: 1px; }
+.ln-dv-btn:focus-visible, .ln-dv-thumb:focus-visible { outline: 2px solid #58dc83; outline-offset: 1px; }
 .ln-dv-pct, .ln-dv-count {
     min-width: 46px; padding: 0 6px; text-align: center; font-size: 13px;
     color: rgba(255, 255, 255, .88); font-variant-numeric: tabular-nums; white-space: nowrap;

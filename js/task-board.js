@@ -23,7 +23,7 @@
 
     const COLUMNS = [
         { id: 'todo', icon: 'bi-circle', accent: '#6c757d' },
-        { id: 'in_progress', icon: 'bi-arrow-repeat', accent: '#4a86e8' },
+        { id: 'in_progress', icon: 'bi-arrow-repeat', accent: '#2ac660' },
         { id: 'done', icon: 'bi-check-circle-fill', accent: '#28a745' }
     ];
 

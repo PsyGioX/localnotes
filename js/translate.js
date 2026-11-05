@@ -243,7 +243,7 @@ function updateInterface(langData, language) {
     }
     
     // Обновляем отображение дат при смене языка
-    if (typeof refreshAllDates === 'function' && typeof notesDatabase !== 'undefined' && notesDatabase) {
+    if (typeof refreshAllDates === 'function' && typeof notesDB !== 'undefined' && notesDB) {
         // Добавляем задержку, чтобы убедиться, что все скрипты загружены и langData обновлен
         setTimeout(() => {
             // Проверяем, что langData обновлен для текущего языка

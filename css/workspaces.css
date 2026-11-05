@@ -72,7 +72,7 @@
     border-radius: 8px 8px 0 0;
     cursor: pointer;
     white-space: nowrap;
-    font-family: 'Golos Text', sans-serif;
+    font-family: var(--font-ui);
     font-size: 13px;
     font-weight: 500;
     color: var(--text-secondary);
@@ -189,11 +189,11 @@
 .workspace-tab-add:active {
     border-color: var(--primary-color);
     color: var(--primary-color);
-    background: rgba(174, 252, 110, 0.06);
+    background: rgba(88,220,131, 0.06);
 }
 [data-theme="light"] .workspace-tab-add:hover,
 [data-theme="light"] .workspace-tab-add:active {
-    background: rgba(40, 167, 69, 0.06);
+    background: rgba(9,139,56, 0.06);
 }
 
 /* ── Выпадающее меню ────────────────────────────────────── */
@@ -217,7 +217,7 @@
     border: none;
     border-radius: 7px;
     cursor: pointer;
-    font-family: 'Golos Text', sans-serif;
+    font-family: var(--font-ui);
     font-size: 14px;
     color: var(--text-color);
     text-align: left;
@@ -272,7 +272,7 @@
 }
 
 .ws-selector-title {
-    font-family: 'Golos Text', sans-serif;
+    font-family: var(--font-ui);
     font-size: 17px;
     font-weight: 600;
     color: var(--text-color);
@@ -302,7 +302,7 @@
     border: 1px solid var(--border-color);
     border-radius: 10px;
     cursor: pointer;
-    font-family: 'Golos Text', sans-serif;
+    font-family: var(--font-ui);
     font-size: 15px;
     color: var(--text-color);
     text-align: left;
@@ -317,10 +317,10 @@
 }
 .ws-selector-item.current {
     border-color: var(--primary-color);
-    background: rgba(174, 252, 110, 0.07);
+    background: rgba(88,220,131, 0.07);
 }
 [data-theme="light"] .ws-selector-item.current {
-    background: rgba(40, 167, 69, 0.07);
+    background: rgba(9,139,56, 0.07);
 }
 
 .ws-selector-dot {
@@ -350,11 +350,11 @@
     width: 100%;
     height: 48px;
     border: 1px solid var(--primary-color);
-    background: rgba(174, 252, 110, 0.08);
+    background: rgba(88,220,131, 0.08);
     color: var(--primary-color);
     border-radius: 10px;
     cursor: pointer;
-    font-family: 'Golos Text', sans-serif;
+    font-family: var(--font-ui);
     font-size: 15px;
     font-weight: 600;
     display: flex;
@@ -365,10 +365,10 @@
     -webkit-tap-highlight-color: transparent;
 }
 .ws-selector-btn-new:hover,
-.ws-selector-btn-new:active { background: rgba(174, 252, 110, 0.16); }
-[data-theme="light"] .ws-selector-btn-new { background: rgba(40, 167, 69, 0.08); }
+.ws-selector-btn-new:active { background: rgba(88,220,131, 0.16); }
+[data-theme="light"] .ws-selector-btn-new { background: rgba(9,139,56, 0.08); }
 [data-theme="light"] .ws-selector-btn-new:hover,
-[data-theme="light"] .ws-selector-btn-new:active { background: rgba(40, 167, 69, 0.16); }
+[data-theme="light"] .ws-selector-btn-new:active { background: rgba(9,139,56, 0.16); }
 
 .ws-selector-btn-cancel {
     width: 100%;
@@ -378,7 +378,7 @@
     color: var(--text-secondary);
     border-radius: 10px;
     cursor: pointer;
-    font-family: 'Golos Text', sans-serif;
+    font-family: var(--font-ui);
     font-size: 15px;
     font-weight: 500;
     display: flex;

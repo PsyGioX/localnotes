@@ -54,7 +54,7 @@
     height: 28px;
     border-radius: 8px;
     color: var(--primary-color);
-    background: rgba(174, 252, 110, .1);
+    background: rgba(88,220,131, .1);
     font-size: 13px;
 }
 .ln-sidebar-title {
@@ -109,7 +109,7 @@
 .ln-sidebar-search:focus {
     border-color: var(--primary-color);
     background: var(--button-bg);
-    box-shadow: 0 0 0 3px rgba(40, 167, 69, .13);
+    box-shadow: 0 0 0 3px rgba(9,139,56, .13);
 }
 .ln-sidebar-search-clear {
     position: absolute;
@@ -148,7 +148,7 @@
     transition: background 0.15s ease;
 }
 .ln-sidebar-item:hover { background: var(--button-hover); }
-.ln-sidebar-item:active { background: rgba(174, 252, 110, 0.12); }
+.ln-sidebar-item:active { background: rgba(88,220,131, 0.12); }
 .ln-sidebar-item-hidden { display: none !important; }
 
 .ln-sidebar-item-title {
@@ -261,9 +261,9 @@
 
 /* ── Highlight a note in the main grid when jumped to from the sidebar ─── */
 @keyframes ln-note-highlight-pulse {
-    0% { box-shadow: 0 0 0 3px rgba(174, 252, 110, 0.55); }
-    50% { box-shadow: 0 0 0 3px rgba(174, 252, 110, 0.85); }
-    100% { box-shadow: 0 0 0 3px rgba(174, 252, 110, 0.55); }
+    0% { box-shadow: 0 0 0 3px rgba(88,220,131, 0.55); }
+    50% { box-shadow: 0 0 0 3px rgba(88,220,131, 0.85); }
+    100% { box-shadow: 0 0 0 3px rgba(88,220,131, 0.55); }
 }
 /* Persists until cleared (via the sidebar's "Clear" button, or by
    jumping to a different note) — not just a few seconds of fade, so the
@@ -283,7 +283,7 @@
     gap: 10px;
     padding: 10px 16px;
     border-bottom: 1px solid var(--border-color);
-    background: rgba(174, 252, 110, 0.08);
+    background: rgba(88,220,131, 0.08);
     flex: 0 0 auto;
 }
 .ln-sidebar-selection-text {
@@ -311,7 +311,7 @@
 /* Persistent marker on the sidebar item corresponding to the currently
    highlighted note in the main grid. */
 .ln-sidebar-item.ln-sidebar-item-active {
-    background: rgba(174, 252, 110, 0.12);
+    background: rgba(88,220,131, 0.12);
     border-color: var(--primary-color);
 }
 

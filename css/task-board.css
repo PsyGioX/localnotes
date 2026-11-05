@@ -39,7 +39,7 @@ body.task-board-active .app-notes-center {
     margin: 0 8px 4px;
     border-radius: 16px;
     background: var(--footer-bg, rgba(20, 20, 20, 0.88));
-    border: 1px solid rgba(174, 252, 110, 0.14);
+    border: 1px solid rgba(88,220,131, 0.14);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
     backdrop-filter: blur(10px);
 }
@@ -60,8 +60,8 @@ body.task-board-active .app-notes-center {
 }
 
 .tb-chip {
-    border: 1px solid rgba(174, 252, 110, 0.22);
-    background: rgba(174, 252, 110, 0.04);
+    border: 1px solid rgba(88,220,131, 0.22);
+    background: rgba(88,220,131, 0.04);
     color: var(--button-text, #fff);
     border-radius: 999px;
     padding: 5px 13px;
@@ -72,14 +72,14 @@ body.task-board-active .app-notes-center {
 }
 
 .tb-chip:hover {
-    background: rgba(174, 252, 110, 0.12);
-    border-color: rgba(174, 252, 110, 0.4);
+    background: rgba(88,220,131, 0.12);
+    border-color: rgba(88,220,131, 0.4);
 }
 
 .tb-chip.active {
-    background: rgba(174, 252, 110, 0.2);
-    border-color: rgba(174, 252, 110, 0.55);
-    box-shadow: 0 0 0 1px rgba(174, 252, 110, 0.15);
+    background: rgba(88,220,131, 0.2);
+    border-color: rgba(88,220,131, 0.55);
+    box-shadow: 0 0 0 1px rgba(88,220,131, 0.15);
     font-weight: 600;
 }
 
@@ -89,7 +89,7 @@ body.task-board-active .app-notes-center {
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: var(--tag-color, #aefc6e);
+    background: var(--tag-color, #58dc83);
     margin-right: 5px;
     vertical-align: middle;
 }
@@ -118,7 +118,7 @@ body.task-board-active .app-notes-center {
     min-height: 280px;
     border-radius: 18px;
     background: var(--note-bg, rgba(30, 30, 30, 0.65));
-    border: 1px solid rgba(174, 252, 110, 0.12);
+    border: 1px solid rgba(88,220,131, 0.12);
     box-shadow: 0 6px 24px rgba(0, 0, 0, 0.1);
     overflow: hidden;
 }
@@ -134,7 +134,7 @@ body.task-board-active .app-notes-center {
         color-mix(in srgb, var(--tb-col-accent, #6c757d) 18%, transparent),
         transparent 70%
     );
-    border-bottom: 1px solid rgba(174, 252, 110, 0.08);
+    border-bottom: 1px solid rgba(88,220,131, 0.08);
 }
 
 .tb-column-title-wrap {
@@ -190,8 +190,8 @@ body.task-board-active .app-notes-center {
 }
 
 .tb-column-body.drag-over {
-    background: rgba(174, 252, 110, 0.06);
-    outline: 2px dashed rgba(174, 252, 110, 0.35);
+    background: rgba(88,220,131, 0.06);
+    outline: 2px dashed rgba(88,220,131, 0.35);
     outline-offset: -4px;
     border-radius: 8px;
 }
@@ -208,14 +208,14 @@ body.task-board-active .app-notes-center {
     display: flex;
     gap: 6px;
     padding: 8px 10px 12px;
-    border-top: 1px solid rgba(174, 252, 110, 0.08);
+    border-top: 1px solid rgba(88,220,131, 0.08);
     flex-shrink: 0;
 }
 
 .tb-quick-input {
     flex: 1;
     min-width: 0;
-    border: 1px solid rgba(174, 252, 110, 0.2);
+    border: 1px solid rgba(88,220,131, 0.2);
     border-radius: 10px;
     padding: 8px 10px;
     font-size: 13px;
@@ -229,8 +229,8 @@ body.task-board-active .app-notes-center {
     height: 36px;
     border: none;
     border-radius: 10px;
-    background: rgba(174, 252, 110, 0.2);
-    color: var(--primary-color, #aefc6e);
+    background: rgba(88,220,131, 0.2);
+    color: var(--primary-color, #58dc83);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -238,7 +238,7 @@ body.task-board-active .app-notes-center {
 }
 
 .tb-quick-add:hover {
-    background: rgba(174, 252, 110, 0.35);
+    background: rgba(88,220,131, 0.35);
 }
 
 .tb-card {
@@ -247,8 +247,8 @@ body.task-board-active .app-notes-center {
     border-radius: 14px;
     padding: 12px 12px 10px;
     margin-bottom: 10px;
-    border: 1px solid rgba(174, 252, 110, 0.08);
-    border-left: 4px solid var(--tb-accent, rgba(174, 252, 110, 0.25));
+    border: 1px solid rgba(88,220,131, 0.08);
+    border-left: 4px solid var(--tb-accent, rgba(88,220,131, 0.25));
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
     cursor: grab;
     transition: transform 0.15s, box-shadow 0.2s, border-color 0.2s;
@@ -257,7 +257,7 @@ body.task-board-active .app-notes-center {
 .tb-card:hover {
     transform: translateY(-1px);
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
-    border-color: rgba(174, 252, 110, 0.18);
+    border-color: rgba(88,220,131, 0.18);
 }
 
 .tb-card.tb-dragging {
@@ -266,7 +266,7 @@ body.task-board-active .app-notes-center {
 }
 
 .tb-card-pinned {
-    box-shadow: 0 0 0 1px rgba(174, 252, 110, 0.35);
+    box-shadow: 0 0 0 1px rgba(88,220,131, 0.35);
 }
 
 .tb-card-top {
@@ -285,7 +285,7 @@ body.task-board-active .app-notes-center {
 }
 
 .tb-pin {
-    color: var(--primary-color, #aefc6e);
+    color: var(--primary-color, #58dc83);
     font-size: 12px;
 }
 
@@ -299,12 +299,12 @@ body.task-board-active .app-notes-center {
 
 .tb-priority-high { background: rgba(231, 76, 60, 0.25); color: #e74c3c; }
 .tb-priority-medium { background: rgba(241, 196, 15, 0.2); color: #f1c40f; }
-.tb-priority-low { background: rgba(52, 152, 219, 0.2); color: #3498db; }
+.tb-priority-low { background: rgba(31, 176, 74, 0.2); color: #1fb04a; }
 
 .tb-card-menu {
     flex-shrink: 0;
-    border: 1px solid rgba(174, 252, 110, 0.15);
-    background: rgba(174, 252, 110, 0.06);
+    border: 1px solid rgba(88,220,131, 0.15);
+    background: rgba(88,220,131, 0.06);
     color: inherit;
     opacity: 0.85;
     cursor: pointer;
@@ -318,8 +318,8 @@ body.task-board-active .app-notes-center {
 }
 
 .tb-card-menu:hover {
-    background: rgba(174, 252, 110, 0.16);
-    border-color: rgba(174, 252, 110, 0.35);
+    background: rgba(88,220,131, 0.16);
+    border-color: rgba(88,220,131, 0.35);
     opacity: 1;
 }
 
@@ -351,14 +351,14 @@ body.task-board-active .app-notes-center {
 .tb-progress {
     flex: 1;
     height: 4px;
-    background: rgba(174, 252, 110, 0.12);
+    background: rgba(88,220,131, 0.12);
     border-radius: 2px;
     overflow: hidden;
 }
 
 .tb-progress-bar {
     height: 100%;
-    background: linear-gradient(90deg, #34d399, #28a745);
+    background: linear-gradient(90deg, #34d399, #098b38);
     border-radius: 2px;
 }
 
@@ -398,7 +398,7 @@ body.task-board-active .app-notes-center {
     gap: 6px;
     margin-top: 8px;
     padding-top: 8px;
-    border-top: 1px solid rgba(174, 252, 110, 0.08);
+    border-top: 1px solid rgba(88,220,131, 0.08);
     opacity: 0.55;
     transition: opacity 0.2s;
 }
@@ -414,8 +414,8 @@ body.task-board-active .app-notes-center {
     align-items: center;
     justify-content: center;
     gap: 5px;
-    border: 1px solid rgba(174, 252, 110, 0.12);
-    background: rgba(174, 252, 110, 0.06);
+    border: 1px solid rgba(88,220,131, 0.12);
+    background: rgba(88,220,131, 0.06);
     color: inherit;
     border-radius: 8px;
     padding: 6px 8px;
@@ -431,9 +431,9 @@ body.task-board-active .app-notes-center {
 }
 
 .tb-card-actions .tb-btn-edit:hover {
-    background: rgba(74, 134, 232, 0.2);
-    border-color: rgba(74, 134, 232, 0.45);
-    color: #7eb3ff;
+    background: rgba(42, 198, 96, 0.2);
+    border-color: rgba(42, 198, 96, 0.45);
+    color: #6fe095;
 }
 
 .tb-card-actions .tb-btn-del:hover {
@@ -448,7 +448,7 @@ body.task-board-active .app-notes-center {
     right: 8px;
     z-index: 20;
     background: var(--modal-bg, #1e1e1e);
-    border: 1px solid rgba(174, 252, 110, 0.2);
+    border: 1px solid rgba(88,220,131, 0.2);
     border-radius: 10px;
     padding: 4px;
     min-width: 140px;
@@ -471,7 +471,7 @@ body.task-board-active .app-notes-center {
 }
 
 .tb-move-menu button:hover {
-    background: rgba(174, 252, 110, 0.12);
+    background: rgba(88,220,131, 0.12);
 }
 
 .tb-empty-state {
@@ -480,7 +480,7 @@ body.task-board-active .app-notes-center {
     margin: 8px 12px;
     border-radius: 18px;
     background: var(--note-bg, rgba(30, 30, 30, 0.5));
-    border: 1px dashed rgba(174, 252, 110, 0.2);
+    border: 1px dashed rgba(88,220,131, 0.2);
 }
 
 .tb-empty-state p {
@@ -501,22 +501,22 @@ body.task-board-active .app-notes-center {
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    background: rgba(174, 252, 110, 0.08);
-    border: 1px solid rgba(174, 252, 110, 0.15);
+    background: rgba(88,220,131, 0.08);
+    border: 1px solid rgba(88,220,131, 0.15);
 }
 
 .tb-empty-icon i {
     font-size: 28px;
     opacity: 0.65;
-    color: var(--primary-color, #aefc6e);
+    color: var(--primary-color, #58dc83);
 }
 
 .tb-empty-clear {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    border: 1px solid rgba(174, 252, 110, 0.35);
-    background: rgba(174, 252, 110, 0.12);
+    border: 1px solid rgba(88,220,131, 0.35);
+    background: rgba(88,220,131, 0.12);
     color: var(--button-text, #fff);
     border-radius: 999px;
     padding: 10px 18px;
@@ -527,7 +527,7 @@ body.task-board-active .app-notes-center {
 }
 
 .tb-empty-clear:hover {
-    background: rgba(174, 252, 110, 0.22);
+    background: rgba(88,220,131, 0.22);
     transform: translateY(-1px);
 }
 
@@ -537,8 +537,8 @@ body.task-board-active .app-notes-center {
     min-width: min(200px, 44vw);
     max-width: 320px;
     height: 50px;
-    border: 2px solid rgba(174, 252, 110, 0.3);
-    background: linear-gradient(135deg, var(--button-bg) 0%, rgba(174, 252, 110, 0.05) 100%);
+    border: 2px solid rgba(88,220,131, 0.3);
+    background: linear-gradient(135deg, var(--button-bg) 0%, rgba(88,220,131, 0.05) 100%);
     color: var(--button-text);
     border-radius: 16px;
     cursor: pointer;
@@ -554,14 +554,14 @@ body.task-board-active .app-notes-center {
 }
 
 #toggleTaskBoardButton.active {
-    border-color: rgba(174, 252, 110, 0.7);
-    background: linear-gradient(135deg, rgba(174, 252, 110, 0.2) 0%, rgba(174, 252, 110, 0.08) 100%);
-    box-shadow: 0 4px 20px rgba(174, 252, 110, 0.2);
+    border-color: rgba(88,220,131, 0.7);
+    background: linear-gradient(135deg, rgba(88,220,131, 0.2) 0%, rgba(88,220,131, 0.08) 100%);
+    box-shadow: 0 4px 20px rgba(88,220,131, 0.2);
 }
 
 #toggleTaskBoardButton:hover {
     transform: translateY(-2px);
-    border-color: rgba(174, 252, 110, 0.55);
+    border-color: rgba(88,220,131, 0.55);
 }
 
 @media (max-width: 700px) {
@@ -627,7 +627,7 @@ body.task-board-active .app-notes-center {
 .nsm-pri-btn {
     flex: 1 1 auto;
     min-width: 0;
-    border: 1px solid rgba(174, 252, 110, 0.25);
+    border: 1px solid rgba(88,220,131, 0.25);
     background: transparent;
     color: inherit;
     border-radius: 10px;
@@ -642,8 +642,8 @@ body.task-board-active .app-notes-center {
 
 .nsm-status-btn.active,
 .nsm-pri-btn.active {
-    background: rgba(174, 252, 110, 0.18);
-    border-color: rgba(174, 252, 110, 0.55);
+    background: rgba(88,220,131, 0.18);
+    border-color: rgba(88,220,131, 0.55);
 }
 
 .btn_view_div #toggleTaskBoardButton {
@@ -672,9 +672,9 @@ body.task-board-active .app-notes-center {
     height: 50px !important;
     padding: 0 16px !important;
     margin: 0 !important;
-    border: 2px solid rgba(174, 252, 110, 0.3) !important;
+    border: 2px solid rgba(88,220,131, 0.3) !important;
     border-radius: 16px !important;
-    background: linear-gradient(135deg, var(--button-bg) 0%, rgba(174, 252, 110, 0.05) 100%) !important;
+    background: linear-gradient(135deg, var(--button-bg) 0%, rgba(88,220,131, 0.05) 100%) !important;
     color: var(--button-text) !important;
     font-size: 14px !important;
     font-weight: 600 !important;
@@ -685,7 +685,7 @@ body.task-board-active .app-notes-center {
     align-items: center !important;
     justify-content: center !important;
     white-space: nowrap !important;
-    box-shadow: 0 4px 20px rgba(174, 252, 110, 0.1) !important;
+    box-shadow: 0 4px 20px rgba(88,220,131, 0.1) !important;
     transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease !important;
     scroll-snap-align: start !important;
 }
@@ -693,8 +693,8 @@ body.task-board-active .app-notes-center {
 .btn_view_div #toggleTaskBoardButton:hover,
 .btn_view_div #appLockBtn:hover {
     transform: translateY(-3px) !important;
-    border-color: rgba(174, 252, 110, 0.6) !important;
-    box-shadow: 0 8px 30px rgba(174, 252, 110, 0.2) !important;
+    border-color: rgba(88,220,131, 0.6) !important;
+    box-shadow: 0 8px 30px rgba(88,220,131, 0.2) !important;
 }
 .btn_view_div #toggleViewButton:active,
 .btn_view_div #toggleTaskBoardButton:active,
@@ -703,26 +703,26 @@ body.task-board-active .app-notes-center {
     transition: transform 0.1s !important;
 }
 #toggleTaskBoardButton.active {
-    border-color: rgba(174, 252, 110, 0.7) !important;
-    background: linear-gradient(135deg, rgba(174, 252, 110, 0.2) 0%, rgba(174, 252, 110, 0.08) 100%) !important;
+    border-color: rgba(88,220,131, 0.7) !important;
+    background: linear-gradient(135deg, rgba(88,220,131, 0.2) 0%, rgba(88,220,131, 0.08) 100%) !important;
 }
 #appLockBtn.ln-lock-active {
-    border-color: var(--primary-color, #aefc6e) !important;
-    color: var(--primary-color, #aefc6e) !important;
+    border-color: var(--primary-color, #58dc83) !important;
+    color: var(--primary-color, #58dc83) !important;
 }
 
 [data-theme="dark"] .btn_view_div #toggleViewButton,
 [data-theme="dark"] .btn_view_div #toggleTaskBoardButton,
 [data-theme="dark"] .btn_view_div #appLockBtn {
-    background: linear-gradient(135deg, #1a1a1a 0%, rgba(174, 252, 110, 0.08) 100%) !important;
-    border-color: rgba(174, 252, 110, 0.4) !important;
+    background: linear-gradient(135deg, #1a1a1a 0%, rgba(88,220,131, 0.08) 100%) !important;
+    border-color: rgba(88,220,131, 0.4) !important;
     color: #ffffff !important;
 }
 [data-theme="light"] .btn_view_div #toggleViewButton,
 [data-theme="light"] .btn_view_div #toggleTaskBoardButton,
 [data-theme="light"] .btn_view_div #appLockBtn {
-    background: linear-gradient(135deg, #ffffff 0%, rgba(40, 167, 69, 0.08) 100%) !important;
-    border-color: rgba(40, 167, 69, 0.4) !important;
+    background: linear-gradient(135deg, #ffffff 0%, rgba(9,139,56, 0.08) 100%) !important;
+    border-color: rgba(9,139,56, 0.4) !important;
     color: #212529 !important;
 }
 

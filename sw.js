@@ -11,7 +11,7 @@
  * Исходники: https://github.com/PsyGioX/localnotes — Сайт: https://localnotes-three.vercel.app
  */
 // Service Worker для Local Notes
-const CACHE_VERSION = 'v1.12.0';
+const CACHE_VERSION = 'v1.14.1-green';
 const STATIC_CACHE  = `static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `dynamic-${CACHE_VERSION}`;
 const CACHE_LIMIT   = 60;
@@ -30,7 +30,7 @@ const STATIC_FILES = [
     '/css/editor-modal.css',
     '/css/tags-calendar.css',
     '/css/page.css',
-    '/css/print.css',
+    '/js/doc-theme.js',
     '/css/apple.css',
     '/css/adaptive.css',
     '/css/app-lock.css',
@@ -42,22 +42,13 @@ const STATIC_FILES = [
     '/css/sidebar.css',
     '/css/modal-system.css',
     '/css/scroll-top.css',
+    '/css/office2024.css',
 
     // Шрифты — CSS
     '/fonts/local-fonts.css',
-    '/fonts/golos_web/golostext.css',
-    '/fonts/intro/intro.css',
     '/fonts/lekton-nerd-font-mono/lekton-nerd-font-mono.css',
-    '/fonts/Roboto/roboto.css',
-    '/fonts/Open_Sans/open_sans.css',
-    '/fonts/Lato/lato.css',
-    '/fonts/Montserrat/montserrat.css',
 
     // Шрифты — файлы
-    '/fonts/golos_web/golostextvf-regular.woff2',
-    '/fonts/golos_web/golostextvf-regular.woff',
-    '/fonts/intro/intro.woff2',
-    '/fonts/intro/intro.woff',
     '/fonts/lekton-nerd-font-mono/lekton-nerd-font-mono.woff2',
 
     // Bootstrap Icons (редактор)

@@ -41,8 +41,8 @@ body {
 }
 
 /* ── 2. SELECTION ──────────────────────────────────────────────────────────── */
-::selection        { background: rgba(174,252,110,.35); color: inherit; }
-::-moz-selection   { background: rgba(174,252,110,.35); color: inherit; }
+::selection        { background: rgba(88,220,131,.35); color: inherit; }
+::-moz-selection   { background: rgba(88,220,131,.35); color: inherit; }
 
 /* ── 3. SAFE-AREA INSETS (notch / Dynamic Island / Android cutout) ─────────── */
 /* Applied globally so every browser that supports env() picks them up.
@@ -206,8 +206,8 @@ html, body { overscroll-behavior-y: auto; }
         transform: translate(-50%, -50%) translateZ(0);
     }
     .checklist-done {
-        -webkit-text-decoration: line-through rgba(174,252,110,.65) !important;
-        text-decoration: line-through rgba(174,252,110,.65) !important;
+        -webkit-text-decoration: line-through rgba(88,220,131,.65) !important;
+        text-decoration: line-through rgba(88,220,131,.65) !important;
     }
 }
 
@@ -284,7 +284,7 @@ html, body { overscroll-behavior-y: auto; }
         transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease;
     }
     .block_btn button:hover {
-        box-shadow: 0 2px 12px rgba(174,252,110,.15);
+        box-shadow: 0 2px 12px rgba(88,220,131,.15);
         transition: background 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
     }
     .lne-btn:hover {
@@ -297,13 +297,13 @@ html, body { overscroll-behavior-y: auto; }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb {
-        background: rgba(174,252,110,.25);
+        background: rgba(88,220,131,.25);
         border-radius: 10px;
     }
-    ::-webkit-scrollbar-thumb:hover  { background: rgba(174,252,110,.5); }
-    ::-webkit-scrollbar-thumb:window-inactive { background: rgba(174,252,110,.1); }
-    [data-theme="light"] ::-webkit-scrollbar-thumb       { background: rgba(40,167,69,.25); }
-    [data-theme="light"] ::-webkit-scrollbar-thumb:hover { background: rgba(40,167,69,.5);  }
+    ::-webkit-scrollbar-thumb:hover  { background: rgba(88,220,131,.5); }
+    ::-webkit-scrollbar-thumb:window-inactive { background: rgba(88,220,131,.1); }
+    [data-theme="light"] ::-webkit-scrollbar-thumb       { background: rgba(9,139,56,.25); }
+    [data-theme="light"] ::-webkit-scrollbar-thumb:hover { background: rgba(9,139,56,.5);  }
 }
 
 /* ── 12. HIGH-DPI / RETINA ─────────────────────────────────────────────────── */
@@ -425,11 +425,11 @@ html, body { overscroll-behavior-y: auto; }
 /* ── 19. FOCUS STYLES ──────────────────────────────────────────────────────── */
 :focus:not(:focus-visible) { outline: none; }
 :focus-visible {
-    outline: 2px solid rgba(174,252,110,.8);
+    outline: 2px solid rgba(88,220,131,.8);
     outline-offset: 2px;
     border-radius: 4px;
 }
-[data-theme="light"] :focus-visible { outline-color: rgba(40,167,69,.8); }
+[data-theme="light"] :focus-visible { outline-color: rgba(9,139,56,.8); }
 [contenteditable]:focus,
 [contenteditable]:focus-visible { outline: none !important; box-shadow: none !important; }
 

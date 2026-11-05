@@ -107,7 +107,7 @@ class WorkspacesManager {
     }
 
     _randomColor() {
-        const colors = ['#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#F44336', '#00BCD4', '#E91E63', '#FF5722'];
+        const colors = ['#4CAF50', '#1bb94b', '#FF9800', '#9C27B0', '#F44336', '#00BCD4', '#E91E63', '#FF5722'];
         return colors[Math.floor(Math.random() * colors.length)];
     }
 
@@ -326,7 +326,7 @@ class WorkspacesManager {
         document.querySelectorAll('.ws-color-picker').forEach(p => p.remove());
 
         const colors = [
-            '#4CAF50', '#2196F3', '#FF9800', '#9C27B0',
+            '#4CAF50', '#1bb94b', '#FF9800', '#9C27B0',
             '#F44336', '#00BCD4', '#E91E63', '#FF5722',
             '#607D8B', '#795548', '#FFEB3B', '#8BC34A',
             '#3F51B5', '#009688', '#FF4081', '#aefc6e'

@@ -393,7 +393,7 @@ function refreshAllDates() {
     updateDateDisplay();
     
     // Перезагружаем заметки для обновления дат в футерах заметок
-    if (typeof loadNotes === 'function' && typeof notesDatabase !== 'undefined' && notesDatabase) {
+    if (typeof loadNotes === 'function' && typeof notesDB !== 'undefined' && notesDB) {
         loadNotes().catch(error => {
             console.warn('⚠️ Could not refresh notes:', error);
         });

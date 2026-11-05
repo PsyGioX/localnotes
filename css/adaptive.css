@@ -133,17 +133,10 @@
         gap: 10px;
     }
     
-    .ln-check-box {
-        width: 20px !important;
-        height: 20px !important;
-        min-width: 20px !important;
-        min-height: 20px !important;
-    }
+    
     
     /* PWA модальное окно */
-    .pwa-modal {
-        max-width: 380px;
-    }
+    
     
     /* Поисковые подсказки */
     .search-hint-dropdown {
@@ -379,12 +372,7 @@
         margin: 5px 0;
     }
     
-    .ln-check-box {
-        width: 18px !important;
-        height: 18px !important;
-        min-width: 18px !important;
-        min-height: 18px !important;
-    }
+    
     
     .checklist-text {
         font-size: 13px;
@@ -396,18 +384,11 @@
     }
     
     /* PWA */
-    .pwa-modal {
-        max-width: 360px;
-        border-radius: 20px;
-    }
     
-    .pwa-modal-header {
-        padding: 18px 18px 12px;
-    }
     
-    .pwa-feature-item {
-        padding: 8px 10px;
-    }
+    
+    
+    
     
     /* Поисковые подсказки */
     .search-hint-dropdown {
@@ -426,25 +407,21 @@
     }
     
     /* Экспорт/импорт */
-    .export-modal-content,
-    .import-modal-content {
+    .export-modal-content {
         padding: 20px;
         max-width: 400px;
     }
     
-    .export-option,
-    .import-option {
+    .export-option {
         padding: 12px 14px;
     }
     
-    .export-icon,
-    .import-icon {
+    .export-icon {
         font-size: 20px;
         width: 32px;
     }
     
-    .export-text,
-    .import-text {
+    .export-text {
         font-size: 14px;
     }
 }
@@ -776,12 +753,7 @@
             min-height: 36px;
         }
         
-        .ln-check-box {
-            width: 22px !important;
-            height: 22px !important;
-            min-width: 22px !important;
-            min-height: 22px !important;
-        }
+        
     }
     
     /* Уменьшение размеров скроллбаров */

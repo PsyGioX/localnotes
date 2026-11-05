@@ -477,7 +477,7 @@ async function renderNoteDueDate(noteId) {
         '<div class="lne-fg">' +
         '<label><i class="bi bi-palette"></i> Color</label>' +
         '<div class="note-color-swatches" id="note-color-swatches">' +
-        ['','#aefc6e','#4ec9b0','#c586c0','#f1c40f','#e74c3c','#4a86e8','#ff7eb3'].map(c =>
+        ['','#aefc6e','#4ec9b0','#c586c0','#f1c40f','#e74c3c','#2ac660','#ff7eb3'].map(c =>
             '<button class="nc-swatch' + (c === color ? ' selected' : '') + '" data-c="' + c + '" style="background:' + (c || 'transparent') + '" title="' + (c || 'Default') + '"></button>'
         ).join('') + '</div></div>' +
         '<div class="lne-fg" style="justify-content:flex-end;">' +
