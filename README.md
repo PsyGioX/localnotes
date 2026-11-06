@@ -245,9 +245,23 @@ window.t('decryptOriginError', { allowed, current });  // with placeholders
 window.translations['ru']['lockTitle'];
 window.changeLanguage('ru');         // switch UI language
 window.currentLang;                  // active language code
+window.tn('oxCommentsCount', 3);     // plural-aware (CLDR categories per language)
+window.LNLang.detect();              // detected language (see locales/README.md)
 ```
 
 Sources: `/locales/<lang>.json` (in-app strings, loaded by `js/i18n.js`) and `/locales/site/<lang>.json` (static landing-page strings) — see [`locales/README.md`](locales/README.md).
+
+### Word import/export & Office-style editor (`window.LNDocx`)
+
+```javascript
+await LNDocx.exportDocx(html, { meta });   // real .docx (OOXML): styles, lists, tables, images, footnotes, TOC, header/footer
+await LNDocx.exportDoc(html, { meta });    // Word 97–2003 compatible .doc (Word-HTML/MHTML)
+await LNDocx.importFile(file);             // .docx, binary .doc (text/tables/links), RTF, HTML → { html, meta, partial? }
+```
+
+The editor ribbon has extra File / Layout / References / Review tabs (page setup, margins, columns, TOC,
+footnotes, comments, bookmarks, header/footer, accessibility check, read aloud, format painter, change case…) in
+`localnoteseditor/office-ext.js`. Limitations: no track changes; binary `.doc` import keeps limited formatting.
 
 ### Themes (`window.themeManager`)
 

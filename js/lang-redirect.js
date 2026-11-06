@@ -10,108 +10,37 @@
  * Copyright (c) 2026 PsyGioX. Лицензия MIT.
  * Исходники: https://github.com/PsyGioX/localnotes — Сайт: https://localnotes-three.vercel.app
  */
-// Language mapping for automatic redirection
-var languageMap = {
-    'ru': '/ru/',
-    'uk': '/ua/',
-    'pl': '/pl/',
-    'cs': '/cs/',
-    'sk': '/sk/',
-    'bg': '/bg/',
-    'hr': '/hr/',
-    'sr': '/sr/',
-    'bs': '/bs/',
-    'mk': '/mk/',
-    'sl': '/sl/'
-};
-
-// Only run on the root page — language pages don't need redirection
-var currentPath = window.location.pathname;
-var isRootPage = (currentPath === '/' || currentPath === '/index.html');
-if (!isRootPage) {
-    // Not on root — do nothing, just set currentLang from path
-    var pathMatch = currentPath.match(/^\/([a-z]{2})\//);
-    if (pathMatch) window.currentLang = pathMatch[1];
-} else {
-    // On root page — detect language and redirect if needed
-    // Флаг предотвращает двойной редирект (DOMContentLoaded + readyState fallback)
-    var _langRedirectDone = false;
-
-    function _doLangRedirect() {
-        if (_langRedirectDone) return;
-        _langRedirectDone = true;
-        var userLang = getUserLanguage();
-        if (userLang !== 'en' && languageMap[userLang]) {
-            localStorage.setItem('preferredLanguage', userLang);
-            // Preserve query string + hash across the redirect — otherwise
-            // incoming Web Share Target data (?title=&text=&url=) or a
-            // shared-note link (#shared=...) gets silently dropped here,
-            // before js/share-target.js on the localized page ever sees it.
-            var target = languageMap[userLang] + window.location.search + window.location.hash;
-            window.location.replace(target);
-        } else {
-            // English or unknown — stay on root, clear any stale redirect pref
-            localStorage.removeItem('preferredLanguage');
-            showMainPage();
-        }
-    }
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', _doLangRedirect);
-    } else {
-        _doLangRedirect();
-    }
+// Определение языка и редирект переехали в js/lang-core.js (LNLang) — он
+// выполняется синхронно в <head>, ещё до первой отрисовки, поэтому вспышки
+// английской версии при редиректе больше нет. Здесь остался только
+// консольный баннер для английской (корневой) страницы и совместимость
+// со старыми глобальными именами.
+var languageMap = {};
+if (window.LNLang) {
+    window.LNLang.SUPPORTED.forEach(function (c) {
+        if (c !== 'en') languageMap[window.LNLang.META[c].html] = '/' + c + '/';
+    });
 }
 
 function getUserLanguage() {
-    // ?lang= param always wins and clears saved pref
-    var urlParams = new URLSearchParams(window.location.search);
-    var langParam = urlParams.get('lang');
-    if (langParam === 'en') return 'en';
-    if (langParam && languageMap[langParam]) return langParam;
-
-    var savedLang = localStorage.getItem('preferredLanguage');
-    if (savedLang === 'en') return 'en';
-    if (savedLang && languageMap[savedLang]) return savedLang;
-
-    var browserLanguages = navigator.languages || [navigator.language || navigator.userLanguage];
-    for (var i = 0; i < browserLanguages.length; i++) {
-        var browserLang = browserLanguages[i];
-        var langCode = browserLang.split('-')[0].toLowerCase();
-        if (languageMap[langCode]) return langCode;
-        var parts = browserLang.split('-');
-        var countryCode = parts[1] ? parts[1].toLowerCase() : null;
-        if (countryCode) {
-            if (countryCode === 'ua') return 'uk';
-            if (countryCode === 'by' || countryCode === 'kz' || countryCode === 'md' || countryCode === 'ru') return 'ru';
-        }
-    }
-
-    try {
-        var systemLang = Intl.DateTimeFormat().resolvedOptions().locale.split('-')[0].toLowerCase();
-        if (languageMap[systemLang]) return systemLang;
-    } catch (e) {}
-
-    try {
-        var timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        if (timezone.includes('Moscow') || timezone.includes('Yekaterinburg') ||
-            timezone.includes('Novosibirsk') || timezone.includes('Krasnoyarsk') ||
-            timezone.includes('Irkutsk') || timezone.includes('Yakutsk') ||
-            timezone.includes('Vladivostok')) return 'ru';
-        if (timezone.includes('Kiev')) return 'uk';
-    } catch (e) {}
-
-    try {
-        var ua = navigator.userAgent;
-        if (ua.includes('ru-RU') || ua.includes('ru_ru')) return 'ru';
-        if (ua.includes('uk-UA') || ua.includes('uk_ua')) return 'uk';
-    } catch (e) {}
-
-    return 'en';
+    return window.LNLang ? window.LNLang.current() : 'en';
 }
 
+(function () {
+    if (window.__lnRedirecting) return;
+    var path = window.location.pathname;
+    var isRootPage = (path === '/' || path === '/index.html');
+    if (!isRootPage) return;
+    function run() {
+        // Мы на корне и редирект не потребовался → это английская версия.
+        window.currentLang = 'en';
+        showMainPage();
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
+    else run();
+})();
+
 function showMainPage() {
-    window.currentLang = 'en';
     console.clear();
 
     var originalLog = console.log;
@@ -140,7 +69,7 @@ function showMainPage() {
     originalLog('%c' +
         '╔═══════════════════════════════════════════════════════════╗\n' +
         '║                                                           ║\n' +
-        '║              <i class="bi bi-filetype-md"></i>  LOCAL NOTES - SECURE NOTES  <i class="bi bi-filetype-md"></i>            ║\n' +
+        '║                  LOCAL NOTES - SECURE NOTES                ║\n' +
         '║                                                           ║\n' +
         '╚═══════════════════════════════════════════════════════════╝',
         'color: #4CAF50; font-weight: bold; font-size: 12px; font-family: monospace;');
@@ -158,7 +87,7 @@ function showMainPage() {
     originalLog('%c   ✓ Search with transliteration', 'color: #666; font-size: 12px;');
 
     originalLog('%c\n📊 INFORMATION', 'color: #9C27B0; font-size: 16px; font-weight: bold;');
-    originalLog('%c   Version:  1.9.19', 'color: #666; font-size: 12px;');
+    originalLog('%c   Version:  1.15.0', 'color: #666; font-size: 12px;');
     originalLog('%c   Author:   PsyGioX', 'color: #666; font-size: 12px;');
     originalLog('%c   Website:  https://localnotes-three.vercel.app/', 'color: #666; font-size: 12px;');
     originalLog('%c   GitHub:   https://github.com/PsyGioX/localnotes', 'color: #666; font-size: 12px;');

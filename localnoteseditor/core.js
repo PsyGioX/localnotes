@@ -363,6 +363,8 @@ class LocalNotesEditor {
         ]) +
         '</div>';
 
+        // Extension point (localnoteseditor/office-ext.js): extra ribbon tabs/groups. Must run before wiring.
+        if (typeof LocalNotesEditor.extendRibbon === 'function') { try { LocalNotesEditor.extendRibbon(this); } catch (e) { console.error('extendRibbon failed', e); } }
         this._colorBars();
         this._wireToolbar();
         this._wireRibbon();
@@ -580,6 +582,8 @@ class LocalNotesEditor {
     _exec(cmd, btn) {
         this._restoreRange();
         if (cmd.indexOf('style_') === 0) { this._applyBlockStyle(cmd.slice(6)); var _t = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0); if (!_t) this.ed.focus(); return; }
+        // Commands registered by extensions (office-ext.js): File / Layout / References / Review …
+        if (LocalNotesEditor.extCommands && LocalNotesEditor.extCommands[cmd]) { LocalNotesEditor.extCommands[cmd].call(this, btn); return; }
         // Commands that open a modal — don't refocus editor after
         var modalCmds = {
             insertLink:        function() { this._modalLink(); },
@@ -1498,7 +1502,8 @@ class LocalNotesEditor {
     // ── Smart typography ─────────────────────────────────────────────────
 
     _quotePair() {
-        var lang = (document.documentElement.lang || (function() { try { return localStorage.getItem('preferredLanguage'); } catch (e) { return ''; } })() || 'en').toLowerCase().slice(0, 2);
+        // currentLang — код приложения (ua), <html lang> — BCP-47 (uk); берём приоритетно язык приложения
+        var lang = (window.currentLang || document.documentElement.lang || 'en').toLowerCase().slice(0, 2);
         var map = { ru: '«»', uk: '«»', ua: '«»', be: '«»', pl: '„”', hr: '„”', bs: '„”', cs: '„“', sk: '„“', bg: '„“', sl: '„“', sr: '„“', mk: '„“' };
         return map[lang] || '“”';
     }

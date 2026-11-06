@@ -19,6 +19,7 @@
     <meta http-equiv="Permissions-Policy" content="browsing-topics=(), run-ad-auction=(), camera=(), microphone=(), geolocation=()">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.googletagmanager.com https://www.google-analytics.com; script-src-elem 'self' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: cid: https:; font-src 'self' data: https://fonts.gstatic.com chrome-extension:; connect-src 'self' blob: https://www.google-analytics.com https://analytics.google.com; frame-src 'self' https://www.youtube.com https://youtu.be https://www.youtube-nocookie.com https://rutube.ru https://vk.com https://vkvideo.ru https://vk.ru https://ok.ru https://www.tiktok.com https://player.vimeo.com https://www.dailymotion.com https://player.twitch.tv https://clips.twitch.tv; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self'; upgrade-insecure-requests;">
     <!-- Google Analytics — Consent Mode v2 + loader (no inline scripts) -->
+    <script src="/js/lang-core.js?v=2024.2"></script>
     <script src="/js/ga-init.js?v=2024.1"></script>
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <meta http-equiv="X-XSS-Protection" content="1; mode=block">
@@ -202,8 +203,8 @@
         },
         "datePublished": "2024-01-01",
         "dateModified": "2026-08-22",
-        "version": "1.9.19",
-        "softwareVersion": "1.9.19",
+        "version": "1.15.0",
+        "softwareVersion": "1.15.0",
         "browserRequirements": "Requires JavaScript. Requires HTML5.",
         "memoryRequirements": "Minimal",
         "storageRequirements": "Browser Local Storage",
@@ -244,7 +245,8 @@
     <!-- Critical CSS -->
     <link rel="stylesheet" href="../css/index.css?v=2024.1">
     <link rel="stylesheet" href="../css/adaptive.css?v=2024.1">
-    <link rel="stylesheet" href="../css/office2024.css?v=2024.1">
+    <link rel="stylesheet" href="../css/office2024.css?v=2024.2">
+    <link rel="stylesheet" href="../css/office-ext.css?v=2024.2">
     <!-- Screenshot & App Lock -->
     <link rel="stylesheet" href="../css/screenshot.css?v=2024.1">
     <link rel="stylesheet" href="../css/app-lock.css?v=2024.1">
@@ -365,7 +367,7 @@
                     <button id="calendarBtn"><i class="bi bi-calendar3"></i> Calendar</button>
                     <button id="quickEditToggle"><i class="bi bi-lightning-charge"></i> Quick Edit</button>
                 </div>
-                <input multiple type="file" id="importInput" accept=".note,.html,.htm,.md,.zip,.enex,.json">
+                <input multiple type="file" id="importInput" accept=".note,.html,.htm,.md,.zip,.enex,.json,.docx,.doc">
             </div>
             <div class="search-wrap">
                 <input type="text" id="searchInput" autocomplete="off" placeholder="Поиск заметок... (#тег)" title="#tag  is:pinned|overdue|today|soon  has:image|video|table|checklist|link  before:YYYY-MM-DD  after:YYYY-MM-DD">
@@ -469,6 +471,8 @@
     
     <!-- LocalNotesEditor -->
     <script src="../localnoteseditor/core.js?v=2024.1" defer></script>
+    <script src="../localnoteseditor/docx-io.js?v=2024.2" defer></script>
+    <script src="../localnoteseditor/office-ext.js?v=2024.2" defer></script>
     
     <!-- Non-critical JavaScript loaded asynchronously -->
     <script src="/js/script-loader.js?v=2024.1"></script>

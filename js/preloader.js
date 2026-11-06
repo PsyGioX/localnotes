@@ -16,16 +16,7 @@
     const el = document.getElementById('app-preloader');
     if (!el) return;
 
-    const lang = (() => {
-        // 1. From URL path: /ru/, /ua/, etc.
-        const m = window.location.pathname.match(/^\/([a-z]{2})\//);
-        if (m) return m[1];
-        // 2. From localStorage (saved preference)
-        const saved = localStorage.getItem('preferredLanguage');
-        if (saved) return saved;
-        // 3. From browser language
-        return (navigator.language || 'en').split('-')[0];
-    })();
+    const lang = window.currentLang || (window.LNLang && window.LNLang.current()) || 'en';
     const loadingTexts = {
         en: ['Initializing...', 'Loading modules...', 'Security check...', 'Preparing interface...', 'Almost ready...'],
         ru: ['Инициализация...', 'Загрузка модулей...', 'Проверка безопасности...', 'Подготовка интерфейса...', 'Почти готово...'],

@@ -126,7 +126,7 @@ class PointerEventManager {
 }
 
 function isSupportedFileExtension(filename) {
-    return ['.note','.html','.md'].includes('.' + filename.split('.').pop().toLowerCase());
+    return ['.note','.html','.md','.docx','.doc'].includes('.' + filename.split('.').pop().toLowerCase());
 }
 
 const pointerManager = new PointerEventManager();
@@ -4397,8 +4397,45 @@ async function exportNote(noteContent, password) {
     }
 }
 
+async function exportToWord(noteContent, kind) {
+    try {
+        if (!window.LNDocx) throw new Error('Word module is not loaded yet');
+        const pc = await processMediaContent(noteContent);
+        const ts = new Date().toISOString().replace(/[:.]/g,'-');
+        let title = '';
+        try { title = (window.notesDB && notesDB.extractTitle(pc)) || ''; } catch (e) {}
+        const opts = { meta: Object.assign(LNDocx.defaultMeta(), { title, lang: (window.LNLang && LNLang.htmlLang) ? LNLang.htmlLang(window.currentLang) : '' }) };
+        const blob = kind === 'doc' ? await LNDocx.exportDoc(pc, opts) : await LNDocx.exportDocx(pc, opts);
+        downloadFile(blob, `note_${ts}.${kind === 'doc' ? 'doc' : 'docx'}`, blob.type);
+        showCustomAlert(typeof t === 'function' ? t('success') : 'Success', typeof t === 'function' ? t('noteExported') : 'Exported!', 'success');
+    } catch (e) { showCustomAlert(typeof t === 'function' ? t('error') : 'Error', e.message, 'error'); }
+}
+
+async function importNotesWord(files) {
+    let imported = 0, errors = 0, partial = false;
+    for (const file of files) {
+        try {
+            if (!window.LNDocx) throw new Error('Word module is not loaded yet');
+            const r = await LNDocx.importFile(file);
+            if (r.partial) partial = true;
+            const content = r.html || '';
+            await notesDB.saveNote({ id: secureNoteId(), content, creationTime: Date.now(), lastModified: Date.now(), title: (r.meta && r.meta.title) || notesDB.extractTitle(content) || file.name.replace(/\.[^.]+$/, '') });
+            imported++;
+        } catch (e) { errors++; showCustomAlert(typeof t === 'function' ? t('error') : 'Error', typeof t === 'function' ? t('importFileError', { name: file.name, message: e.message }) || (file.name + ': ' + e.message) : file.name + ': ' + e.message, 'error'); }
+    }
+    if (imported > 0) {
+        const msg = errors > 0
+            ? (typeof t === 'function' ? t('importCompletedWithErrors', { count: imported, errors }) || `Imported ${imported}, errors: ${errors}` : `Imported ${imported}, errors: ${errors}`)
+            : (typeof t === 'function' ? t('importCompleted', { count: imported }) : `Imported ${imported} notes`);
+        showCustomAlert(typeof t === 'function' ? t('success') : 'Success', msg + (partial && typeof t === 'function' ? '\n' + t('oxImportPartial') : ''), 'success');
+        await loadNotes();
+    }
+}
+
 function exportNoteWithFormat(noteContent, format = 'html') {
     switch (format) {
+        case 'docx': exportToWord(noteContent, 'docx'); break;
+        case 'doc': exportToWord(noteContent, 'doc'); break;
         case 'markdown': exportToMarkdown(noteContent); break;
         case 'pdf': exportToPDF(noteContent); break;
         default: exportToHTML(noteContent); break;
@@ -4645,6 +4682,8 @@ function showExportOptions(noteContent) {
             <button class="export-option" data-format="encrypted"><span class="export-icon"><i class="bi bi-file-earmark-lock"></i></span><span class="export-text">Encrypted</span><span class="export-desc">Password protected</span></button>
             <button class="export-option" data-format="markdown"><span class="export-icon"><i class="bi bi-filetype-md"></i></span><span class="export-text">Markdown</span><span class="export-desc">Text format</span></button>
             <button class="export-option" data-format="pdf"><span class="export-icon"><i class="bi bi-filetype-pdf"></i></span><span class="export-text">PDF</span><span class="export-desc">Print document</span></button>
+            <button class="export-option" data-format="docx"><span class="export-icon"><i class="bi bi-filetype-docx"></i></span><span class="export-text">Word</span><span class="export-desc">.docx</span></button>
+            <button class="export-option" data-format="doc"><span class="export-icon"><i class="bi bi-filetype-doc"></i></span><span class="export-text">Word 97–2003</span><span class="export-desc">.doc</span></button>
         </div>
         <button class="export-close">${typeof t === 'function' ? t('cancel') : 'Cancel'}</button></div>`;
     document.body.appendChild(modal);
@@ -4685,6 +4724,7 @@ function importNotesWithFormat(event) {
             <button class="export-option" data-format="encrypted"><span class="export-icon"><i class="bi bi-file-earmark-lock"></i></span><span class="export-text">Encrypted</span><span class="export-desc">.note files</span></button>
             <button class="export-option" data-format="html"><span class="export-icon"><i class="bi bi-filetype-html"></i></span><span class="export-text">HTML</span><span class="export-desc">HTML files</span></button>
             <button class="export-option" data-format="markdown"><span class="export-icon"><i class="bi bi-filetype-md"></i></span><span class="export-text">Markdown</span><span class="export-desc">.md files</span></button>
+            <button class="export-option" data-format="word"><span class="export-icon"><i class="bi bi-filetype-docx"></i></span><span class="export-text">Word</span><span class="export-desc">.docx / .doc</span></button>
         </div>
         <div class="export-options-divider"><span>${typeof t === 'function' ? t('importFromOtherApps') || 'From other apps' : 'From other apps'}</span></div>
         <div class="export-options">
@@ -4704,6 +4744,7 @@ function importNotesWithFormat(event) {
             if (fmt === 'encrypted') importNotesFiles(filesArray);
             else if (fmt === 'html') importNotesHTML(filesArray);
             else if (fmt === 'markdown') importNotesMarkdown(filesArray);
+            else if (fmt === 'word') importNotesWord(filesArray);
             else if (window.LNImportFormats) {
                 if (fmt === 'notion') window.LNImportFormats.importNotionSource(filesArray);
                 else if (fmt === 'evernote') window.LNImportFormats.importEvernoteEnex(filesArray);

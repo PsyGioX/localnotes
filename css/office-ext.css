@@ -1,0 +1,112 @@
+/*
+ * Local Notes — Office-style editor extension (tabs File/Layout/References/Review, page layout, marks).
+ * Loaded AFTER office2024.css so these rules win the cascade. Copyright (c) 2026 PsyGioX. MIT License.
+ */
+
+/* ── Page layout from Layout tab (desktop only: on phones the paper is full-width) ── */
+@media (min-width: 769px) {
+    html[data-theme] body .lne-body .lne-editor[data-ox-page] {
+        width: min(var(--ox-w, 210mm), 100%);
+        max-width: 100%;
+        min-height: var(--ox-h, 297mm);
+        box-sizing: border-box;
+        padding: var(--ox-pad, 25.4mm) !important;
+        column-count: var(--ox-cols, 1);
+        column-gap: 10mm;
+        background: var(--ox-bg, var(--paper-bg));
+        color: var(--ox-fg, var(--text-color));
+    }
+    html[data-theme] body .lne-body .lne-editor[data-ox-page].lne-ox-border { outline: 1px solid color-mix(in srgb, currentColor 45%, transparent); outline-offset: -10mm; }
+}
+@media (max-width: 768px) {
+    html[data-theme] body .lne-body .lne-editor[data-ox-page] { background: var(--ox-bg, var(--paper-bg)); color: var(--ox-fg, var(--text-color)); }
+}
+.lne-editor .lne-toc, .lne-editor .lne-fnlist, .lne-editor .lne-pagebreak, .lne-editor .lne-textbox, .lne-editor table { column-span: none; }
+.lne-editor .lne-toc { break-inside: avoid; }
+
+/* ── Header / footer bands (sticky, informational) ── */
+.lne-body[data-ox-hdr]::before, .lne-body[data-ox-ftr]::after {
+    position: sticky; display: block; z-index: 3; left: 0; right: 0; text-align: center;
+    font: 400 11px/1.6 var(--font-ui, system-ui); color: var(--text-secondary, #777);
+    background: color-mix(in srgb, var(--ribbon-bg, #f3f3f3) 92%, transparent);
+    padding: 1px 12px; pointer-events: none;
+}
+.lne-body[data-ox-hdr]::before { content: attr(data-ox-hdr); top: 0; border-bottom: 1px dashed var(--border-color, #ccc); }
+.lne-body[data-ox-ftr]::after { content: attr(data-ox-ftr); bottom: 0; border-top: 1px dashed var(--border-color, #ccc); }
+
+/* ── Page break, text box, drop cap, quick styles ── */
+.lne-editor .lne-pagebreak {
+    position: relative; height: 22px; margin: 10px 0; user-select: none; break-after: page;
+    border-top: 1px dashed var(--border-color, #999); border-bottom: 0;
+}
+.lne-editor .lne-pagebreak::after {
+    content: attr(data-label); position: absolute; left: 50%; top: -9px; transform: translateX(-50%);
+    padding: 0 10px; font: 400 11px/16px var(--font-ui, system-ui); color: var(--text-secondary, #777); background: var(--ox-bg, var(--paper-bg, #fff));
+}
+.lne-editor .lne-textbox, .noteContent .lne-textbox {
+    border: 1.5px solid var(--border-color, #999); border-radius: 4px; padding: 10px 14px; margin: 12px 0; background: color-mix(in srgb, var(--accent-soft, #e8f1fb) 60%, transparent);
+}
+.lne-editor .lne-textbox > :last-child, .noteContent .lne-textbox > :last-child { margin-bottom: 0; }
+.lne-editor .lne-dropcap::first-letter, .noteContent .lne-dropcap::first-letter {
+    float: left; font-size: 3.4em; line-height: .85; padding: .04em .1em 0 0; font-weight: 600; color: var(--heading-color, inherit);
+}
+.lne-editor .lne-title, .noteContent .lne-title { font-size: 2.1em; font-weight: 300; line-height: 1.15; letter-spacing: -.01em; margin-bottom: .2em; }
+.lne-editor .lne-subtitle, .noteContent .lne-subtitle { font-size: 1.2em; color: var(--text-secondary, #666); letter-spacing: .02em; margin-bottom: .8em; }
+.lne-editor .lne-caption, .noteContent .lne-caption { font-size: .85em; font-style: italic; color: var(--text-secondary, #666); }
+
+/* ── Table of contents, footnotes, comments, bookmarks ── */
+.lne-editor .lne-toc, .noteContent .lne-toc { border: 1px solid var(--border-color, #ccc); border-radius: 6px; padding: 10px 16px; margin: 12px 0; }
+.lne-toc .lne-toc-title { font-weight: 600; margin-bottom: 6px; }
+.lne-toc ul { list-style: none; margin: 0; padding: 0; }
+.lne-toc .lne-toc-item { padding: 2px 0; cursor: pointer; color: var(--accent-fg, #0b6a2e); }
+.lne-toc .lne-toc-item:hover { text-decoration: underline; }
+.lne-editor sup.lne-fn, .noteContent sup.lne-fn { color: var(--accent-fg, #0b6a2e); cursor: pointer; font-weight: 600; padding: 0 1px; }
+.lne-editor .lne-fnlist, .noteContent .lne-fnlist { font-size: .82em; color: var(--text-secondary, #666); margin-top: 18px; user-select: text; }
+.lne-fnlist hr { width: 33%; margin: 0 0 6px; border: 0; border-top: 1px solid var(--border-color, #999); }
+.lne-fnlist .lne-fn-line { margin: 2px 0; }
+.lne-editor .lne-comment, .noteContent .lne-comment { background: rgba(255, 214, 0, .28); border-bottom: 2px solid rgba(235, 180, 0, .9); cursor: help; }
+.lne-editor .lne-bookmark { display: inline-block; width: 0; overflow: visible; }
+.lne-editor .lne-bookmark::before { content: "\F1C8"; font-family: "bootstrap-icons"; font-size: 11px; color: var(--accent-fg, #0b6a2e); opacity: .7; }
+
+/* ── Formatting marks (¶) ── */
+.lne-editor.lne-ox-marks p::after, .lne-editor.lne-ox-marks h1::after, .lne-editor.lne-ox-marks h2::after, .lne-editor.lne-ox-marks h3::after,
+.lne-editor.lne-ox-marks h4::after, .lne-editor.lne-ox-marks li::after, .lne-editor.lne-ox-marks blockquote::after { content: " \00B6"; color: #4a90e2; opacity: .7; font-size: .85em; user-select: none; pointer-events: none; }
+.lne-editor.lne-ox-marks br::before { content: "\21B5"; color: #4a90e2; opacity: .7; }
+
+/* ── Read mode / format painter / flash ── */
+.lne-editor.lne-ox-read { cursor: default; caret-color: transparent; }
+.lne-editor.lne-ox-painting { cursor: copy; }
+.lne-ox-flash { outline: 3px solid #f5a623 !important; outline-offset: 2px; transition: outline-color .3s; }
+
+/* ── Navigation pane ── */
+.lne-ox-nav {
+    position: absolute; left: 0; bottom: 26px; width: min(260px, 82%); z-index: 20; display: flex; flex-direction: column;
+    background: var(--ribbon-panel, var(--ribbon-bg, #fbfbfb)); border-right: 1px solid var(--border-color, #ccc); box-shadow: 4px 0 18px rgba(0, 0, 0, .18);
+    font: 400 13px/1.35 var(--font-ui, system-ui);
+}
+.lne-ox-nav-h { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-bottom: 1px solid var(--border-color, #ccc); }
+.lne-ox-nav-x { background: none; border: 0; color: inherit; cursor: pointer; padding: 4px 6px; border-radius: 4px; }
+.lne-ox-nav-x:hover, .lne-ox-nav-i:hover { background: var(--ribbon-hover, rgba(0, 0, 0, .06)); }
+.lne-ox-nav-list { overflow: auto; flex: 1; padding: 4px 0; }
+.lne-ox-nav-i { display: block; width: 100%; text-align: left; background: none; border: 0; color: inherit; padding: 6px 10px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font: inherit; }
+.lne-ox-nav-empty { padding: 14px; opacity: .65; }
+
+/* ── Lists inside dialogs (bookmarks, comments, accessibility) ── */
+.lne-ox-list { display: flex; flex-direction: column; gap: 6px; max-height: 50vh; overflow: auto; }
+.lne-ox-row { display: flex; align-items: center; gap: 8px; text-align: left; padding: 8px 10px; border: 1px solid var(--button-border, #ccc); background: var(--input-bg, transparent); color: inherit; border-radius: 4px; cursor: pointer; font: inherit; }
+.lne-ox-row:hover { background: var(--ribbon-hover, rgba(0, 0, 0, .06)); }
+.lne-ox-count { margin: 0 0 8px; font-weight: 600; }
+.lne-ox-cm { border: 1px solid var(--button-border, #ccc); border-left: 4px solid #f0b400; border-radius: 4px; padding: 8px 10px; }
+.lne-ox-cm-h span { opacity: .6; font-size: 12px; margin-left: 6px; }
+.lne-ox-cm-q { opacity: .7; font-style: italic; margin: 4px 0; font-size: 12.5px; }
+.lne-ox-cm-a { margin-top: 8px; display: flex; gap: 6px; }
+.lne-ox-toast { position: fixed; left: 50%; bottom: 70px; transform: translateX(-50%); z-index: 100000; max-width: 90vw; padding: 10px 16px; border-radius: 8px; background: #222; color: #fff; font: 400 13px/1.4 system-ui; box-shadow: 0 6px 24px rgba(0, 0, 0, .35); transition: opacity .35s; }
+.lne-ox-toast.out { opacity: 0; }
+
+/* Phones: navigation pane covers the page, labels in the pinned tab strip stay compact */
+@media (max-width: 768px) {
+    .lne-ox-nav { width: 100%; box-shadow: none; }
+}
+@media print {
+    .lne-ox-nav, .lne-body[data-ox-hdr]::before, .lne-body[data-ox-ftr]::after { display: none !important; }
+}

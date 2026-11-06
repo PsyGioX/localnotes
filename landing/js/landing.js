@@ -153,21 +153,18 @@
     });
   });
 
-  /* ── Language redirect ──────────────────────────────────── */
-  var isRoot = !window.location.pathname.match(/\/(ru|ua|pl|cs|sk|bg|hr|sr|bs|mk|sl|en)\//);
-  var alreadyRedirected = sessionStorage.getItem('ln_redirected');
+  /* ── Language redirect ──────────────────────────────────
+     Логика определения языка — в /js/lang-core.js (LNLang): алиасы (uk→ua),
+     порядок navigator.languages, явный выбор пользователя. */
+  var onLangPage = !!(window.LNLang && window.LNLang.fromPath());
+  var alreadyRedirected = false;
+  try { alreadyRedirected = !!sessionStorage.getItem('ln_redirected'); } catch (e) {}
 
-  if (isRoot && !alreadyRedirected) {
-    var localeMap = {
-      ru: 'ru', uk: 'ua', pl: 'pl', cs: 'cs', sk: 'sk',
-      bg: 'bg', hr: 'hr', sr: 'sr', bs: 'bs', mk: 'mk', sl: 'sl'
-    };
-    var lang = (navigator.language || '').slice(0, 2).toLowerCase();
-    var locale = localeMap[lang];
-    if (locale) {
-      sessionStorage.setItem('ln_redirected', '1');
-      var base = window.location.pathname.replace(/\/?$/, '/');
-      window.location.replace(base + locale + '/');
+  if (window.LNLang && !onLangPage && !alreadyRedirected) {
+    var target = window.LNLang.getChosen() || window.LNLang.detect();
+    if (target && target !== 'en') {
+      try { sessionStorage.setItem('ln_redirected', '1'); } catch (e) {}
+      window.location.replace(window.LNLang.urlFor(target));
     }
   }
 

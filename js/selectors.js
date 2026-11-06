@@ -13,21 +13,9 @@
 // Управление селекторами языка и темы в футере
 class FooterSelectors {
     constructor() {
-        this.languages = {
-            'en': { name: 'English', flag: '🇺🇸' },
-            'ru': { name: 'Русский', flag: '🇷🇺' },
-            'ua': { name: 'Українська', flag: '🇺🇦' },
-            'pl': { name: 'Polski', flag: '🇵🇱' },
-            'cs': { name: 'Čeština', flag: '🇨🇿' },
-            'sk': { name: 'Slovenčina', flag: '🇸🇰' },
-            'bg': { name: 'Български', flag: '🇧🇬' },
-            'hr': { name: 'Hrvatski', flag: '🇭🇷' },
-            'sr': { name: 'Српски', flag: '🇷🇸' },
-            'bs': { name: 'Bosanski', flag: '🇧🇦' },
-            'mk': { name: 'Македонски', flag: '🇲🇰' },
-            'sl': { name: 'Slovenščina', flag: '🇸🇮' }
-        };
-        
+        // Список языков — из LNLang (единый источник правды), без копии здесь.
+        this.languages = (window.LNLang && window.LNLang.META) || { en: { name: 'English', flag: '🇺🇸' } };
+
         this.themes = {
             'light': { name: 'Light', icon: '☀️' },
             'dark': { name: 'Dark', icon: '🌙' },
@@ -49,7 +37,7 @@ class FooterSelectors {
         const selector = document.createElement('div');
         selector.className = 'footer-selector language-selector';
         selector.innerHTML = `
-            <select id="languageSelect" title="Select Language">
+            <select id="languageSelect" title="Select Language" aria-label="Select Language">
                 ${Object.entries(this.languages).map(([code, lang]) => 
                     `<option value="${code}" ${code === currentLang ? 'selected' : ''}>
                         ${lang.flag} ${lang.name}
@@ -107,43 +95,23 @@ class FooterSelectors {
         }
     }
     
-    // Получение текущего языка
+    // Получение текущего языка (путь /ua/ → код приложения 'ua'; корень → 'en')
     getCurrentLanguage() {
-        const path = window.location.pathname;
-        const langMatch = path.match(/\/([a-z]{2})\//);
-        return langMatch ? langMatch[1] : 'en';
+        return (window.LNLang && window.LNLang.fromPath()) || 'en';
     }
-    
+
     // Получение текущей темы
     getCurrentTheme() {
         return localStorage.getItem('theme') || 'auto';
     }
     
-    // Смена языка
+    // Смена языка: явный выбор запоминается; страница меняется на /xx/<та же страница>
+    // с сохранением query/hash (раньше всегда вело на главную языка и теряло #shared=…).
     changeLanguage(langCode) {
-        // Сохраняем выбранный язык
-        localStorage.setItem('preferredLanguage', langCode);
-        
-        // Проверяем, находимся ли мы на языковой странице
-        const isLanguagePage = window.location.pathname.match(/^\/([a-z]{2})\//);
-        const currentLang = isLanguagePage ? window.location.pathname.split('/')[1] : 'en';
-        
-        // Если язык не изменился, просто обновляем интерфейс
-        if (langCode === currentLang) {
-            if (typeof window.changeLanguage === 'function') {
-                window.changeLanguage(langCode);
-            }
-            return;
-        }
-        
-        // Если язык изменился, перенаправляем на нужную страницу
-        if (langCode === 'en') {
-            window.location.href = '/';
-        } else {
-            window.location.href = `/${langCode}/`;
-        }
+        if (window.LNLang) window.LNLang.switchTo(langCode);
+        else window.location.href = langCode === 'en' ? '/' : `/${langCode}/`;
     }
-    
+
     // Смена темы
     changeTheme(themeCode) {
         if (window.themeManager) {

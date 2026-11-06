@@ -10,31 +10,43 @@
  * Copyright (c) 2026 PsyGioX. Лицензия MIT.
  * Исходники: https://github.com/PsyGioX/localnotes — Сайт: https://localnotes-three.vercel.app
  */
-// Глобальная переменная для хранения текущего языка
-// Инициализируем сразу из localStorage чтобы быть готовыми до рендера нот
-window.currentLang = null;
+// Текущий язык определяет js/lang-core.js (LNLang) — единый источник правды.
+// Здесь его НЕЛЬЗЯ обнулять или перезаписывать значением из localStorage:
+// раньше именно это ломало языковые страницы (/ru/ показывалась на английском,
+// если когда-то был выбран English) и давало несуществующий код "uk".
+window.currentLang = window.currentLang || (window.LNLang ? window.LNLang.current() : 'en');
+
+// Кеш склеенных словарей для офлайна. Версионирован и хранит максимум 2 языка
+// (текущий + en): раньше туда по очереди попадали все 12 языков по ~100 КБ и
+// кеш рос до квоты localStorage. Основной офлайн-кеш — Service Worker.
+const LANG_CACHE_KEY = 'langDataCache2';
+const LANG_CACHE_VERSION = 3;
+
+function readLangCache() {
+    try {
+        const raw = localStorage.getItem(LANG_CACHE_KEY);
+        const obj = raw ? JSON.parse(raw) : null;
+        return (obj && obj.v === LANG_CACHE_VERSION && obj.data) ? obj.data : {};
+    } catch (e) { return {}; }
+}
+function writeLangCache(language, langData) {
+    try {
+        const cache = readLangCache();
+        cache[language] = langData;
+        // оставляем только текущий и английский
+        Object.keys(cache).forEach(k => { if (k !== language && k !== 'en') delete cache[k]; });
+        localStorage.setItem(LANG_CACHE_KEY, JSON.stringify({ v: LANG_CACHE_VERSION, data: cache }));
+        localStorage.removeItem('langDataCache'); // старый формат — освобождаем место
+    } catch (e) { /* quota */ }
+}
 
 // Синхронное восстановление langData из кеша при старте (для офлайн-режима)
-// Это выполняется немедленно, до любого рендера нот
 (function restoreLangCacheSync() {
     try {
-        // Восстанавливаем currentLang синхронно из localStorage
-        const savedLang = localStorage.getItem('preferredLanguage');
-        if (savedLang && !window.currentLang) {
-            window.currentLang = savedLang;
-        }
-
-        const cached = localStorage.getItem('langDataCache');
-        if (cached) {
-            const data = JSON.parse(cached);
-            window.langData = window.langData || {};
-            // Заполняем все языки из кеша
-            Object.keys(data).forEach(lang => {
-                if (!window.langData[lang]) {
-                    window.langData[lang] = data[lang];
-                }
-            });
-        }
+        const data = readLangCache();
+        window.langData = window.langData || {};
+        Object.keys(data).forEach(lang => { if (!window.langData[lang]) window.langData[lang] = data[lang]; });
+        localStorage.removeItem('langDataCache');
     } catch (e) { /* ignore */ }
 })();
 
@@ -47,59 +59,45 @@ function initializeLanguage() {
 }
 
 // Функция для загрузки текста из /locales и обновления интерфейса
+let _langRequestSeq = 0;
 function changeLanguage(language) {
     // Две небольшие языковые выборки вместо одного большого json/lang.json:
     //  - /locales/site/<lang>.json  — тексты статических элементов страницы
-    //    (name-app, addNoteButton, footer и т.д.), которые ниже читает
-    //    updateInterface()
-    //  - /locales/<lang>.json       — полный набор строк приложения,
-    //    используемый функцией t() из js/i18n.js
-    // Обе — plain flat json, поэтому объединяем их в единый объект и
-    // используем его и как langData (для updateInterface), и как
-    // window.translations[language] (чтобы t() сразу видел все строки
-    // выбранного языка, а не только те 223, что раньше лежали в lang.json).
-    const isLanguagePage = window.location.pathname.match(/^\/([a-z]{2})\//);
-    const prefix = isLanguagePage ? '..' : '';
-    const siteUrl = `${prefix}/locales/site/${language}.json`;
-    const appUrl = `${prefix}/locales/${language}.json`;
+    //  - /locales/<lang>.json       — полный набор строк приложения для t()
+    // appData — база, siteData — поверх.
+    language = (window.LNLang && window.LNLang.normalize(language)) || 'en';
+    const seq = ++_langRequestSeq; // быстрые переключения: применяем только последний ответ
+    // Абсолютные пути работают и на /, и на /ru/, и на /ru/beta.html
+    const siteUrl = `/locales/site/${language}.json`;
+    const appUrl = `/locales/${language}.json`;
+    const getJson = url => fetch(url).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status} for ${url}`); return r.json(); });
 
-    Promise.all([
-        fetch(siteUrl).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status} for ${siteUrl}`); return r.json(); }),
-        fetch(appUrl).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status} for ${appUrl}`); return r.json(); })
-    ])
+    Promise.all([getJson(siteUrl), getJson(appUrl)])
         .then(([siteData, appData]) => {
-            // appData как база, siteData поверх — это те же ключи,
-            // которые исторически жили только в lang.json.
+            if (seq !== _langRequestSeq) return;
             const langData = Object.assign({}, appData, siteData);
-
-            // Кешируем загруженные языки в localStorage для офлайн-режима
-            try {
-                const cacheRaw = localStorage.getItem('langDataCache');
-                const cache = cacheRaw ? JSON.parse(cacheRaw) : {};
-                cache[language] = langData;
-                localStorage.setItem('langDataCache', JSON.stringify(cache));
-            } catch (e) { /* ignore quota errors */ }
-
+            writeLangCache(language, langData);
             document.body.setAttribute('data-lang', language);
             updateInterface(langData, language);
         })
         .catch(err => {
-            console.error("Error loading language files:", err);
-            console.error("Attempted to load from:", siteUrl, appUrl);
-            // Офлайн-режим: восстанавливаем данные из кеша
-            try {
-                const cacheRaw = localStorage.getItem('langDataCache');
-                const cache = cacheRaw ? JSON.parse(cacheRaw) : {};
-                const langData = cache[language] || cache['en'];
-                if (langData) {
-                    console.warn('Offline mode: using cached language data for', language);
-                    document.body.setAttribute('data-lang', language);
-                    updateInterface(langData, language);
-                }
-            } catch (cacheErr) {
-                console.error('Failed to restore language from cache:', cacheErr);
+            if (seq !== _langRequestSeq) return;
+            console.error('Error loading language files:', err, siteUrl, appUrl);
+            // Офлайн-режим: восстанавливаем данные из кеша (язык → en)
+            const cache = readLangCache();
+            const langData = cache[language] || cache['en'];
+            if (langData) {
+                console.warn('Offline mode: using cached language data for', language);
+                document.body.setAttribute('data-lang', language);
+                updateInterface(langData, cache[language] ? language : 'en');
             }
         });
+}
+
+// Подписи кнопок идут в innerHTML вместе с иконкой — экранируем, чтобы строка
+// перевода никогда не могла внести разметку.
+function escapeLabel(v) {
+    return String(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
 // Функция для обновления интерфейса
@@ -112,11 +110,13 @@ function updateInterface(langData, language) {
     // загружен при старте страницы.
     window.translations = window.translations || {};
     window.translations[language] = langData;
+    const changed = window.currentLang !== language;
     window.currentLang = language;
+    // Язык в localStorage НЕ пишем: это делает только явный выбор пользователя
+    // (LNLang.switchTo). Раньше сюда попадал и автоопределённый язык, и смена
+    // языка браузера потом игнорировалась.
+    if (window.LNLang) window.LNLang.applyToDocument(language);
 
-    // Сохраняем язык в localStorage для офлайн-режима
-    try { localStorage.setItem('preferredLanguage', language); } catch (e) { /* ignore */ }
-    
     // Обновляем язык куки баннера, если он доступен
     if (window.CookiesBanner && typeof window.CookiesBanner.updateLanguage === 'function') {
         window.CookiesBanner.updateLanguage(language);
@@ -125,32 +125,35 @@ function updateInterface(langData, language) {
     
     // Мета-теги теперь статические в HTML - не обновляем динамически
 
+    // Не затираем DOM строкой "undefined", если ключа нет в словаре
+    const has = v => typeof v === 'string' && v !== '';
+
     // Обновление текста в preloader (если элемент существует)
     const preloaderText = document.getElementById('preloaderText');
-    if (preloaderText) {
-        preloaderText.innerHTML = langData.preloaderText;
+    if (preloaderText && has(langData.preloaderText)) {
+        preloaderText.textContent = langData.preloaderText;
     }
     // Примечание: прелойдер сам управляет своим текстом через updatePreloaderText()
 
     // Обновление других элементов интерфейса
     const nameApp = document.querySelector('.name-app');
-    if (nameApp) {
+    if (nameApp && has(langData.appName)) {
         nameApp.textContent = langData.appName;
     }
 
     const addNoteButton = document.getElementById('addNoteButton');
-    if (addNoteButton) {
-        addNoteButton.innerHTML = `<i class="bi bi-plus-lg"></i> ${langData.addNoteButton}`;
+    if (addNoteButton && has(langData.addNoteButton)) {
+        addNoteButton.innerHTML = `<i class="bi bi-plus-lg"></i> ${escapeLabel(langData.addNoteButton)}`;
     }
 
     const importButton = document.getElementById('importButton');
-    if (importButton) {
-        importButton.innerHTML = `<i class="bi bi-box-arrow-in-down"></i> ${langData.importButton}`;
+    if (importButton && has(langData.importButton)) {
+        importButton.innerHTML = `<i class="bi bi-box-arrow-in-down"></i> ${escapeLabel(langData.importButton)}`;
     }
 
     const clearAllButton = document.getElementById('clearAllButton');
-    if (clearAllButton) {
-        clearAllButton.innerHTML = `<i class="bi bi-trash3"></i> ${langData.clearAllButton}`;
+    if (clearAllButton && has(langData.clearAllButton)) {
+        clearAllButton.innerHTML = `<i class="bi bi-trash3"></i> ${escapeLabel(langData.clearAllButton)}`;
     }
 
     const toggleViewButton = document.getElementById('toggleViewButton');
@@ -176,62 +179,63 @@ function updateInterface(langData, language) {
     }
 
     const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
+    if (searchInput && has(langData.searchPlaceholder)) {
         searchInput.placeholder = langData.searchPlaceholder;
     }
 
     const modalH2 = document.querySelector('.modal_h2');
-    if (modalH2) {
+    if (modalH2 && has(langData.editModalTitle)) {
         modalH2.textContent = langData.editModalTitle;
     }
 
     const saveNoteButton = document.getElementById('saveNoteButton');
-    if (saveNoteButton) {
-        saveNoteButton.innerHTML = `<i class="bi bi-floppy"></i> ${langData.saveNoteButton}`;
+    if (saveNoteButton && has(langData.saveNoteButton)) {
+        saveNoteButton.innerHTML = `<i class="bi bi-floppy"></i> ${escapeLabel(langData.saveNoteButton)}`;
     }
 
     const cancelNoteButton = document.getElementById('cancelNoteButton');
-    if (cancelNoteButton) {
-        cancelNoteButton.innerHTML = `<i class="bi bi-x-lg"></i> ${langData.cancelNoteButton}`;
+    if (cancelNoteButton && has(langData.cancelNoteButton)) {
+        cancelNoteButton.innerHTML = `<i class="bi bi-x-lg"></i> ${escapeLabel(langData.cancelNoteButton)}`;
     }
 
     const footerText = document.querySelector('.info-about-project p');
-    if (footerText) {
+    if (footerText && has(langData.footerText)) {
         footerText.textContent = langData.footerText;
     }
 
     const footerCopyRight = document.querySelector('.footerCopyRight');
-    if (footerCopyRight) {
+    if (footerCopyRight && has(langData.footerCopyRight)) {
         footerCopyRight.textContent = langData.footerCopyRight;
     }
 
     const usagePolicy = document.querySelector('.Usage_Policy');
-    if (usagePolicy) {
+    if (usagePolicy && has(langData.Usage_Policy)) {
         usagePolicy.textContent = langData.Usage_Policy;
     }
 
     const privacyPolicy = document.querySelector('.Privacy_Policy');
-    if (privacyPolicy) {
+    if (privacyPolicy && has(langData.Privacy_Policy)) {
         privacyPolicy.textContent = langData.Privacy_Policy;
     }
 
     const cookiePolicy = document.querySelector('.Cookie_Policy');
-    if (cookiePolicy) {
+    if (cookiePolicy && has(langData.Cookie_Policy)) {
         cookiePolicy.textContent = langData.Cookie_Policy;
     }
 
     const cookie = document.getElementById('cookie');
-    if (cookie) {
+    if (cookie && has(langData.cookie)) {
         cookie.textContent = langData.cookie;
     }
 
     const author = document.querySelector('.author');
-    if (author) {
+    if (author && has(langData.author)) {
         author.textContent = langData.author;
     }
 
-    // Обновляем текст кнопок с иконками
-    updateButtonTexts();
+    // Обновляем текст кнопок с иконками (версия из index.js перекрывает запасную ниже)
+    (typeof window.updateButtonTexts === 'function' ? window.updateButtonTexts : updateButtonTextsFallback)();
+    if (typeof window.applyI18n === 'function') window.applyI18n();
 
     if (typeof window._updateLockBtn === 'function') {
         window._updateLockBtn();
@@ -257,10 +261,14 @@ function updateInterface(langData, language) {
             }
         }, 150);
     }
+
+    if (changed) {
+        try { window.dispatchEvent(new CustomEvent('ln:languagechange', { detail: { lang: language } })); } catch (e) { /* old browsers */ }
+    }
 }
 
-// Функция для обновления текста кнопок с иконками
-function updateButtonTexts() {
+// Запасная версия: работает, пока index.js (где живёт основная window.updateButtonTexts) ещё не загружен.
+function updateButtonTextsFallback() {
     const addNoteButton = document.getElementById("addNoteButton");
     const importButton = document.getElementById("importButton");
     const clearAllButton = document.getElementById("clearAllButton");
@@ -353,104 +361,25 @@ function updateButtonTexts() {
     }
 }
 
-// Функция для определения языка браузера пользователя
-function getCurrentLanguage() {
-    // Проверяем, установлен ли язык в window.currentLang (для языковых версий)
-    if (window.currentLang) {
-        return window.currentLang;
-    }
-    
-    // Проверяем URL параметр
-    const urlParams = new URLSearchParams(window.location.search);
-    const langParam = urlParams.get('lang');
-    if (langParam) {
-        window.currentLang = langParam;
-        return langParam;
-    }
-    
-    // Проверяем localStorage
-    const savedLang = localStorage.getItem('preferredLanguage');
-    if (savedLang) {
-        window.currentLang = savedLang;
-        return savedLang;
-    }
-    
-    // Определяем язык по браузеру
-    const userLang = navigator.language || navigator.userLanguage;
-    const langCode = userLang.split('-')[0].toLowerCase();
-    
-    // Поддерживаемые языки
-    const supportedLanguages = ['en', 'ru', 'ua', 'pl', 'cs', 'sk', 'bg', 'hr', 'sr', 'bs', 'mk', 'sl'];
-    
-    if (supportedLanguages.includes(langCode)) {
-        window.currentLang = langCode;
-        return langCode;
-    }
-    
-    // Проверяем для специальных случаев
-    const countryCode = userLang.split('-')[1]?.toLowerCase();
-    if (countryCode) {
-        if (countryCode === 'ua') {
-            window.currentLang = 'ua';
-            return 'ua';
-        }
-        if (['by', 'kz', 'md'].includes(countryCode)) {
-            window.currentLang = 'ru';
-            return 'ru';
-        }
-    }
-    
-    // По умолчанию английский
-    window.currentLang = 'en';
-    return 'en';
-}
-
-// Функция для периодической проверки языка
-function checkAndUpdateLanguage() {
-    const currentLang = getCurrentLanguage();
-    changeLanguage(currentLang);
-}
-
-// Функция для установки атрибута lang в <html>
-function setPageLanguage(lang) {
-    document.documentElement.setAttribute('lang', lang);
-}
+// Смена языка на месте (без перезагрузки). Выбор пользователя запоминается явно.
+window.setAppLanguage = function (code) {
+    if (window.LNLang) window.LNLang.setPreferred(code, true);
+    changeLanguage(code);
+};
 
 // Экспортируем функцию changeLanguage в глобальную область
 window.changeLanguage = changeLanguage;
 
-// Запуск проверки языка при загрузке страницы
+// Инициализация интерфейса после загрузки DOM. Язык уже определён в lang-core.js
+// (путь URL → ?lang → явный выбор → браузер), здесь только применяем его.
 document.addEventListener('DOMContentLoaded', () => {
-    // Добавляем небольшую задержку для полной загрузки DOM
-    setTimeout(() => {
-        try {
-            // Проверяем, не находимся ли мы на языковой версии страницы
-            const currentPath = window.location.pathname;
-            const isLanguagePage = currentPath.match(/^\/([a-z]{2})\//);
-            
-            if (isLanguagePage) {
-                // Если мы на языковой странице, устанавливаем язык из URL
-                const langFromPath = isLanguagePage[1];
-                
-                // Проверяем, не установлен ли уже язык в HTML
-                if (!window.currentLang) {
-                    window.currentLang = langFromPath;
-                }
-                
-                setPageLanguage(window.currentLang);
-                // Обновляем интерфейс для языковой версии
-                changeLanguage(window.currentLang);
-            } else {
-                // Если мы на главной странице, используем стандартную логику
-                checkAndUpdateLanguage();
-                const currentLang = getCurrentLanguage();
-                setPageLanguage(currentLang);
-            }
-        } catch (error) {
-            console.error('Error initializing language:', error);
-            // Fallback на английский
-            window.currentLang = 'en';
-            setPageLanguage('en');
-        }
-    }, 100);
+    try {
+        const lang = window.currentLang || 'en';
+        if (window.LNLang) window.LNLang.applyToDocument(lang);
+        changeLanguage(lang);
+    } catch (error) {
+        console.error('Error initializing language:', error);
+        window.currentLang = 'en';
+        if (window.LNLang) window.LNLang.applyToDocument('en');
+    }
 });

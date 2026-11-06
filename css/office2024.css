@@ -583,6 +583,41 @@ html[data-theme] body .lne-tab-a { background: var(--accent-soft); color: var(--
     html[data-theme] body #editModal .lne-actions, html[data-theme] body #editModal .modal-footer { padding-bottom: max(8px, env(safe-area-inset-bottom)); }
 }
 
+/* ── Mobile toolbar: the shell is pinned, ONLY the tools row scrolls ─────────
+   Before, `.lne-toolbar-scroll` scrolled horizontally as a whole, dragging the
+   tab strip along with the tools. Now: shell + tab strip never move; the active
+   panel (the tools block) is the single horizontal scroller. */
+@media (max-width: 768px) {
+    html[data-theme] body .lne-toolbar,
+    html[data-theme] body #editModal .modal-content .lne-toolbar {
+        overflow: hidden !important; max-height: none !important;
+        overscroll-behavior: none; touch-action: pan-y;
+        flex: 0 0 auto; position: relative; z-index: 10;
+    }
+    html[data-theme] body .lne-toolbar .lne-toolbar-scroll {
+        display: flex; flex-direction: column; width: 100%; max-width: 100%; min-width: 0;
+        overflow: hidden !important;
+    }
+    /* tabs: share the width equally, never scroll */
+    html[data-theme] body .lne-toolbar .lne-ribbon-tabs { overflow: hidden !important; flex: 0 0 auto; width: 100%; padding: 0 2px; gap: 0; }
+    html[data-theme] body .lne-toolbar .lne-rtab {
+        flex: 1 1 0 !important; min-width: 0 !important; padding: 0 2px !important;
+        font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center;
+    }
+    html[data-theme] body .lne-toolbar .lne-rtab.active::after { left: 4px; right: 4px; }
+    /* tools row: the only scrolling element */
+    html[data-theme] body .lne-toolbar .lne-panel.active {
+        width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; flex: 0 0 auto;
+        overflow-x: auto !important; overflow-y: hidden !important;
+        overscroll-behavior-x: contain; touch-action: pan-x;
+        -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    }
+    html[data-theme] body .lne-toolbar .lne-panel.active::-webkit-scrollbar { display: none; }
+    /* the page/editor body scrolls under the pinned toolbar, never the other way round */
+    html[data-theme] body #editModal .modal-content .lne-wrapper { display: flex; flex-direction: column; min-height: 0; }
+    html[data-theme] body #editModal .modal-content .lne-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+}
+
 @media print {
     .lne-ribbon-tabs, .lne-pop { display: none !important; }
 }

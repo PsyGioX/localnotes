@@ -12,145 +12,139 @@
  */
 // Система переводов для динамического текста
 //
-// Заменяет старый js/translations.js (объект на 12 языков, ~420 КБ,
-// зашитый прямо в JS). Теперь переводы лежат в /locales/<lang>.json
-// (см. locales/README.md) и подгружаются только для двух языков:
-// текущего (window.currentLang, уже определён в lang-redirect.js) и
-// английского как запасного. Это обычно 2 файла по 25-40 КБ вместо
-// одного файла на 420 КБ на каждой странице.
+// Переводы лежат в /locales/<lang>.json (см. locales/README.md) и
+// подгружаются только для двух языков: текущего (window.currentLang,
+// определяется в js/lang-core.js) и английского как запасного.
 //
 // Загрузка синхронная (XMLHttpRequest, а не fetch): скрипты в
 // script-loader.js выполняются строго по порядку, и весь остальной код
 // (index.js и т.д.) обращается к translations/t() сразу после загрузки
-// этого файла, без ожидания промиса. Синхронный XHR — единственный
-// способ сохранить эту гарантию без переписывания index.js.
-if (typeof translations === 'undefined') {
+// этого файла, без ожидания промиса.
+//
+// Что умеет (помимо t(key, params)):
+//   t.has(key)                 — есть ли ключ в текущем языке или в en
+//   tn(key, n, params)         — плюрализация через Intl.PluralRules:
+//                                key_one / key_two / key_few / key_many / key_other
+//                                ({n} подставляется автоматически)
+//   applyI18n(root)            — data-i18n / data-i18n-title / -placeholder / -aria-label
+//   i18n.formatNumber/Date/List/RelativeTime — Intl с правильной локалью
+//   window.__missingI18n       — Set ключей, которых не нашлось ни в языке, ни в en
+//                                (в консоль пишет только при ?i18n-debug)
+(function () {
+    'use strict';
+    if (window.i18n) return; // уже инициализирован
 
-function loadLocaleSync(lang) {
-    try {
-        const xhr = new XMLHttpRequest();
-        xhr.open('GET', `/locales/${lang}.json`, false); // false = синхронно
-        xhr.send(null);
-        if (xhr.status >= 200 && xhr.status < 300) {
-            return JSON.parse(xhr.responseText);
+    var DEBUG = /[?&]i18n-debug\b/.test(window.location.search);
+    var norm = function (c) { return (window.LNLang && window.LNLang.normalize(c)) || c || 'en'; };
+
+    function loadLocaleSync(lang) {
+        try {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/locales/' + lang + '.json', false); // false = синхронно
+            xhr.send(null);
+            if (xhr.status >= 200 && xhr.status < 300) return JSON.parse(xhr.responseText);
+            console.warn('[i18n] /locales/' + lang + '.json → HTTP ' + xhr.status);
+        } catch (e) {
+            console.error('[i18n] Failed to load /locales/' + lang + '.json', e);
         }
-    } catch (e) {
-        console.error(`Failed to load /locales/${lang}.json`, e);
-    }
-    return null;
-}
-
-const currentLang = window.currentLang || 'en';
-
-const translations = {};
-translations['en'] = loadLocaleSync('en') || {};
-if (currentLang !== 'en') {
-    const data = loadLocaleSync(currentLang);
-    if (data) {
-        translations[currentLang] = data;
-    } else {
-        console.warn(`Locale '${currentLang}' failed to load, falling back to 'en'`);
-    }
-}
-
-// Функция для получения перевода
-function t(key, params = {}) {
-    const lang = window.currentLang || 'en';
-    let translation = translations[lang]?.[key];
-    if (translation == null) translation = translations['en']?.[key];
-    if (translation == null && window.langData) {
-        translation = window.langData[lang]?.[key];
-        if (translation == null) translation = window.langData['en']?.[key];
+        return null;
     }
 
-    if (translation == null) return key;
-
-    // Если значение — массив или объект (например months, weekdays), возвращаем как есть
-    if (typeof translation !== 'string') return translation;
-
-    // Заменяем параметры в тексте
-    return translation.replace(/\{(\w+)\}/g, (match, param) => params[param] || match);
-}
-
-// Экспортируем функцию и объект переводов в глобальную область
-window.t = t;
-window.translations = translations;
-
-// Функция для получения текущего языка
-function getCurrentLanguage() {
-    return window.currentLang || 'en';
-}
-
-// Функция для обновления текста кнопок в HTML
-function updateButtonTexts() {
-    const addNoteButton = document.getElementById("addNoteButton");
-    const importButton = document.getElementById("importButton");
-    const clearAllButton = document.getElementById("clearAllButton");
-    const toggleViewButton = document.getElementById("toggleViewButton");
-    const saveNoteButton = document.getElementById("saveNoteButton");
-    const cancelNoteButton = document.getElementById("cancelNoteButton");
-    const confirmYesButton = document.getElementById("confirmYes");
-    const confirmNoButton = document.getElementById("confirmNo");
-    const okButton = document.getElementById("ok");
-    
-    if (addNoteButton) {
-        addNoteButton.innerHTML = `<i class="bi bi-plus-lg"></i> ${t("addNote")}`;
+    var startLang = norm(window.currentLang || 'en');
+    // translate.js может успеть положить сюда уже загруженный язык — не затираем
+    var translations = window.translations || {};
+    if (!translations.en) translations.en = loadLocaleSync('en') || {};
+    if (startLang !== 'en' && !translations[startLang]) {
+        var data = loadLocaleSync(startLang);
+        if (data) translations[startLang] = data;
+        else console.warn("[i18n] Locale '" + startLang + "' failed to load, falling back to 'en'");
     }
-    if (importButton) {
-        importButton.innerHTML = `<i class="bi bi-box-arrow-in-down"></i> ${t("importNotes")}`;
-    }
-    if (clearAllButton) {
-        clearAllButton.innerHTML = `<i class="bi bi-trash3"></i> ${t("clearAllNotes")}`;
-    }
-    const quickEditToggle = document.getElementById("quickEditToggle");
-    if (quickEditToggle && !quickEditToggle.classList.contains('active')) {
-        quickEditToggle.innerHTML = `<i class="bi bi-lightning-charge"></i> ${t("quickEditOn") || 'Quick Edit'}`;
-    }
-    if (window.taskBoard && typeof window.taskBoard.updateToggleButton === "function") {
-        window.taskBoard.updateToggleButton();
-    }
-    if (toggleViewButton) {
-        // Обновляем кнопку переключения вида с правильными переводами
-        const notesContainer = document.getElementById("notesContainer");
-        const isFullWidth = notesContainer && notesContainer.classList.contains("full-width-view");
-        
-        if (isFullWidth) {
-            toggleViewButton.innerHTML = `<i class="bi bi-grid"></i> ${t("viewModeGrid")}`;
-        } else {
-            toggleViewButton.innerHTML = `<i class="bi bi-list-ul"></i> ${t("viewModeList")}`;
+
+    var missing = window.__missingI18n = window.__missingI18n || new Set();
+
+    function lookup(key, lang) {
+        var v = translations[lang] && translations[lang][key];
+        if (v == null && lang !== 'en') v = translations.en && translations.en[key];
+        if (v == null && window.langData) {
+            v = window.langData[lang] && window.langData[lang][key];
+            if (v == null) v = window.langData.en && window.langData.en[key];
         }
-        
-        // Принудительно обновляем кнопку через AppUtils, если он доступен
-        if (window.appUtils && typeof window.appUtils.forceUpdateToggleButton === 'function') {
-            // Добавляем небольшую задержку, чтобы избежать ошибок
-            setTimeout(() => {
-                try {
-                    window.appUtils.forceUpdateToggleButton();
-                } catch (error) {
-                }
-            }, 50);
-        }
-    }
-    if (saveNoteButton) {
-        saveNoteButton.innerHTML = `<i class="bi bi-floppy"></i> ${t("saveNote")}`;
-    }
-    if (cancelNoteButton) {
-        cancelNoteButton.innerHTML = `<i class="bi bi-x-lg"></i> ${t("cancel")}`;
-    }
-    if (confirmYesButton) {
-        confirmYesButton.innerHTML = `<i class="bi bi-check-lg"></i> ${t("confirmYes")}`;
-    }
-    if (confirmNoButton) {
-        confirmNoButton.innerHTML = `<i class="bi bi-x-lg"></i> ${t("confirmNo")}`;
-    }
-    if (okButton) {
-        okButton.innerHTML = `<i class="bi bi-check-lg"></i> ${t("ok")}`;
+        return v;
     }
 
-    // Calendar button
-    const calendarBtn = document.getElementById("calendarBtn");
-    if (calendarBtn) {
-        calendarBtn.innerHTML = `<i class="bi bi-calendar3"></i> ${t("calendar")}`;
+    function interpolate(str, params) {
+        if (!params) return str;
+        // `!= null`, а не `||`: t('x', {n: 0}) должен дать "0", а не оставить "{n}"
+        return str.replace(/\{(\w+)\}/g, function (m, p) { return params[p] != null ? params[p] : m; });
     }
-}
-} // Закрываем блок if (typeof translations === 'undefined')
+
+    // Функция для получения перевода
+    function t(key, params) {
+        var lang = norm(window.currentLang || 'en');
+        var v = lookup(key, lang);
+        if (v == null) {
+            if (!missing.has(key)) {
+                missing.add(key);
+                if (DEBUG) console.warn('[i18n] missing key "' + key + '" (' + lang + ')');
+            }
+            return key;
+        }
+        // Массивы/объекты (months, weekdays) возвращаем как есть
+        if (typeof v !== 'string') return v;
+        return interpolate(v, params);
+    }
+    t.has = function (key) { return lookup(key, norm(window.currentLang || 'en')) != null; };
+
+    var pluralCache = {};
+    function pluralRules(lang) {
+        var h = (window.LNLang ? window.LNLang.htmlLang(lang) : lang) || 'en';
+        try { return pluralCache[h] || (pluralCache[h] = new Intl.PluralRules(h)); }
+        catch (e) { return null; }
+    }
+    // tn('rvComments', 3) → "3 комментария" (ключи rvComments_one/_few/_many/_other)
+    function tn(key, n, params) {
+        var lang = norm(window.currentLang || 'en');
+        var pr = pluralRules(lang);
+        var cat = pr ? pr.select(Number(n)) : (Number(n) === 1 ? 'one' : 'other');
+        var p = Object.assign({ n: n }, params || {});
+        var k = key + '_' + cat;
+        if (lookup(k, lang) == null) k = key + '_other';
+        if (lookup(k, lang) == null) k = key;
+        return t(k, p);
+    }
+
+    function htmlLang() { return window.LNLang ? window.LNLang.htmlLang(window.currentLang) : (window.currentLang || 'en'); }
+    var i18n = {
+        t: t, tn: tn,
+        lang: function () { return norm(window.currentLang || 'en'); },
+        formatNumber: function (n, o) { try { return new Intl.NumberFormat(htmlLang(), o).format(n); } catch (e) { return String(n); } },
+        formatDate: function (d, o) { try { return new Intl.DateTimeFormat(htmlLang(), o || { dateStyle: 'medium' }).format(d instanceof Date ? d : new Date(d)); } catch (e) { return String(d); } },
+        formatList: function (a, o) { try { return new Intl.ListFormat(htmlLang(), o || { style: 'long', type: 'conjunction' }).format(a); } catch (e) { return a.join(', '); } },
+        formatRelative: function (v, unit, o) { try { return new Intl.RelativeTimeFormat(htmlLang(), o || { numeric: 'auto' }).format(v, unit); } catch (e) { return v + ' ' + unit; } }
+    };
+
+    // Декларативные переводы: <span data-i18n="key">, data-i18n-title / -placeholder / -aria-label
+    var ATTRS = [['data-i18n-title', 'title'], ['data-i18n-placeholder', 'placeholder'], ['data-i18n-aria-label', 'aria-label']];
+    function applyI18n(root) {
+        root = root || document;
+        if (!root.querySelectorAll) return;
+        root.querySelectorAll('[data-i18n]').forEach(function (el) {
+            var v = t(el.getAttribute('data-i18n')); if (typeof v === 'string' && v !== el.getAttribute('data-i18n')) el.textContent = v;
+        });
+        ATTRS.forEach(function (pair) {
+            root.querySelectorAll('[' + pair[0] + ']').forEach(function (el) {
+                var k = el.getAttribute(pair[0]), v = t(k);
+                if (typeof v === 'string' && v !== k) el.setAttribute(pair[1], v);
+            });
+        });
+    }
+
+    // Экспортируем в глобальную область (обратная совместимость: window.t, window.translations)
+    window.t = t;
+    window.tn = tn;
+    window.i18n = i18n;
+    window.applyI18n = applyI18n;
+    window.translations = translations;
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { applyI18n(); });
+    else applyI18n();
+})();

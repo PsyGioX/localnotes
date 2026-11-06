@@ -283,52 +283,14 @@
         }
     };
 
-    // Get current language
+    // Get current language — LNLang is the single source of truth (js/lang-core.js);
+    // the fallback below only matters if the banner is embedded on a page without it.
     function getCurrentLanguage() {
-        // First, check if the main app has already set the language
-        if (window.currentLang && translations[window.currentLang]) {
-            return window.currentLang;
-        }
-
-        // Check pathname for language (most reliable for language-specific pages)
-        const pathname = window.location.pathname;
-        const pathLang = pathname.split('/')[1];
-        if (pathLang && translations[pathLang]) {
-            return pathLang;
-        }
-
-        // Check URL parameter
-        const urlParams = new URLSearchParams(window.location.search);
-        const langParam = urlParams.get('lang');
-        if (langParam && translations[langParam]) {
-            return langParam;
-        }
-
-        // Check localStorage
-        const savedLang = localStorage.getItem('preferredLanguage');
-        if (savedLang && translations[savedLang]) {
-            return savedLang;
-        }
-
-        // Check browser language
-        const browserLang = navigator.language || navigator.userLanguage;
-        const langCode = browserLang.split('-')[0].toLowerCase();
-        if (translations[langCode]) {
-            return langCode;
-        }
-
-        // Check for special cases (like ru for by, kz, md)
-        const countryCode = browserLang.split('-')[1]?.toLowerCase();
-        if (countryCode) {
-            if (countryCode === 'ua') {
-                return 'ua';
-            }
-            if (['by', 'kz', 'md'].includes(countryCode)) {
-                return 'ru';
-            }
-        }
-
-        return 'en'; // default
+        var l = window.LNLang ? window.LNLang.current() : window.currentLang;
+        if (l && translations[l]) return l;
+        var n = window.LNLang ? window.LNLang.normalize(l) : null;
+        if (n && translations[n]) return n;
+        return 'en';
     }
 
     // Check if consent is already given

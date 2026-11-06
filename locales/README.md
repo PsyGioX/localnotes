@@ -27,7 +27,7 @@ locales/
 Every file is a **flat** `{ "key": "value" }` map — no nesting, no
 generated boilerplate. Every language file in a given folder has
 **exactly the same set of keys** (enforced — see `verify-locales.js`
-below): 864 keys in `locales/`, 223 keys in `locales/site/`.
+below): ~1127 logical keys in `locales/` (plural families counted once), 223 keys in `locales/site/`.
 
 The in-app files also carry the strings of the editor (toolbar, dialogs,
 templates, the drawing pad), the vault / App Lock screens, Task Board, Graph
@@ -58,7 +58,9 @@ View, Command Palette and site export — everything read through `t()`.
 1. Edit the relevant `locales/<lang>.json` (or `locales/site/<lang>.json`)
    file directly — it's what ships, there's no build step.
 2. Run `node scripts/verify-locales.js` to confirm every language still
-   has the exact same key set (catches typos/missing keys immediately).
+   has the exact same key set, matching `{placeholders}`, complete plural
+   forms, and that every key used in code exists (`--strict` makes warnings,
+   e.g. values identical to English, fail too).
 3. Commit.
 
 ## What was fixed in the original cleanup pass
@@ -89,3 +91,27 @@ those for any asset you changed (see `release-checklist.md`).
    the editor — the editor falls back to the English text if a key is missing.
 3. Run `node scripts/verify-locales.js`; it fails on missing keys and empty
    values.
+
+## Plurals
+
+Use `tn('key', n, params)` (`window.tn`). It picks the CLDR category for the
+active language via `Intl.PluralRules` and looks up `key_one`, `key_two`,
+`key_few`, `key_many`, `key_other` (falling back to `key_other`, then `key`).
+`{n}` is always available as a placeholder. Required categories per language:
+
+| Languages | Categories |
+|---|---|
+| en, bg, mk | `one`, `other` |
+| hr, sr, bs | `one`, `few`, `other` |
+| ru, ua, pl, cs, sk | `one`, `few`, `many`, `other` |
+| sl | `one`, `two`, `few`, `other` |
+
+`verify-locales.js` enforces `_other` plus whatever the language needs.
+
+## Language detection and switching
+
+All logic lives in `js/lang-core.js` (`window.LNLang`): URL (`/<lang>/`) →
+`?lang=` → explicit user choice (`preferredLanguage` + `languageChosen=1`) →
+`navigator.languages` → region/timezone hints. An auto-detected language is
+never persisted; only an explicit choice in the selector is. Aliases such as
+`uk→ua`, `be/kk→ru`, `sh→hr`, `cnr→sr` are handled in `LNLang.normalize`.

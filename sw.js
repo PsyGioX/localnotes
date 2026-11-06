@@ -11,7 +11,7 @@
  * Исходники: https://github.com/PsyGioX/localnotes — Сайт: https://localnotes-three.vercel.app
  */
 // Service Worker для Local Notes
-const CACHE_VERSION = 'v1.14.1-green';
+const CACHE_VERSION = 'v1.15.0-office';
 const STATIC_CACHE  = `static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `dynamic-${CACHE_VERSION}`;
 const CACHE_LIMIT   = 60;
@@ -43,6 +43,7 @@ const STATIC_FILES = [
     '/css/modal-system.css',
     '/css/scroll-top.css',
     '/css/office2024.css',
+    '/css/office-ext.css',
 
     // Шрифты — CSS
     '/fonts/local-fonts.css',
@@ -58,11 +59,14 @@ const STATIC_FILES = [
 
     // Редактор
     '/localnoteseditor/core.js',
+    '/localnoteseditor/docx-io.js',
+    '/localnoteseditor/office-ext.js',
     '/localnoteseditor/styles.css',
 
     // JavaScript
     '/js/page-init.js',
     '/js/script-loader.js',
+    '/js/lang-core.js',
     '/js/lang-redirect.js',
     '/js/purify.min.js',
     '/js/utils.js',
