@@ -42,8 +42,10 @@
   <link rel="alternate" hreflang="sl" href="https://localnotes-three.vercel.app/landing/sl/" />
   <link rel="alternate" hreflang="x-default" href="https://localnotes-three.vercel.app/landing/" />
   <link rel="icon" href="../favicon.png" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="/localnoteseditor/bootstrap-icons/font/bootstrap-icons.min.css" />
   <link rel="stylesheet" href="../css/landing.css" />
+  <link rel="stylesheet" href="../css/landing-v2.css?v=2" />
+  <meta name="theme-color" content="#0a0a0a" />
   <script type="application/ld+json">
   {"@context":"https://schema.org","@type":"WebApplication","name":"Local Notes","url":"https://localnotes-three.vercel.app/ru/","description":"Современное PWA для создания и хранения заметок прямо в браузере. Шифрование AES-256. Бесплатно, без регистрации.","applicationCategory":"ProductivityApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
   </script>
@@ -61,10 +63,11 @@
     <li><a href="#how">Как работает</a></li>
     <li><a href="#note-format">Формат .note</a></li>
     <li><a href="#editor">Редактор</a></li>
+    <li><a href="#office">Word</a></li>
     <li><a href="#usecases">Сценарии</a></li>
     <li><a href="#security">Безопасность</a></li>
     <li><a href="#faq">FAQ</a></li>
-    <li><a href="../" class="lang-switcher" style="border-color:rgba(174,252,110,0.3);">🇷🇺 RU</a></li>
+    <li><a href="../" class="lang-switcher" style="border-color:rgba(174,252,110,0.3);"><i class="bi bi-translate"></i> RU</a></li>
     <li><a href="https://localnotes-three.vercel.app/ru/" class="nav-cta" target="_blank" rel="noopener">Открыть</a></li>
   </ul>
   <button class="nav-hamburger" id="hamburger" aria-label="Меню">
@@ -77,13 +80,14 @@
   <a href="#how">Как работает</a>
   <a href="#note-format">Формат .note</a>
   <a href="#editor">Редактор</a>
+  <a href="#office">Word</a>
   <a href="#usecases">Сценарии</a>
   <a href="#security">Безопасность</a>
   <a href="#install">Установка</a>
   <a href="#faq">FAQ</a>
   <a href="#languages">Языки</a>
-  <a href="../"><i class="bi bi-filetype-html"></i> Сменить язык</a>
-  <a href="https://localnotes-three.vercel.app/ru/" target="_blank" rel="noopener" style="color:#aefc6e;font-weight:700;">Открыть приложение →</a>
+  <a href="../"><i class="bi bi-translate"></i> Сменить язык</a>
+  <a href="https://localnotes-three.vercel.app/ru/" target="_blank" rel="noopener" style="color:#aefc6e;font-weight:700;">Открыть приложение <i class="bi bi-arrow-right"></i></a>
 </div>
 
 <section class="hero" id="hero">
@@ -91,6 +95,7 @@
     <div class="hero-inner">
       <div class="hero-content">
         <div class="hero-eyebrow animate-in">Бесплатно · Без регистрации</div>
+        <a href="#office" class="hero-news animate-in delay-1"><i class="bi bi-stars"></i><span>Новое: Word .docx/.doc и вкладки как в Office</span><i class="bi bi-arrow-right"></i></a>
         <h1 class="hero-title animate-in delay-1">
           Ваши заметки.<br>
           <span class="accent blur-reveal"><span class="blur-text">Приватно. Зашифровано.</span><span class="blur-hint">нажмите</span></span><br>
@@ -129,7 +134,7 @@
               <span class="mock-note-tag tag-green">личное</span>
             </div>
             <div class="mock-note">
-              <div class="mock-note-title">Идеи 💡</div>
+              <div class="mock-note-title">Идеи <i class="bi bi-lightbulb"></i></div>
               <div class="mock-note-preview">Новая концепция проекта…</div>
               <span class="mock-note-tag tag-purple">идеи</span>
             </div>
@@ -152,10 +157,10 @@
       <div>
         <div class="story-problem-title animate-in">Проблемы существующих приложений</div>
         <div class="story-problem">
-          <div class="problem-card animate-in delay-1"><div class="problem-card-icon">☁️</div><div class="problem-card-text"><strong>Всё синхронизируется с сервером.</strong> Notion, Evernote, Google Keep — ваши заметки хранятся на чужом компьютере. Одна утечка — и данные раскрыты.</div></div>
-          <div class="problem-card animate-in delay-2"><div class="problem-card-icon">💳</div><div class="problem-card-text"><strong>Шифрование стоит денег.</strong> Большинство приложений прячут настоящее шифрование за платной подпиской. Приватность не должна быть премиум-функцией.</div></div>
-          <div class="problem-card animate-in delay-3"><div class="problem-card-icon"><i class="bi bi-copy"></i></div><div class="problem-card-text"><strong>Везде нужна регистрация.</strong> Чтобы написать заметку, нужен email, пароль и согласие с политикой, разрешающей использовать ваши данные.</div></div>
-          <div class="problem-card animate-in delay-4"><div class="problem-card-icon"><i class="bi bi-filetype-html"></i></div><div class="problem-card-text"><strong>Нет офлайн-поддержки.</strong> Большинство веб-приложений бесполезны без интернета. Ваши заметки должны быть доступны всегда и везде.</div></div>
+          <div class="problem-card animate-in delay-1"><div class="problem-card-icon"><i class="bi bi-cloud-arrow-up"></i></div><div class="problem-card-text"><strong>Всё синхронизируется с сервером.</strong> Notion, Evernote, Google Keep — ваши заметки хранятся на чужом компьютере. Одна утечка — и данные раскрыты.</div></div>
+          <div class="problem-card animate-in delay-2"><div class="problem-card-icon"><i class="bi bi-credit-card-2-front"></i></div><div class="problem-card-text"><strong>Шифрование стоит денег.</strong> Большинство приложений прячут настоящее шифрование за платной подпиской. Приватность не должна быть премиум-функцией.</div></div>
+          <div class="problem-card animate-in delay-3"><div class="problem-card-icon"><i class="bi bi-person-plus"></i></div><div class="problem-card-text"><strong>Везде нужна регистрация.</strong> Чтобы написать заметку, нужен email, пароль и согласие с политикой, разрешающей использовать ваши данные.</div></div>
+          <div class="problem-card animate-in delay-4"><div class="problem-card-icon"><i class="bi bi-wifi-off"></i></div><div class="problem-card-text"><strong>Нет офлайн-поддержки.</strong> Большинство веб-приложений бесполезны без интернета. Ваши заметки должны быть доступны всегда и везде.</div></div>
         </div>
       </div>
       <div class="story-timeline">
@@ -188,29 +193,44 @@
         <div class="feature-desc">Военный уровень шифрования защищает каждую заметку. Данные шифруются до сохранения — только вы владеете ключом.</div>
       </div>
       <div class="feature-card glass animate-in delay-1">
-        <div class="feature-icon">📱</div>
+        <div class="feature-icon"><i class="bi bi-phone"></i></div>
         <div class="feature-title">Работает офлайн (PWA)</div>
         <div class="feature-desc">Установите как Progressive Web App и используйте везде — без интернета. Ваши заметки всегда доступны.</div>
       </div>
       <div class="feature-card glass animate-in delay-2">
-        <div class="feature-icon">🌍</div>
+        <div class="feature-icon"><i class="bi bi-globe2"></i></div>
         <div class="feature-title">12 языков</div>
         <div class="feature-desc">Полный интерфейс на русском, украинском, польском, чешском, словацком, болгарском, хорватском, сербском и других языках.</div>
       </div>
       <div class="feature-card glass animate-in delay-1">
-        <div class="feature-icon">📅</div>
+        <div class="feature-icon"><i class="bi bi-calendar3"></i></div>
         <div class="feature-title">Встроенный календарь</div>
         <div class="feature-desc">Просматривайте заметки по дате в режиме месяца, недели или повестки дня.</div>
       </div>
       <div class="feature-card glass animate-in delay-2">
-        <div class="feature-icon">🏷️</div>
+        <div class="feature-icon"><i class="bi bi-tags"></i></div>
         <div class="feature-title">Теги и цвета</div>
         <div class="feature-desc">Организуйте заметки с помощью тегов и цветовых меток. Находите нужное за секунды.</div>
       </div>
       <div class="feature-card glass animate-in delay-3">
-        <div class="feature-icon"><i class="bi bi-three-dots"></i></div>
+        <div class="feature-icon"><i class="bi bi-box-arrow-up"></i></div>
         <div class="feature-title">Экспорт</div>
         <div class="feature-desc">Экспортируйте заметки в форматах .note, HTML или Markdown. Ваши данные всегда переносимы.</div>
+      </div>
+          <div class="feature-card glass animate-in delay-1">
+        <div class="feature-icon"><i class="bi bi-filetype-docx"></i></div>
+        <div class="feature-title">Совместимость с Word</div>
+        <div class="feature-desc">Импорт и экспорт .docx и .doc — переносите заметки в Microsoft Word и обратно без потери структуры.</div>
+      </div>
+      <div class="feature-card glass animate-in delay-2">
+        <div class="feature-icon"><i class="bi bi-layout-text-window"></i></div>
+        <div class="feature-title">Редактор как в Office</div>
+        <div class="feature-desc">Вкладки ленты, макет страницы, оглавление, сноски, примечания и десяток других привычных инструментов Office.</div>
+      </div>
+      <div class="feature-card glass animate-in delay-3">
+        <div class="feature-icon"><i class="bi bi-diagram-3"></i></div>
+        <div class="feature-title">Граф, задачи, палитра</div>
+        <div class="feature-desc">Связывайте заметки в граф, планируйте на доске задач, переходите куда угодно через палитру команд и блокируйте приложение паролем.</div>
       </div>
     </div>
   </div>
@@ -276,32 +296,32 @@
     </div>
     <div class="usecases-grid">
       <div class="usecase-card glass animate-in">
-        <div class="usecase-persona"><div class="usecase-avatar">👩‍💻</div><div><div class="usecase-name">Разработчик</div><div class="usecase-role">Инженер-программист</div></div></div>
+        <div class="usecase-persona"><div class="usecase-avatar"><i class="bi bi-laptop"></i></div><div><div class="usecase-name">Разработчик</div><div class="usecase-role">Инженер-программист</div></div></div>
         <p class="usecase-scenario">Хранит сниппеты кода, API-ключи и заметки по проектам в зашифрованном виде. Использует экспорт в Markdown для документации. Работает офлайн в самолёте.</p>
         <div class="usecase-tags"><span class="usecase-tag">Markdown</span><span class="usecase-tag">Офлайн</span><span class="usecase-tag">Экспорт</span></div>
       </div>
       <div class="usecase-card glass animate-in delay-1">
-        <div class="usecase-persona"><div class="usecase-avatar">📰</div><div><div class="usecase-name">Журналист</div><div class="usecase-role">Расследовательская журналистика</div></div></div>
+        <div class="usecase-persona"><div class="usecase-avatar"><i class="bi bi-newspaper"></i></div><div><div class="usecase-name">Журналист</div><div class="usecase-role">Расследовательская журналистика</div></div></div>
         <p class="usecase-scenario">Хранит конфиденциальные заметки об источниках с шифрованием AES-256. Никакой синхронизации с облаком — никаких утечек. Теги для организации по темам.</p>
         <div class="usecase-tags"><span class="usecase-tag">Шифрование</span><span class="usecase-tag">Теги</span><span class="usecase-tag">Приватность</span></div>
       </div>
       <div class="usecase-card glass animate-in delay-2">
-        <div class="usecase-persona"><div class="usecase-avatar">🎓</div><div><div class="usecase-name">Студент</div><div class="usecase-role">Университет</div></div></div>
+        <div class="usecase-persona"><div class="usecase-avatar"><i class="bi bi-mortarboard"></i></div><div><div class="usecase-name">Студент</div><div class="usecase-role">Университет</div></div></div>
         <p class="usecase-scenario">Ведёт конспекты с форматированием, чеклистами и изображениями. Использует календарь для дедлайнов. Установлено как PWA на телефоне.</p>
         <div class="usecase-tags"><span class="usecase-tag">Форматирование</span><span class="usecase-tag">Календарь</span><span class="usecase-tag">PWA</span></div>
       </div>
       <div class="usecase-card glass animate-in delay-1">
-        <div class="usecase-persona"><div class="usecase-avatar">🏥</div><div><div class="usecase-name">Врач</div><div class="usecase-role">Медицинский работник</div></div></div>
+        <div class="usecase-persona"><div class="usecase-avatar"><i class="bi bi-heart-pulse"></i></div><div><div class="usecase-name">Врач</div><div class="usecase-role">Медицинский работник</div></div></div>
         <p class="usecase-scenario">Ведёт заметки о наблюдениях локально — никаких проблем с конфиденциальностью, данные не покидают устройство. Экспорт в HTML для отчётов.</p>
         <div class="usecase-tags"><span class="usecase-tag">Локально</span><span class="usecase-tag">Без сервера</span><span class="usecase-tag">HTML</span></div>
       </div>
       <div class="usecase-card glass animate-in delay-2">
-        <div class="usecase-persona"><div class="usecase-avatar">✍️</div><div><div class="usecase-name">Писатель</div><div class="usecase-role">Романист / Блогер</div></div></div>
+        <div class="usecase-persona"><div class="usecase-avatar"><i class="bi bi-pen"></i></div><div><div class="usecase-name">Писатель</div><div class="usecase-role">Романист / Блогер</div></div></div>
         <p class="usecase-scenario">Пишет главы и посты в полноэкранном редакторе. Цветные теги для разных проектов. Экспорт в Markdown для публикации.</p>
         <div class="usecase-tags"><span class="usecase-tag">Полный экран</span><span class="usecase-tag">Цвета</span><span class="usecase-tag">Markdown</span></div>
       </div>
       <div class="usecase-card glass animate-in delay-3">
-        <div class="usecase-persona"><div class="usecase-avatar">🌍</div><div><div class="usecase-name">Путешественник</div><div class="usecase-role">Цифровой кочевник</div></div></div>
+        <div class="usecase-persona"><div class="usecase-avatar"><i class="bi bi-globe2"></i></div><div><div class="usecase-name">Путешественник</div><div class="usecase-role">Цифровой кочевник</div></div></div>
         <p class="usecase-scenario">Использует Local Notes на 12 языках в разных странах. Работает полностью офлайн в самолётах и отдалённых местах.</p>
         <div class="usecase-tags"><span class="usecase-tag">12 языков</span><span class="usecase-tag">Офлайн</span><span class="usecase-tag">PWA</span></div>
       </div>
@@ -328,21 +348,21 @@
             </div>
           </div>
           <div class="nft-item">
-            <div class="nft-icon">📦</div>
+            <div class="nft-icon"><i class="bi bi-box-seam"></i></div>
             <div>
               <div class="nft-title">Что внутри файла .note</div>
               <div class="nft-desc">Файл <code class="note-code">.note</code> — это самодостаточный JSON-пакет: содержимое заметки, метаданные, теги и — при включённом шифровании — шифртекст AES-256, который может расшифровать только ваш пароль. Никакого проприетарного формата, никакой привязки к вендору.</div>
             </div>
           </div>
           <div class="nft-item">
-            <div class="nft-icon"><i class="bi bi-filetype-html"></i></div>
+            <div class="nft-icon"><i class="bi bi-usb-drive"></i></div>
             <div>
               <div class="nft-title">Офлайн-первый, всегда переносимый</div>
               <div class="nft-desc">Экспортируйте любую заметку как файл <code class="note-code">.note</code> и носите на флешке, отправляйте через Signal или архивируйте на десятилетия. Импортируйте обратно в Local Notes на любом устройстве — без аккаунта, без интернета.</div>
             </div>
           </div>
           <div class="nft-item">
-            <div class="nft-icon">🛡️</div>
+            <div class="nft-icon"><i class="bi bi-shield-check"></i></div>
             <div>
               <div class="nft-title">Zero-knowledge по умолчанию</div>
               <div class="nft-desc">При шифровании заметки ключ никогда не покидает ваше устройство. Local Notes использует встроенный в браузер Web Crypto API — тот же стандарт, что используют банки. Даже если кто-то перехватит ваш файл <code class="note-code">.note</code>, он увидит только шифртекст.</div>
@@ -353,7 +373,7 @@
       <div class="note-format-visual animate-in delay-2">
         <div class="note-file-card glass">
           <div class="nfc-header">
-            <div class="nfc-icon"><i class="bi bi-filetype-pdf"></i></div>
+            <div class="nfc-icon"><i class="bi bi-file-earmark-text"></i></div>
             <div>
               <div class="nfc-name">meeting-notes.note</div>
               <div class="nfc-size">2.4 KB · Зашифровано</div>
@@ -374,7 +394,7 @@
             <span class="nfc-badge">Открытый формат</span>
           </div>
         </div>
-        <p class="note-format-hint">↑ Реальная структура зашифрованного файла .note. Содержимое нечитаемо без вашего пароля.</p>
+        <p class="note-format-hint"><i class="bi bi-arrow-up"></i> Реальная структура зашифрованного файла .note. Содержимое нечитаемо без вашего пароля.</p>
       </div>
     </div>
   </div>
@@ -416,8 +436,8 @@
           <div class="editor-mock-text">
             <p>Ключевые решения сессии:</p>
             <div class="editor-checklist">
-              <div class="editor-check done"><span class="check-box">✓</span> Финализировать приоритеты дорожной карты</div>
-              <div class="editor-check done"><span class="check-box">✓</span> Назначить ответственных по функциям</div>
+              <div class="editor-check done"><span class="check-box"><i class="bi bi-check-lg"></i></span> Финализировать приоритеты дорожной карты</div>
+              <div class="editor-check done"><span class="check-box"><i class="bi bi-check-lg"></i></span> Назначить ответственных по функциям</div>
               <div class="editor-check"><span class="check-box"></span> Запланировать встречу по бюджету</div>
               <div class="editor-check"><span class="check-box"></span> Проверить результаты аудита безопасности</div>
             </div>
@@ -434,6 +454,55 @@
   </div>
 </section>
 
+<!-- ── Word & Office ─────────────────────────────────────────── -->
+<section class="office-section" id="office">
+  <div class="container">
+    <div class="office-header">
+      <div class="section-label animate-in">Word и Office</div>
+      <h2 class="section-title animate-in delay-1">Редактор как в Office. Файлы — как в Word.</h2>
+      <p class="section-subtitle animate-in delay-2">Вкладки «Файл», «Макет», «Ссылки» и «Рецензия», параметры страницы, оглавление, сноски — а также импорт и экспорт .docx и .doc.</p>
+    </div>
+    <div class="ribbon-mock animate-in" aria-hidden="true">
+      <div class="rm-titlebar"><span class="rm-dots"><i></i><i></i><i></i></span><span class="rm-title">meeting-notes.docx</span></div>
+      <div class="rm-tabs"><span class="rm-tab">Файл</span><span class="rm-tab">Главная</span><span class="rm-tab">Вставка</span><span class="rm-tab active">Макет</span><span class="rm-tab">Ссылки</span><span class="rm-tab">Рецензия</span><span class="rm-tab">Вид</span></div>
+      <div class="rm-body"><div class="rm-group"><div class="rm-btns"><span class="rm-btn"><i class="bi bi-arrows-expand"></i><em>Поля</em></span><span class="rm-btn"><i class="bi bi-phone-landscape"></i><em>Ориентация</em></span><span class="rm-btn"><i class="bi bi-file-earmark"></i><em>Размер</em></span><span class="rm-btn"><i class="bi bi-layout-three-columns"></i><em>Колонки</em></span></div><div class="rm-glabel">Параметры страницы</div></div><div class="rm-group"><div class="rm-btns"><span class="rm-btn"><i class="bi bi-distribute-vertical"></i><em>Интервал</em></span><span class="rm-btn"><i class="bi bi-type"></i><em>Переносы</em></span></div><div class="rm-glabel">Абзац</div></div><div class="rm-group"><div class="rm-btns"><span class="rm-btn"><i class="bi bi-file-break"></i><em>Разрыв страницы</em></span></div><div class="rm-glabel">Разрывы</div></div><div class="rm-group"><div class="rm-btns"><span class="rm-btn"><i class="bi bi-list-nested"></i><em>Оглавление</em></span><span class="rm-btn"><i class="bi bi-chat-square-text"></i><em>Новое примечание</em></span></div><div class="rm-glabel">Оглавление</div></div></div>
+      <div class="rm-page"><div class="rm-sheet"><b></b><u></u><u></u><u class="s"></u><i></i><u></u><u class="s"></u></div></div>
+    </div>
+    <div class="office-grid">
+      <div class="office-card glass animate-in delay-0">
+        <div class="office-card-icon"><i class="bi bi-filetype-docx"></i></div>
+        <div><div class="office-card-title">Импорт и экспорт Word</div><div class="office-card-desc">Открывайте .docx и .doc и сохраняйте заметки в настоящий .docx или в .doc, совместимый с Word 97–2003. Стили, списки, таблицы и изображения сохраняются.</div></div>
+      </div>
+      <div class="office-card glass animate-in delay-1">
+        <div class="office-card-icon"><i class="bi bi-file-earmark-ruled"></i></div>
+        <div><div class="office-card-title">Параметры страницы</div><div class="office-card-desc">A4, Letter и другие форматы, поля, ориентация, колонки, колонтитулы и номера страниц — в печати, PDF и файлах Word.</div></div>
+      </div>
+      <div class="office-card glass animate-in delay-2">
+        <div class="office-card-icon"><i class="bi bi-list-nested"></i></div>
+        <div><div class="office-card-title">Оглавление и сноски</div><div class="office-card-desc">Автоматическое оглавление по заголовкам, сноски с автонумерацией, названия рисунков и закладки.</div></div>
+      </div>
+      <div class="office-card glass animate-in delay-3">
+        <div class="office-card-icon"><i class="bi bi-chat-square-text"></i></div>
+        <div><div class="office-card-title">Рецензирование</div><div class="office-card-desc">Примечания к выделенному, язык проверки орфографии и проверка доступности: нет alt-текста, пустые заголовки, неясные ссылки.</div></div>
+      </div>
+      <div class="office-card glass animate-in delay-0">
+        <div class="office-card-icon"><i class="bi bi-brush"></i></div>
+        <div><div class="office-card-title">Помощники форматирования</div><div class="office-card-desc">Формат по образцу, смена регистра, экспресс-стили, буквица, надпись, заливка абзаца, знаки ¶ и направление текста LTR/RTL.</div></div>
+      </div>
+      <div class="office-card glass animate-in delay-1">
+        <div class="office-card-icon"><i class="bi bi-volume-up"></i></div>
+        <div><div class="office-card-title">Чтение вслух и режим чтения</div><div class="office-card-desc">Слушайте выделенное или всю заметку, открывайте область навигации с заголовками или блокируйте правку в режиме чтения.</div></div>
+      </div>
+      <div class="office-card glass animate-in delay-2">
+        <div class="office-card-icon"><i class="bi bi-phone"></i></div>
+        <div><div class="office-card-title">Создано и для смартфонов</div><div class="office-card-desc">На маленьких экранах полоса вкладок закреплена, а прокручивается только ряд инструментов — страница не «ездит» вбок.</div></div>
+      </div>
+    </div>
+    <div class="format-chips animate-in"><i class="bi bi-box-arrow-in-down"></i><span class="fmt-chip">.docx</span><span class="fmt-chip">.doc</span><span class="fmt-chip">.html</span><span class="fmt-chip">.md</span><span class="fmt-chip">.pdf</span><span class="fmt-chip">.txt</span><span class="fmt-chip">.note</span><i class="bi bi-box-arrow-up"></i></div>
+    <p class="office-note animate-in"><i class="bi bi-info-circle"></i> Экспорт .doc — файл, совместимый с Word 97–2003; при импорте старого бинарного .doc сохраняются текст, таблицы и ссылки.</p>
+  </div>
+</section>
+
 <!-- ── Install PWA ───────────────────────────────────────────── -->
 <section class="install-section" id="install">
   <div class="container">
@@ -445,32 +514,32 @@
       </div>
       <div class="install-platforms">
         <div class="install-platform glass animate-in">
-          <div class="install-platform-icon">🖥️</div>
+          <div class="install-platform-icon"><i class="bi bi-pc-display"></i></div>
           <div class="install-platform-name">Компьютер</div>
           <div class="install-platform-desc">Chrome, Edge, Firefox — нажмите значок установки в адресной строке</div>
           <div class="install-steps">
             <div class="install-step-item"><span class="install-step-num">1</span> Откройте приложение</div>
-            <div class="install-step-item"><span class="install-step-num">2</span> Нажмите ⊕ в адресной строке</div>
+            <div class="install-step-item"><span class="install-step-num">2</span> Нажмите <i class="bi bi-plus-circle"></i> в адресной строке</div>
             <div class="install-step-item"><span class="install-step-num">3</span> Нажмите «Установить»</div>
           </div>
         </div>
         <div class="install-platform glass animate-in delay-1">
-          <div class="install-platform-icon">📱</div>
+          <div class="install-platform-icon"><i class="bi bi-phone"></i></div>
           <div class="install-platform-name">Android</div>
           <div class="install-platform-desc">Chrome для Android — добавьте на главный экран одним нажатием</div>
           <div class="install-steps">
             <div class="install-step-item"><span class="install-step-num">1</span> Откройте в Chrome</div>
-            <div class="install-step-item"><span class="install-step-num">2</span> Нажмите ⋮ меню</div>
+            <div class="install-step-item"><span class="install-step-num">2</span> Нажмите <i class="bi bi-three-dots-vertical"></i> меню</div>
             <div class="install-step-item"><span class="install-step-num">3</span> «Добавить на главный экран»</div>
           </div>
         </div>
         <div class="install-platform glass animate-in delay-2">
-          <div class="install-platform-icon">🍎</div>
+          <div class="install-platform-icon"><i class="bi bi-apple"></i></div>
           <div class="install-platform-name">iOS / iPadOS</div>
-          <div class="install-platform-desc">Safari на iPhone или iPad — меню «Поделиться» → на главный экран</div>
+          <div class="install-platform-desc">Safari на iPhone или iPad — меню «Поделиться» <i class="bi bi-arrow-right"></i> на главный экран</div>
           <div class="install-steps">
             <div class="install-step-item"><span class="install-step-num">1</span> Откройте в Safari</div>
-            <div class="install-step-item"><span class="install-step-num">2</span> Нажмите «Поделиться» ↑</div>
+            <div class="install-step-item"><span class="install-step-num">2</span> Нажмите «Поделиться» <i class="bi bi-box-arrow-up"></i></div>
             <div class="install-step-item"><span class="install-step-num">3</span> «На экран «Домой»»</div>
           </div>
         </div>
@@ -490,15 +559,15 @@
       <table class="comparison-table">
         <thead><tr><th>Функция</th><th class="highlight">Local Notes</th><th>Notion</th><th>Evernote</th><th>Google Keep</th></tr></thead>
         <tbody>
-          <tr><td>Бесплатно</td><td class="highlight"><span class="check">✓</span></td><td><span class="partial">Ограничено</span></td><td><span class="partial">Ограничено</span></td><td><span class="check">✓</span></td></tr>
-          <tr><td>Без регистрации</td><td class="highlight"><span class="check">✓</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td></tr>
-          <tr><td>Шифрование AES-256</td><td class="highlight"><span class="check">✓</span></td><td><span class="cross">✗</span></td><td><span class="partial">Платно</span></td><td><span class="cross">✗</span></td></tr>
-          <tr><td>Без сервера / локально</td><td class="highlight"><span class="check">✓</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td></tr>
-          <tr><td>Офлайн (PWA)</td><td class="highlight"><span class="check">✓</span></td><td><span class="partial">Частично</span></td><td><span class="partial">Частично</span></td><td><span class="partial">Частично</span></td></tr>
-          <tr><td>Без слежки</td><td class="highlight"><span class="check">✓</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td></tr>
-          <tr><td>12 языков интерфейса</td><td class="highlight"><span class="check">✓</span></td><td><span class="partial">Мало</span></td><td><span class="partial">Мало</span></td><td><span class="partial">Мало</span></td></tr>
-          <tr><td>Экспорт Markdown / HTML</td><td class="highlight"><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="partial">Платно</span></td><td><span class="cross">✗</span></td></tr>
-          <tr><td>Открытый исходный код</td><td class="highlight"><span class="check">✓</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td></tr>
+          <tr><td>Бесплатно</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="partial">Ограничено</span></td><td><span class="partial">Ограничено</span></td><td><span class="check"><i class="bi bi-check-lg"></i></span></td></tr>
+          <tr><td>Без регистрации</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td></tr>
+          <tr><td>Шифрование AES-256</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="partial">Платно</span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td></tr>
+          <tr><td>Без сервера / локально</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td></tr>
+          <tr><td>Офлайн (PWA)</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="partial">Частично</span></td><td><span class="partial">Частично</span></td><td><span class="partial">Частично</span></td></tr>
+          <tr><td>Без слежки</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td></tr>
+          <tr><td>12 языков интерфейса</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="partial">Мало</span></td><td><span class="partial">Мало</span></td><td><span class="partial">Мало</span></td></tr>
+          <tr><td>Экспорт Markdown / HTML</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="partial">Платно</span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td></tr>
+          <tr><td>Открытый исходный код</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td></tr>
         </tbody>
       </table>
       <p class="comparison-note">* На основе публично доступной информации на 2026 год.</p>
@@ -516,28 +585,28 @@
       </div>
       <div class="security-badges">
         <div class="security-badge glass animate-in">
-          <div class="security-badge-icon">🛡️</div>
+          <div class="security-badge-icon"><i class="bi bi-shield-check"></i></div>
           <div>
             <div class="security-badge-title">Без сервера и облака</div>
             <div class="security-badge-desc">Все заметки хранятся локально в IndexedDB вашего браузера. Ничего не покидает ваше устройство.</div>
           </div>
         </div>
         <div class="security-badge glass animate-in delay-1">
-          <div class="security-badge-icon">👁️</div>
+          <div class="security-badge-icon"><i class="bi bi-eye-slash"></i></div>
           <div>
             <div class="security-badge-title">Минимальная аналитика</div>
             <div class="security-badge-desc">Только анонимный Google Analytics с вашего согласия. Никаких личных данных, никакой рекламной слежки.</div>
           </div>
         </div>
         <div class="security-badge glass animate-in delay-2">
-          <div class="security-badge-icon">🔑</div>
+          <div class="security-badge-icon"><i class="bi bi-key"></i></div>
           <div>
             <div class="security-badge-title">Без регистрации</div>
             <div class="security-badge-desc">Откройте приложение и начните писать. Никакого email, никакого пароля, никакого аккаунта.</div>
           </div>
         </div>
         <div class="security-badge glass animate-in delay-3">
-          <div class="security-badge-icon">🔐</div>
+          <div class="security-badge-icon"><i class="bi bi-lock"></i></div>
           <div>
             <div class="security-badge-title">Шифрование AES-256</div>
             <div class="security-badge-desc">Отраслевой стандарт шифрования защищает ваши заметки. Только вы можете их расшифровать.</div>
@@ -556,18 +625,18 @@
       <p class="section-subtitle animate-in delay-2">Local Notes говорит на вашем языке. Выберите предпочтительный интерфейс.</p>
     </div>
     <div class="lang-grid">
-      <a href="../" class="lang-item animate-in"><span class="lang-flag">🇬🇧</span><div><div class="lang-name">English</div><div class="lang-native">English</div></div></a>
-      <a href="../ru/" class="lang-item active animate-in delay-1"><span class="lang-flag">🇷🇺</span><div><div class="lang-name">Русский</div><div class="lang-native">Russian</div></div></a>
-      <a href="../ua/" class="lang-item animate-in delay-2"><span class="lang-flag">🇺🇦</span><div><div class="lang-name">Українська</div><div class="lang-native">Ukrainian</div></div></a>
-      <a href="../pl/" class="lang-item animate-in delay-3"><span class="lang-flag">🇵🇱</span><div><div class="lang-name">Polski</div><div class="lang-native">Polish</div></div></a>
-      <a href="../cs/" class="lang-item animate-in"><span class="lang-flag">🇨🇿</span><div><div class="lang-name">Čeština</div><div class="lang-native">Czech</div></div></a>
-      <a href="../sk/" class="lang-item animate-in delay-1"><span class="lang-flag">🇸🇰</span><div><div class="lang-name">Slovenčina</div><div class="lang-native">Slovak</div></div></a>
-      <a href="../bg/" class="lang-item animate-in delay-2"><span class="lang-flag">🇧🇬</span><div><div class="lang-name">Български</div><div class="lang-native">Bulgarian</div></div></a>
-      <a href="../hr/" class="lang-item animate-in delay-3"><span class="lang-flag">🇭🇷</span><div><div class="lang-name">Hrvatski</div><div class="lang-native">Croatian</div></div></a>
-      <a href="../sr/" class="lang-item animate-in"><span class="lang-flag">🇷🇸</span><div><div class="lang-name">Српски</div><div class="lang-native">Serbian</div></div></a>
-      <a href="../bs/" class="lang-item animate-in delay-1"><span class="lang-flag">🇧🇦</span><div><div class="lang-name">Bosanski</div><div class="lang-native">Bosnian</div></div></a>
-      <a href="../mk/" class="lang-item animate-in delay-2"><span class="lang-flag">🇲🇰</span><div><div class="lang-name">Македонски</div><div class="lang-native">Macedonian</div></div></a>
-      <a href="../sl/" class="lang-item animate-in delay-3"><span class="lang-flag">🇸🇮</span><div><div class="lang-name">Slovenščina</div><div class="lang-native">Slovenian</div></div></a>
+      <a href="../" class="lang-item animate-in"><span class="lang-flag lang-code">GB</span><div><div class="lang-name">English</div><div class="lang-native">English</div></div></a>
+      <a href="../ru/" class="lang-item active animate-in delay-1"><span class="lang-flag lang-code">RU</span><div><div class="lang-name">Русский</div><div class="lang-native">Russian</div></div></a>
+      <a href="../ua/" class="lang-item animate-in delay-2"><span class="lang-flag lang-code">UA</span><div><div class="lang-name">Українська</div><div class="lang-native">Ukrainian</div></div></a>
+      <a href="../pl/" class="lang-item animate-in delay-3"><span class="lang-flag lang-code">PL</span><div><div class="lang-name">Polski</div><div class="lang-native">Polish</div></div></a>
+      <a href="../cs/" class="lang-item animate-in"><span class="lang-flag lang-code">CZ</span><div><div class="lang-name">Čeština</div><div class="lang-native">Czech</div></div></a>
+      <a href="../sk/" class="lang-item animate-in delay-1"><span class="lang-flag lang-code">SK</span><div><div class="lang-name">Slovenčina</div><div class="lang-native">Slovak</div></div></a>
+      <a href="../bg/" class="lang-item animate-in delay-2"><span class="lang-flag lang-code">BG</span><div><div class="lang-name">Български</div><div class="lang-native">Bulgarian</div></div></a>
+      <a href="../hr/" class="lang-item animate-in delay-3"><span class="lang-flag lang-code">HR</span><div><div class="lang-name">Hrvatski</div><div class="lang-native">Croatian</div></div></a>
+      <a href="../sr/" class="lang-item animate-in"><span class="lang-flag lang-code">RS</span><div><div class="lang-name">Српски</div><div class="lang-native">Serbian</div></div></a>
+      <a href="../bs/" class="lang-item animate-in delay-1"><span class="lang-flag lang-code">BA</span><div><div class="lang-name">Bosanski</div><div class="lang-native">Bosnian</div></div></a>
+      <a href="../mk/" class="lang-item animate-in delay-2"><span class="lang-flag lang-code">MK</span><div><div class="lang-name">Македонски</div><div class="lang-native">Macedonian</div></div></a>
+      <a href="../sl/" class="lang-item animate-in delay-3"><span class="lang-flag lang-code">SI</span><div><div class="lang-name">Slovenščina</div><div class="lang-native">Slovenian</div></div></a>
     </div>
   </div>
 </section>
@@ -633,6 +702,15 @@
         </button>
         <div class="faq-answer">
           <p>Да. Local Notes полностью открыт под лицензией MIT. Вы можете изучить, форкнуть и внести вклад на <a href="https://github.com/PsyGioX/localnotes" target="_blank" rel="noopener" style="color:var(--primary-light);">GitHub</a>. Никаких чёрных ящиков.</p>
+        </div>
+      </div>
+      <div class="faq-item glass animate-in delay-3">
+        <button class="faq-question" aria-expanded="false">
+          <span>Можно ли открывать и сохранять файлы Word (.docx, .doc)?</span>
+          <i class="bi bi-plus faq-icon"></i>
+        </button>
+        <div class="faq-answer">
+          <p>Да. Используйте «Файл › Импорт Word» в редакторе или кнопку импорта в приложении. Заметки можно экспортировать в .docx или в .doc, совместимый с Word 97–2003. Всё конвертируется в вашем браузере — файлы никуда не загружаются. Отслеживание исправлений не поддерживается, а старый бинарный .doc сохраняет только текст, таблицы и ссылки.</p>
         </div>
       </div>
     </div>

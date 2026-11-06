@@ -367,6 +367,16 @@ html[data-theme] body .lne-toolbar .lne-btn-lg {
 html[data-theme] body .lne-toolbar .lne-btn-lg i { font-size: 24px; }
 html[data-theme] body .lne-toolbar .lne-btn-lg .lne-lg-label { font: 400 12px/1.1 var(--font-ui); white-space: nowrap; }
 html[data-theme] body .lne-toolbar .lne-btn-lg:hover i { color: var(--accent-fg); }
+/* Large button with a dropdown (Margins, Orientation, Size, Columns, Date & time…):
+   the caret lives inside the label, so the 24px icon rule above must not reach it.
+   Label + caret are centred as one unit, like in MS Office. */
+html[data-theme] body .lne-toolbar .lne-btn-lg .lne-lg-label { display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
+html[data-theme] body .lne-toolbar .lne-btn-lg .lne-lg-label .lne-dd-caret {
+    font-size: 9px; line-height: 1; opacity: .75; flex: none; margin: 1px 0 0; padding: 0;
+    display: inline-block; vertical-align: middle; color: inherit;
+}
+html[data-theme] body .lne-toolbar .lne-btn-lg .lne-lg-label .lne-dd-caret::before { vertical-align: 0; display: block; line-height: 1; }
+html[data-theme] body .lne-toolbar .lne-btn-lg:hover .lne-lg-label .lne-dd-caret { color: inherit; opacity: 1; }
 
 /* Icon + text button */
 html[data-theme] body .lne-toolbar .lne-btn-txt {

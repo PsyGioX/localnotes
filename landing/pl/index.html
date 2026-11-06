@@ -42,8 +42,10 @@
   <link rel="alternate" hreflang="sl" href="https://localnotes-three.vercel.app/landing/sl/" />
   <link rel="alternate" hreflang="x-default" href="https://localnotes-three.vercel.app/landing/" />
   <link rel="icon" href="../favicon.png" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="/localnoteseditor/bootstrap-icons/font/bootstrap-icons.min.css" />
   <link rel="stylesheet" href="../css/landing.css" />
+  <link rel="stylesheet" href="../css/landing-v2.css?v=2" />
+  <meta name="theme-color" content="#0a0a0a" />
 </head>
 <body>
 
@@ -55,10 +57,11 @@
   <li><a href="#how">Jak działa</a></li>
   <li><a href="#note-format">Format .note</a></li>
   <li><a href="#editor">Edytor</a></li>
+    <li><a href="#office">Word</a></li>
   <li><a href="#usecases">Zastosowania</a></li>
   <li><a href="#security">Bezpieczeństwo</a></li>
   <li><a href="#faq">FAQ</a></li>
-  <li><a href="../" class="lang-switcher" style="border-color:rgba(174,252,110,0.3);">🇵🇱 PL</a></li>
+  <li><a href="../" class="lang-switcher" style="border-color:rgba(174,252,110,0.3);"><i class="bi bi-translate"></i> PL</a></li>
   <li><a href="https://localnotes-three.vercel.app/pl/" class="nav-cta" target="_blank" rel="noopener">Otwórz</a></li>
 </ul>
   <button class="nav-hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
@@ -69,13 +72,14 @@
   <a href="#how">Jak działa</a>
   <a href="#note-format">Format .note</a>
   <a href="#editor">Edytor</a>
+  <a href="#office">Word</a>
   <a href="#usecases">Zastosowania</a>
   <a href="#security">Bezpieczeństwo</a>
   <a href="#install">Instalacja</a>
   <a href="#faq">FAQ</a>
   <a href="#languages">Języki</a>
-  <a href="../"><i class="bi bi-filetype-html"></i> Zmień język</a>
-  <a href="https://localnotes-three.vercel.app/pl/" target="_blank" rel="noopener" style="color:#aefc6e;font-weight:700;">Otwórz aplikację →</a>
+  <a href="../"><i class="bi bi-translate"></i> Zmień język</a>
+  <a href="https://localnotes-three.vercel.app/pl/" target="_blank" rel="noopener" style="color:#aefc6e;font-weight:700;">Otwórz aplikację <i class="bi bi-arrow-right"></i></a>
 </div>
 
 <section class="hero" id="hero">
@@ -83,6 +87,7 @@
     <div class="hero-inner">
       <div class="hero-content">
         <div class="hero-eyebrow animate-in">Darmowe · Bez rejestracji</div>
+        <a href="#office" class="hero-news animate-in delay-1"><i class="bi bi-stars"></i><span>Nowość: Word .docx/.doc i karty jak w Office</span><i class="bi bi-arrow-right"></i></a>
         <h1 class="hero-title animate-in delay-1">
           Twoje notatki.<br>
           <span class="accent blur-reveal"><span class="blur-text">Prywatnie. Zaszyfrowane.</span><span class="blur-hint">dotknij</span></span><br>
@@ -105,7 +110,7 @@
           <div class="mock-notes mock-notes-blur-wrap" id="mockNotes">
             <div class="mock-note"><div class="mock-note-title">Spotkanie</div><div class="mock-note-preview">Planowanie Q4 — kluczowe decyzje…</div><span class="mock-note-tag tag-blue">praca</span></div>
             <div class="mock-note"><div class="mock-note-title">Lista zakupów</div><div class="mock-note-preview">Mleko, chleb, kawa, jabłka…</div><span class="mock-note-tag tag-green">osobiste</span></div>
-            <div class="mock-note"><div class="mock-note-title">Pomysły 💡</div><div class="mock-note-preview">Nowa koncepcja projektu…</div><span class="mock-note-tag tag-purple">pomysły</span></div>
+            <div class="mock-note"><div class="mock-note-title">Pomysły <i class="bi bi-lightbulb"></i></div><div class="mock-note-preview">Nowa koncepcja projektu…</div><span class="mock-note-tag tag-purple">pomysły</span></div>
           </div>
         </div>
       </div>
@@ -124,10 +129,10 @@
       <div>
         <div class="story-problem-title animate-in">Problemy istniejących aplikacji</div>
         <div class="story-problem">
-          <div class="problem-card animate-in delay-1"><div class="problem-card-icon">☁️</div><div class="problem-card-text"><strong>Wszystko synchronizuje się z serwerem.</strong> Notion, Evernote, Google Keep — Twoje notatki żyją na cudzym komputerze. Jeden wyciek i dane są ujawnione.</div></div>
-          <div class="problem-card animate-in delay-2"><div class="problem-card-icon">💳</div><div class="problem-card-text"><strong>Szyfrowanie kosztuje.</strong> Większość aplikacji ukrywa prawdziwe szyfrowanie za płatnym planem. Prywatność nie powinna być funkcją premium.</div></div>
-          <div class="problem-card animate-in delay-3"><div class="problem-card-icon"><i class="bi bi-copy"></i></div><div class="problem-card-text"><strong>Rejestracja wszędzie.</strong> Żeby napisać notatkę, potrzebujesz emaila, hasła i zgody na politykę pozwalającą używać Twoich danych.</div></div>
-          <div class="problem-card animate-in delay-4"><div class="problem-card-icon"><i class="bi bi-filetype-html"></i></div><div class="problem-card-text"><strong>Brak obsługi offline.</strong> Większość aplikacji webowych jest bezużyteczna bez internetu. Twoje notatki powinny być dostępne zawsze i wszędzie.</div></div>
+          <div class="problem-card animate-in delay-1"><div class="problem-card-icon"><i class="bi bi-cloud-arrow-up"></i></div><div class="problem-card-text"><strong>Wszystko synchronizuje się z serwerem.</strong> Notion, Evernote, Google Keep — Twoje notatki żyją na cudzym komputerze. Jeden wyciek i dane są ujawnione.</div></div>
+          <div class="problem-card animate-in delay-2"><div class="problem-card-icon"><i class="bi bi-credit-card-2-front"></i></div><div class="problem-card-text"><strong>Szyfrowanie kosztuje.</strong> Większość aplikacji ukrywa prawdziwe szyfrowanie za płatnym planem. Prywatność nie powinna być funkcją premium.</div></div>
+          <div class="problem-card animate-in delay-3"><div class="problem-card-icon"><i class="bi bi-person-plus"></i></div><div class="problem-card-text"><strong>Rejestracja wszędzie.</strong> Żeby napisać notatkę, potrzebujesz emaila, hasła i zgody na politykę pozwalającą używać Twoich danych.</div></div>
+          <div class="problem-card animate-in delay-4"><div class="problem-card-icon"><i class="bi bi-wifi-off"></i></div><div class="problem-card-text"><strong>Brak obsługi offline.</strong> Większość aplikacji webowych jest bezużyteczna bez internetu. Twoje notatki powinny być dostępne zawsze i wszędzie.</div></div>
         </div>
       </div>
       <div class="story-timeline">
@@ -154,11 +159,26 @@
     </div>
     <div class="features-grid">
       <div class="feature-card glass animate-in"><div class="feature-icon"><i class="bi bi-file-earmark-lock"></i></div><div class="feature-title">Szyfrowanie AES-256</div><div class="feature-desc">Szyfrowanie klasy wojskowej chroni każdą notatkę. Dane są szyfrowane przed zapisem — tylko Ty masz klucz.</div></div>
-      <div class="feature-card glass animate-in delay-1"><div class="feature-icon">📱</div><div class="feature-title">Działa offline (PWA)</div><div class="feature-desc">Zainstaluj jako Progressive Web App i używaj wszędzie — bez internetu. Twoje notatki są zawsze dostępne.</div></div>
-      <div class="feature-card glass animate-in delay-2"><div class="feature-icon">🌍</div><div class="feature-title">12 języków</div><div class="feature-desc">Pełny interfejs po polsku, rosyjsku, ukraińsku, czesku, słowacku, bułgarsku, chorwacku i innych językach.</div></div>
-      <div class="feature-card glass animate-in delay-1"><div class="feature-icon">📅</div><div class="feature-title">Wbudowany kalendarz</div><div class="feature-desc">Przeglądaj notatki według daty w widoku miesiąca, tygodnia lub agendy.</div></div>
-      <div class="feature-card glass animate-in delay-2"><div class="feature-icon">🏷️</div><div class="feature-title">Tagi i kolory</div><div class="feature-desc">Organizuj notatki za pomocą tagów i kolorowych etykiet. Znajdź to czego szukasz w sekundy.</div></div>
-      <div class="feature-card glass animate-in delay-3"><div class="feature-icon"><i class="bi bi-three-dots"></i></div><div class="feature-title">Eksport</div><div class="feature-desc">Eksportuj notatki jako .note, HTML lub Markdown. Twoje dane są zawsze przenośne.</div></div>
+      <div class="feature-card glass animate-in delay-1"><div class="feature-icon"><i class="bi bi-phone"></i></div><div class="feature-title">Działa offline (PWA)</div><div class="feature-desc">Zainstaluj jako Progressive Web App i używaj wszędzie — bez internetu. Twoje notatki są zawsze dostępne.</div></div>
+      <div class="feature-card glass animate-in delay-2"><div class="feature-icon"><i class="bi bi-globe2"></i></div><div class="feature-title">12 języków</div><div class="feature-desc">Pełny interfejs po polsku, rosyjsku, ukraińsku, czesku, słowacku, bułgarsku, chorwacku i innych językach.</div></div>
+      <div class="feature-card glass animate-in delay-1"><div class="feature-icon"><i class="bi bi-calendar3"></i></div><div class="feature-title">Wbudowany kalendarz</div><div class="feature-desc">Przeglądaj notatki według daty w widoku miesiąca, tygodnia lub agendy.</div></div>
+      <div class="feature-card glass animate-in delay-2"><div class="feature-icon"><i class="bi bi-tags"></i></div><div class="feature-title">Tagi i kolory</div><div class="feature-desc">Organizuj notatki za pomocą tagów i kolorowych etykiet. Znajdź to czego szukasz w sekundy.</div></div>
+      <div class="feature-card glass animate-in delay-3"><div class="feature-icon"><i class="bi bi-box-arrow-up"></i></div><div class="feature-title">Eksport</div><div class="feature-desc">Eksportuj notatki jako .note, HTML lub Markdown. Twoje dane są zawsze przenośne.</div></div>
+          <div class="feature-card glass animate-in delay-1">
+        <div class="feature-icon"><i class="bi bi-filetype-docx"></i></div>
+        <div class="feature-title">Zgodność z Word</div>
+        <div class="feature-desc">Import i eksport .docx i .doc — przenoś notatki do Microsoft Word i z powrotem bez utraty struktury.</div>
+      </div>
+      <div class="feature-card glass animate-in delay-2">
+        <div class="feature-icon"><i class="bi bi-layout-text-window"></i></div>
+        <div class="feature-title">Edytor jak w Office</div>
+        <div class="feature-desc">Karty wstążki, układ strony, spis treści, przypisy, komentarze i kilkanaście innych znanych narzędzi z Office.</div>
+      </div>
+      <div class="feature-card glass animate-in delay-3">
+        <div class="feature-icon"><i class="bi bi-diagram-3"></i></div>
+        <div class="feature-title">Graf, zadania, paleta</div>
+        <div class="feature-desc">Łącz notatki w graf, planuj na tablicy zadań, przechodź wszędzie paletą poleceń i blokuj aplikację hasłem.</div>
+      </div>
     </div>
   </div>
 </section>
@@ -199,32 +219,32 @@
     </div>
     <div class="usecases-grid">
       <div class="usecase-card glass animate-in">
-        <div class="usecase-persona"><div class="usecase-avatar">👩‍💻</div><div><div class="usecase-name">Programista</div><div class="usecase-role">Inżynier oprogramowania</div></div></div>
+        <div class="usecase-persona"><div class="usecase-avatar"><i class="bi bi-laptop"></i></div><div><div class="usecase-name">Programista</div><div class="usecase-role">Inżynier oprogramowania</div></div></div>
         <p class="usecase-scenario">Przechowuje snippety kodu, klucze API i notatki projektowe w zaszyfrowanej formie. Używa eksportu Markdown do dokumentacji. Pracuje offline w samolocie.</p>
         <div class="usecase-tags"><span class="usecase-tag">Markdown</span><span class="usecase-tag">Offline</span><span class="usecase-tag">Eksport</span></div>
       </div>
       <div class="usecase-card glass animate-in delay-1">
-        <div class="usecase-persona"><div class="usecase-avatar">📰</div><div><div class="usecase-name">Dziennikarz</div><div class="usecase-role">Dziennikarstwo śledcze</div></div></div>
+        <div class="usecase-persona"><div class="usecase-avatar"><i class="bi bi-newspaper"></i></div><div><div class="usecase-name">Dziennikarz</div><div class="usecase-role">Dziennikarstwo śledcze</div></div></div>
         <p class="usecase-scenario">Przechowuje poufne notatki o źródłach z szyfrowaniem AES-256. Żadnej synchronizacji z chmurą — żadnych wycieków. Tagi do organizacji według tematów.</p>
         <div class="usecase-tags"><span class="usecase-tag">Szyfrowanie</span><span class="usecase-tag">Tagi</span><span class="usecase-tag">Prywatność</span></div>
       </div>
       <div class="usecase-card glass animate-in delay-2">
-        <div class="usecase-persona"><div class="usecase-avatar">🎓</div><div><div class="usecase-name">Student</div><div class="usecase-role">Uczelnia</div></div></div>
+        <div class="usecase-persona"><div class="usecase-avatar"><i class="bi bi-mortarboard"></i></div><div><div class="usecase-name">Student</div><div class="usecase-role">Uczelnia</div></div></div>
         <p class="usecase-scenario">Prowadzi notatki z formatowaniem, checklistami i obrazami. Używa kalendarza do śledzenia terminów. Zainstalowane jako PWA na telefonie.</p>
         <div class="usecase-tags"><span class="usecase-tag">Formatowanie</span><span class="usecase-tag">Kalendarz</span><span class="usecase-tag">PWA</span></div>
       </div>
       <div class="usecase-card glass animate-in delay-1">
-        <div class="usecase-persona"><div class="usecase-avatar">🏥</div><div><div class="usecase-name">Lekarz</div><div class="usecase-role">Pracownik medyczny</div></div></div>
+        <div class="usecase-persona"><div class="usecase-avatar"><i class="bi bi-heart-pulse"></i></div><div><div class="usecase-name">Lekarz</div><div class="usecase-role">Pracownik medyczny</div></div></div>
         <p class="usecase-scenario">Prowadzi notatki obserwacyjne lokalnie — żadnych problemów z prywatnością, dane nie opuszczają urządzenia. Eksport do HTML dla raportów.</p>
         <div class="usecase-tags"><span class="usecase-tag">Lokalnie</span><span class="usecase-tag">Bez serwera</span><span class="usecase-tag">HTML</span></div>
       </div>
       <div class="usecase-card glass animate-in delay-2">
-        <div class="usecase-persona"><div class="usecase-avatar">✍️</div><div><div class="usecase-name">Pisarz</div><div class="usecase-role">Powieściopisarz / Bloger</div></div></div>
+        <div class="usecase-persona"><div class="usecase-avatar"><i class="bi bi-pen"></i></div><div><div class="usecase-name">Pisarz</div><div class="usecase-role">Powieściopisarz / Bloger</div></div></div>
         <p class="usecase-scenario">Pisze rozdziały i posty w pełnoekranowym edytorze. Kolorowe tagi dla różnych projektów. Eksport do Markdown do publikacji.</p>
         <div class="usecase-tags"><span class="usecase-tag">Pełny ekran</span><span class="usecase-tag">Kolory</span><span class="usecase-tag">Markdown</span></div>
       </div>
       <div class="usecase-card glass animate-in delay-3">
-        <div class="usecase-persona"><div class="usecase-avatar">🌍</div><div><div class="usecase-name">Podróżnik</div><div class="usecase-role">Cyfrowy nomada</div></div></div>
+        <div class="usecase-persona"><div class="usecase-avatar"><i class="bi bi-globe2"></i></div><div><div class="usecase-name">Podróżnik</div><div class="usecase-role">Cyfrowy nomada</div></div></div>
         <p class="usecase-scenario">Używa Local Notes w 12 językach w różnych krajach. Działa w pełni offline w samolotach i odległych miejscach.</p>
         <div class="usecase-tags"><span class="usecase-tag">12 języków</span><span class="usecase-tag">Offline</span><span class="usecase-tag">PWA</span></div>
       </div>
@@ -242,14 +262,14 @@
         <p class="section-subtitle animate-in delay-2">Plik <code class="note-code">.note</code> to przenośny, szyfrowany kontener zaprojektowany z jednym celem: Twoje notatki należą do Ciebie — nie do platformy, chmury ani firmy.</p>
         <div class="note-format-timeline animate-in delay-3">
           <div class="nft-item"><div class="nft-icon"><i class="bi bi-file-earmark-lock"></i></div><div><div class="nft-title">Zrodzony z problemu prywatności</div><div class="nft-desc">Każda popularna aplikacja do notatek przechowuje dane na zdalnych serwerach. Jeden wyciek, jedna żądanie władz, jedna zmiana polityki — i Twoje prywatne myśli są ujawnione. Format <code class="note-code">.note</code> sprawia, że jest to niemożliwe z założenia.</div></div></div>
-          <div class="nft-item"><div class="nft-icon">📦</div><div><div class="nft-title">Co jest wewnątrz pliku .note</div><div class="nft-desc">Plik <code class="note-code">.note</code> to samodzielny pakiet JSON: treść notatki, metadane, tagi i — przy włączonym szyfrowaniu — zaszyfrowany tekst AES-256, który może odszyfrować tylko Twoje hasło. Żadnego zastrzeżonego formatu, żadnego uzależnienia od dostawcy.</div></div></div>
-          <div class="nft-item"><div class="nft-icon"><i class="bi bi-filetype-html"></i></div><div><div class="nft-title">Offline-first, zawsze przenośny</div><div class="nft-desc">Wyeksportuj dowolną notatkę jako plik <code class="note-code">.note</code> i noś na pendrivie, wysyłaj przez Signal lub archiwizuj na dziesięciolecia. Zaimportuj z powrotem do Local Notes na dowolnym urządzeniu — bez konta, bez internetu.</div></div></div>
-          <div class="nft-item"><div class="nft-icon">🛡️</div><div><div class="nft-title">Zero-knowledge jako fundament</div><div class="nft-desc">Przy szyfrowaniu notatki klucz nigdy nie opuszcza Twojego urządzenia. Local Notes używa wbudowanego Web Crypto API przeglądarki — tego samego standardu, który stosują banki. Nawet jeśli ktoś przechwyci Twój plik <code class="note-code">.note</code>, zobaczy tylko zaszyfrowany tekst.</div></div></div>
+          <div class="nft-item"><div class="nft-icon"><i class="bi bi-box-seam"></i></div><div><div class="nft-title">Co jest wewnątrz pliku .note</div><div class="nft-desc">Plik <code class="note-code">.note</code> to samodzielny pakiet JSON: treść notatki, metadane, tagi i — przy włączonym szyfrowaniu — zaszyfrowany tekst AES-256, który może odszyfrować tylko Twoje hasło. Żadnego zastrzeżonego formatu, żadnego uzależnienia od dostawcy.</div></div></div>
+          <div class="nft-item"><div class="nft-icon"><i class="bi bi-usb-drive"></i></div><div><div class="nft-title">Offline-first, zawsze przenośny</div><div class="nft-desc">Wyeksportuj dowolną notatkę jako plik <code class="note-code">.note</code> i noś na pendrivie, wysyłaj przez Signal lub archiwizuj na dziesięciolecia. Zaimportuj z powrotem do Local Notes na dowolnym urządzeniu — bez konta, bez internetu.</div></div></div>
+          <div class="nft-item"><div class="nft-icon"><i class="bi bi-shield-check"></i></div><div><div class="nft-title">Zero-knowledge jako fundament</div><div class="nft-desc">Przy szyfrowaniu notatki klucz nigdy nie opuszcza Twojego urządzenia. Local Notes używa wbudowanego Web Crypto API przeglądarki — tego samego standardu, który stosują banki. Nawet jeśli ktoś przechwyci Twój plik <code class="note-code">.note</code>, zobaczy tylko zaszyfrowany tekst.</div></div></div>
         </div>
       </div>
       <div class="note-format-visual animate-in delay-2">
         <div class="note-file-card glass">
-          <div class="nfc-header"><div class="nfc-icon"><i class="bi bi-filetype-pdf"></i></div><div><div class="nfc-name">meeting-notes.note</div><div class="nfc-size">2.4 KB · Zaszyfrowane</div></div><div class="nfc-lock"><i class="bi bi-file-earmark-lock"></i></div></div>
+          <div class="nfc-header"><div class="nfc-icon"><i class="bi bi-file-earmark-text"></i></div><div><div class="nfc-name">meeting-notes.note</div><div class="nfc-size">2.4 KB · Zaszyfrowane</div></div><div class="nfc-lock"><i class="bi bi-file-earmark-lock"></i></div></div>
           <div class="nfc-body">
             <div class="nfc-line"><span class="nfc-key">"id"</span><span class="nfc-val">"a3f9…c12e"</span></div>
             <div class="nfc-line"><span class="nfc-key">"title"</span><span class="nfc-val">"Notatki ze spotkania"</span></div>
@@ -260,7 +280,7 @@
           </div>
           <div class="nfc-footer"><span class="nfc-badge">AES-256-GCM</span><span class="nfc-badge">Web Crypto API</span><span class="nfc-badge">Otwarty format</span></div>
         </div>
-        <p class="note-format-hint">↑ Rzeczywista struktura zaszyfrowanego pliku .note. Treść jest nieczytelna bez Twojego hasła.</p>
+        <p class="note-format-hint"><i class="bi bi-arrow-up"></i> Rzeczywista struktura zaszyfrowanego pliku .note. Treść jest nieczytelna bez Twojego hasła.</p>
       </div>
     </div>
   </div>
@@ -302,8 +322,8 @@
           <div class="editor-mock-text">
             <p>Kluczowe decyzje ze spotkania:</p>
             <div class="editor-checklist">
-              <div class="editor-check done"><span class="check-box">✓</span> Sfinalizować priorytety roadmapy</div>
-              <div class="editor-check done"><span class="check-box">✓</span> Przydzielić liderów funkcji</div>
+              <div class="editor-check done"><span class="check-box"><i class="bi bi-check-lg"></i></span> Sfinalizować priorytety roadmapy</div>
+              <div class="editor-check done"><span class="check-box"><i class="bi bi-check-lg"></i></span> Przydzielić liderów funkcji</div>
               <div class="editor-check"><span class="check-box"></span> Zaplanować spotkanie budżetowe</div>
               <div class="editor-check"><span class="check-box"></span> Przejrzeć wyniki audytu bezpieczeństwa</div>
             </div>
@@ -320,6 +340,55 @@
   </div>
 </section>
 
+<!-- ── Word & Office ─────────────────────────────────────────── -->
+<section class="office-section" id="office">
+  <div class="container">
+    <div class="office-header">
+      <div class="section-label animate-in">Word i Office</div>
+      <h2 class="section-title animate-in delay-1">Edytor jak w Office. Pliki jak w Wordzie.</h2>
+      <p class="section-subtitle animate-in delay-2">Karty Plik, Układ, Odwołania i Recenzja, ustawienia strony, spis treści, przypisy — oraz import i eksport .docx i .doc.</p>
+    </div>
+    <div class="ribbon-mock animate-in" aria-hidden="true">
+      <div class="rm-titlebar"><span class="rm-dots"><i></i><i></i><i></i></span><span class="rm-title">meeting-notes.docx</span></div>
+      <div class="rm-tabs"><span class="rm-tab">Plik</span><span class="rm-tab">Narzędzia główne</span><span class="rm-tab">Wstawianie</span><span class="rm-tab active">Układ</span><span class="rm-tab">Odwołania</span><span class="rm-tab">Recenzja</span><span class="rm-tab">Widok</span></div>
+      <div class="rm-body"><div class="rm-group"><div class="rm-btns"><span class="rm-btn"><i class="bi bi-arrows-expand"></i><em>Marginesy</em></span><span class="rm-btn"><i class="bi bi-phone-landscape"></i><em>Orientacja</em></span><span class="rm-btn"><i class="bi bi-file-earmark"></i><em>Rozmiar</em></span><span class="rm-btn"><i class="bi bi-layout-three-columns"></i><em>Kolumny</em></span></div><div class="rm-glabel">Ustawienia strony</div></div><div class="rm-group"><div class="rm-btns"><span class="rm-btn"><i class="bi bi-distribute-vertical"></i><em>Odstępy</em></span><span class="rm-btn"><i class="bi bi-type"></i><em>Dzielenie</em></span></div><div class="rm-glabel">Akapit</div></div><div class="rm-group"><div class="rm-btns"><span class="rm-btn"><i class="bi bi-file-break"></i><em>Podział strony</em></span></div><div class="rm-glabel">Podziały</div></div><div class="rm-group"><div class="rm-btns"><span class="rm-btn"><i class="bi bi-list-nested"></i><em>Spis treści</em></span><span class="rm-btn"><i class="bi bi-chat-square-text"></i><em>Nowy komentarz</em></span></div><div class="rm-glabel">Spis treści</div></div></div>
+      <div class="rm-page"><div class="rm-sheet"><b></b><u></u><u></u><u class="s"></u><i></i><u></u><u class="s"></u></div></div>
+    </div>
+    <div class="office-grid">
+      <div class="office-card glass animate-in delay-0">
+        <div class="office-card-icon"><i class="bi bi-filetype-docx"></i></div>
+        <div><div class="office-card-title">Import i eksport Word</div><div class="office-card-desc">Otwieraj pliki .docx i .doc oraz zapisuj notatki jako prawdziwy .docx lub .doc zgodny z Word 97–2003. Style, listy, tabele i obrazy są zachowane.</div></div>
+      </div>
+      <div class="office-card glass animate-in delay-1">
+        <div class="office-card-icon"><i class="bi bi-file-earmark-ruled"></i></div>
+        <div><div class="office-card-title">Ustawienia strony</div><div class="office-card-desc">A4, Letter i inne rozmiary, marginesy, orientacja, kolumny, nagłówki, stopki i numery stron — w druku, PDF i plikach Word.</div></div>
+      </div>
+      <div class="office-card glass animate-in delay-2">
+        <div class="office-card-icon"><i class="bi bi-list-nested"></i></div>
+        <div><div class="office-card-title">Spis treści i przypisy</div><div class="office-card-desc">Automatyczny spis treści z nagłówków, przypisy z numeracją, podpisy rysunków i zakładki.</div></div>
+      </div>
+      <div class="office-card glass animate-in delay-3">
+        <div class="office-card-icon"><i class="bi bi-chat-square-text"></i></div>
+        <div><div class="office-card-title">Recenzja</div><div class="office-card-desc">Komentarze do zaznaczenia, język sprawdzania pisowni i kontrola dostępności: brak tekstu alternatywnego, puste nagłówki, niejasne łącza.</div></div>
+      </div>
+      <div class="office-card glass animate-in delay-0">
+        <div class="office-card-icon"><i class="bi bi-brush"></i></div>
+        <div><div class="office-card-title">Pomocnicy formatowania</div><div class="office-card-desc">Malarz formatów, zmiana wielkości liter, style ekspresowe, inicjał, pole tekstowe, cieniowanie akapitu, znaczniki ¶ i kierunek tekstu LTR/RTL.</div></div>
+      </div>
+      <div class="office-card glass animate-in delay-1">
+        <div class="office-card-icon"><i class="bi bi-volume-up"></i></div>
+        <div><div class="office-card-title">Czytanie na głos i tryb czytania</div><div class="office-card-desc">Słuchaj zaznaczenia lub całej notatki, otwórz okienko nawigacji z nagłówkami albo zablokuj edycję w trybie czytania.</div></div>
+      </div>
+      <div class="office-card glass animate-in delay-2">
+        <div class="office-card-icon"><i class="bi bi-phone"></i></div>
+        <div><div class="office-card-title">Także na telefony</div><div class="office-card-desc">Na małych ekranach pasek kart jest przypięty, a przewija się tylko rząd narzędzi — strona nie przesuwa się na boki.</div></div>
+      </div>
+    </div>
+    <div class="format-chips animate-in"><i class="bi bi-box-arrow-in-down"></i><span class="fmt-chip">.docx</span><span class="fmt-chip">.doc</span><span class="fmt-chip">.html</span><span class="fmt-chip">.md</span><span class="fmt-chip">.pdf</span><span class="fmt-chip">.txt</span><span class="fmt-chip">.note</span><i class="bi bi-box-arrow-up"></i></div>
+    <p class="office-note animate-in"><i class="bi bi-info-circle"></i> Eksportowany .doc jest zgodny z Word 97–2003; import starego binarnego .doc zachowuje tekst, tabele i łącza.</p>
+  </div>
+</section>
+
 <!-- ── Install PWA ───────────────────────────────────────────── -->
 <section class="install-section" id="install">
   <div class="container">
@@ -331,32 +400,32 @@
       </div>
       <div class="install-platforms">
         <div class="install-platform glass animate-in">
-          <div class="install-platform-icon">🖥️</div>
+          <div class="install-platform-icon"><i class="bi bi-pc-display"></i></div>
           <div class="install-platform-name">Komputer</div>
           <div class="install-platform-desc">Chrome, Edge, Firefox — kliknij ikonę instalacji w pasku adresu</div>
           <div class="install-steps">
             <div class="install-step-item"><span class="install-step-num">1</span> Otwórz aplikację</div>
-            <div class="install-step-item"><span class="install-step-num">2</span> Kliknij ⊕ w pasku adresu</div>
+            <div class="install-step-item"><span class="install-step-num">2</span> Kliknij <i class="bi bi-plus-circle"></i> w pasku adresu</div>
             <div class="install-step-item"><span class="install-step-num">3</span> Kliknij «Zainstaluj»</div>
           </div>
         </div>
         <div class="install-platform glass animate-in delay-1">
-          <div class="install-platform-icon">📱</div>
+          <div class="install-platform-icon"><i class="bi bi-phone"></i></div>
           <div class="install-platform-name">Android</div>
           <div class="install-platform-desc">Chrome na Android — dodaj do ekranu głównego jednym dotknięciem</div>
           <div class="install-steps">
             <div class="install-step-item"><span class="install-step-num">1</span> Otwórz w Chrome</div>
-            <div class="install-step-item"><span class="install-step-num">2</span> Dotknij ⋮ menu</div>
+            <div class="install-step-item"><span class="install-step-num">2</span> Dotknij <i class="bi bi-three-dots-vertical"></i> menu</div>
             <div class="install-step-item"><span class="install-step-num">3</span> «Dodaj do ekranu głównego»</div>
           </div>
         </div>
         <div class="install-platform glass animate-in delay-2">
-          <div class="install-platform-icon">🍎</div>
+          <div class="install-platform-icon"><i class="bi bi-apple"></i></div>
           <div class="install-platform-name">iOS / iPadOS</div>
-          <div class="install-platform-desc">Safari na iPhone lub iPad — menu «Udostępnij» → do ekranu głównego</div>
+          <div class="install-platform-desc">Safari na iPhone lub iPad — menu «Udostępnij» <i class="bi bi-arrow-right"></i> do ekranu głównego</div>
           <div class="install-steps">
             <div class="install-step-item"><span class="install-step-num">1</span> Otwórz w Safari</div>
-            <div class="install-step-item"><span class="install-step-num">2</span> Dotknij «Udostępnij» ↑</div>
+            <div class="install-step-item"><span class="install-step-num">2</span> Dotknij «Udostępnij» <i class="bi bi-box-arrow-up"></i></div>
             <div class="install-step-item"><span class="install-step-num">3</span> «Dodaj do ekranu głównego»</div>
           </div>
         </div>
@@ -376,15 +445,15 @@
       <table class="comparison-table">
         <thead><tr><th>Funkcja</th><th class="highlight">Local Notes</th><th>Notion</th><th>Evernote</th><th>Google Keep</th></tr></thead>
         <tbody>
-          <tr><td>Darmowe</td><td class="highlight"><span class="check">✓</span></td><td><span class="partial">Ograniczone</span></td><td><span class="partial">Ograniczone</span></td><td><span class="check">✓</span></td></tr>
-          <tr><td>Bez rejestracji</td><td class="highlight"><span class="check">✓</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td></tr>
-          <tr><td>Szyfrowanie AES-256</td><td class="highlight"><span class="check">✓</span></td><td><span class="cross">✗</span></td><td><span class="partial">Płatne</span></td><td><span class="cross">✗</span></td></tr>
-          <tr><td>Bez serwera / lokalnie</td><td class="highlight"><span class="check">✓</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td></tr>
-          <tr><td>Offline (PWA)</td><td class="highlight"><span class="check">✓</span></td><td><span class="partial">Częściowo</span></td><td><span class="partial">Częściowo</span></td><td><span class="partial">Częściowo</span></td></tr>
-          <tr><td>Bez śledzenia</td><td class="highlight"><span class="check">✓</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td></tr>
-          <tr><td>12 języków interfejsu</td><td class="highlight"><span class="check">✓</span></td><td><span class="partial">Mało</span></td><td><span class="partial">Mało</span></td><td><span class="partial">Mało</span></td></tr>
-          <tr><td>Eksport Markdown / HTML</td><td class="highlight"><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="partial">Płatne</span></td><td><span class="cross">✗</span></td></tr>
-          <tr><td>Otwarty kod źródłowy</td><td class="highlight"><span class="check">✓</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td></tr>
+          <tr><td>Darmowe</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="partial">Ograniczone</span></td><td><span class="partial">Ograniczone</span></td><td><span class="check"><i class="bi bi-check-lg"></i></span></td></tr>
+          <tr><td>Bez rejestracji</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td></tr>
+          <tr><td>Szyfrowanie AES-256</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="partial">Płatne</span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td></tr>
+          <tr><td>Bez serwera / lokalnie</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td></tr>
+          <tr><td>Offline (PWA)</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="partial">Częściowo</span></td><td><span class="partial">Częściowo</span></td><td><span class="partial">Częściowo</span></td></tr>
+          <tr><td>Bez śledzenia</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td></tr>
+          <tr><td>12 języków interfejsu</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="partial">Mało</span></td><td><span class="partial">Mało</span></td><td><span class="partial">Mało</span></td></tr>
+          <tr><td>Eksport Markdown / HTML</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="partial">Płatne</span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td></tr>
+          <tr><td>Otwarty kod źródłowy</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td></tr>
         </tbody>
       </table>
       <p class="comparison-note">* Na podstawie publicznie dostępnych informacji na rok 2026.</p>
@@ -401,10 +470,10 @@
         <p class="section-subtitle animate-in delay-2">Local Notes został zbudowany z myślą o Twojej prywatności. Żadnego serwera, żadnej synchronizacji z chmurą, żadnej analityki.</p>
       </div>
       <div class="security-badges">
-        <div class="security-badge glass animate-in"><div class="security-badge-icon">🛡️</div><div><div class="security-badge-title">Bez serwera i chmury</div><div class="security-badge-desc">Wszystkie notatki są przechowywane lokalnie w IndexedDB Twojej przeglądarki. Nic nie opuszcza Twojego urządzenia.</div></div></div>
-        <div class="security-badge glass animate-in delay-1"><div class="security-badge-icon">👁️</div><div><div class="security-badge-title">Minimalna analityka</div><div class="security-badge-desc">Żadnej analityki, żadnych ciasteczek, żadnego śledzenia. Dosłownie nie możemy zobaczyć Twoich danych.</div></div></div>
-        <div class="security-badge glass animate-in delay-2"><div class="security-badge-icon">🔑</div><div><div class="security-badge-title">Bez rejestracji</div><div class="security-badge-desc">Otwórz aplikację i zacznij pisać. Żadnego emaila, żadnego hasła, żadnego konta.</div></div></div>
-        <div class="security-badge glass animate-in delay-3"><div class="security-badge-icon">🔐</div><div><div class="security-badge-title">Szyfrowanie AES-256</div><div class="security-badge-desc">Branżowy standard szyfrowania chroni Twoje notatki. Tylko Ty możesz je odszyfrować.</div></div></div>
+        <div class="security-badge glass animate-in"><div class="security-badge-icon"><i class="bi bi-shield-check"></i></div><div><div class="security-badge-title">Bez serwera i chmury</div><div class="security-badge-desc">Wszystkie notatki są przechowywane lokalnie w IndexedDB Twojej przeglądarki. Nic nie opuszcza Twojego urządzenia.</div></div></div>
+        <div class="security-badge glass animate-in delay-1"><div class="security-badge-icon"><i class="bi bi-eye-slash"></i></div><div><div class="security-badge-title">Minimalna analityka</div><div class="security-badge-desc">Żadnej analityki, żadnych ciasteczek, żadnego śledzenia. Dosłownie nie możemy zobaczyć Twoich danych.</div></div></div>
+        <div class="security-badge glass animate-in delay-2"><div class="security-badge-icon"><i class="bi bi-key"></i></div><div><div class="security-badge-title">Bez rejestracji</div><div class="security-badge-desc">Otwórz aplikację i zacznij pisać. Żadnego emaila, żadnego hasła, żadnego konta.</div></div></div>
+        <div class="security-badge glass animate-in delay-3"><div class="security-badge-icon"><i class="bi bi-lock"></i></div><div><div class="security-badge-title">Szyfrowanie AES-256</div><div class="security-badge-desc">Branżowy standard szyfrowania chroni Twoje notatki. Tylko Ty możesz je odszyfrować.</div></div></div>
       </div>
     </div>
   </div>
@@ -418,18 +487,18 @@
       <p class="section-subtitle animate-in delay-2">Local Notes mówi Twoim językiem. Wybierz preferowany interfejs.</p>
     </div>
     <div class="lang-grid">
-      <a href="../" class="lang-item animate-in"><span class="lang-flag">🇬🇧</span><div><div class="lang-name">English</div><div class="lang-native">English</div></div></a>
-      <a href="../ru/" class="lang-item animate-in delay-1"><span class="lang-flag">🇷🇺</span><div><div class="lang-name">Русский</div><div class="lang-native">Russian</div></div></a>
-      <a href="../ua/" class="lang-item animate-in delay-2"><span class="lang-flag">🇺🇦</span><div><div class="lang-name">Українська</div><div class="lang-native">Ukrainian</div></div></a>
-      <a href="../pl/" class="lang-item active animate-in delay-3"><span class="lang-flag">🇵🇱</span><div><div class="lang-name">Polski</div><div class="lang-native">Polish</div></div></a>
-      <a href="../cs/" class="lang-item animate-in"><span class="lang-flag">🇨🇿</span><div><div class="lang-name">Čeština</div><div class="lang-native">Czech</div></div></a>
-      <a href="../sk/" class="lang-item animate-in delay-1"><span class="lang-flag">🇸🇰</span><div><div class="lang-name">Slovenčina</div><div class="lang-native">Slovak</div></div></a>
-      <a href="../bg/" class="lang-item animate-in delay-2"><span class="lang-flag">🇧🇬</span><div><div class="lang-name">Български</div><div class="lang-native">Bulgarian</div></div></a>
-      <a href="../hr/" class="lang-item animate-in delay-3"><span class="lang-flag">🇭🇷</span><div><div class="lang-name">Hrvatski</div><div class="lang-native">Croatian</div></div></a>
-      <a href="../sr/" class="lang-item animate-in"><span class="lang-flag">🇷🇸</span><div><div class="lang-name">Српски</div><div class="lang-native">Serbian</div></div></a>
-      <a href="../bs/" class="lang-item animate-in delay-1"><span class="lang-flag">🇧🇦</span><div><div class="lang-name">Bosanski</div><div class="lang-native">Bosnian</div></div></a>
-      <a href="../mk/" class="lang-item animate-in delay-2"><span class="lang-flag">🇲🇰</span><div><div class="lang-name">Македонски</div><div class="lang-native">Macedonian</div></div></a>
-      <a href="../sl/" class="lang-item animate-in delay-3"><span class="lang-flag">🇸🇮</span><div><div class="lang-name">Slovenščina</div><div class="lang-native">Slovenian</div></div></a>
+      <a href="../" class="lang-item animate-in"><span class="lang-flag lang-code">GB</span><div><div class="lang-name">English</div><div class="lang-native">English</div></div></a>
+      <a href="../ru/" class="lang-item animate-in delay-1"><span class="lang-flag lang-code">RU</span><div><div class="lang-name">Русский</div><div class="lang-native">Russian</div></div></a>
+      <a href="../ua/" class="lang-item animate-in delay-2"><span class="lang-flag lang-code">UA</span><div><div class="lang-name">Українська</div><div class="lang-native">Ukrainian</div></div></a>
+      <a href="../pl/" class="lang-item active animate-in delay-3"><span class="lang-flag lang-code">PL</span><div><div class="lang-name">Polski</div><div class="lang-native">Polish</div></div></a>
+      <a href="../cs/" class="lang-item animate-in"><span class="lang-flag lang-code">CZ</span><div><div class="lang-name">Čeština</div><div class="lang-native">Czech</div></div></a>
+      <a href="../sk/" class="lang-item animate-in delay-1"><span class="lang-flag lang-code">SK</span><div><div class="lang-name">Slovenčina</div><div class="lang-native">Slovak</div></div></a>
+      <a href="../bg/" class="lang-item animate-in delay-2"><span class="lang-flag lang-code">BG</span><div><div class="lang-name">Български</div><div class="lang-native">Bulgarian</div></div></a>
+      <a href="../hr/" class="lang-item animate-in delay-3"><span class="lang-flag lang-code">HR</span><div><div class="lang-name">Hrvatski</div><div class="lang-native">Croatian</div></div></a>
+      <a href="../sr/" class="lang-item animate-in"><span class="lang-flag lang-code">RS</span><div><div class="lang-name">Српски</div><div class="lang-native">Serbian</div></div></a>
+      <a href="../bs/" class="lang-item animate-in delay-1"><span class="lang-flag lang-code">BA</span><div><div class="lang-name">Bosanski</div><div class="lang-native">Bosnian</div></div></a>
+      <a href="../mk/" class="lang-item animate-in delay-2"><span class="lang-flag lang-code">MK</span><div><div class="lang-name">Македонски</div><div class="lang-native">Macedonian</div></div></a>
+      <a href="../sl/" class="lang-item animate-in delay-3"><span class="lang-flag lang-code">SI</span><div><div class="lang-name">Slovenščina</div><div class="lang-native">Slovenian</div></div></a>
     </div>
   </div>
 </section>
@@ -466,6 +535,15 @@
       <div class="faq-item glass animate-in delay-3">
         <button class="faq-question" aria-expanded="false"><span>Czy kod źródłowy jest dostępny?</span><i class="bi bi-plus faq-icon"></i></button>
         <div class="faq-answer"><p>Tak. Local Notes jest w pełni otwarty na licencji MIT. Możesz przeglądać, forkować i wnosić wkład na <a href="https://github.com/PsyGioX/localnotes" target="_blank" rel="noopener" style="color:var(--primary-light);">GitHub</a>.</p></div>
+      </div>
+      <div class="faq-item glass animate-in delay-3">
+        <button class="faq-question" aria-expanded="false">
+          <span>Czy mogę otwierać i zapisywać pliki Word (.docx, .doc)?</span>
+          <i class="bi bi-plus faq-icon"></i>
+        </button>
+        <div class="faq-answer">
+          <p>Tak. Użyj Plik › Import Word w edytorze lub przycisku importu w aplikacji. Notatki można eksportować jako .docx lub .doc zgodny z Word 97–2003. Wszystko jest konwertowane w przeglądarce — pliki nigdzie nie są wysyłane. Śledzenie zmian nie jest obsługiwane, a stary binarny .doc zachowuje tylko tekst, tabele i łącza.</p>
+        </div>
       </div>
     </div>
   </div>

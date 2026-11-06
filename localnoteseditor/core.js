@@ -583,7 +583,7 @@ class LocalNotesEditor {
         this._restoreRange();
         if (cmd.indexOf('style_') === 0) { this._applyBlockStyle(cmd.slice(6)); var _t = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0); if (!_t) this.ed.focus(); return; }
         // Commands registered by extensions (office-ext.js): File / Layout / References / Review …
-        if (LocalNotesEditor.extCommands && LocalNotesEditor.extCommands[cmd]) { LocalNotesEditor.extCommands[cmd].call(this, btn); return; }
+        if (LocalNotesEditor.extCommands && LocalNotesEditor.extCommands[cmd]) { LocalNotesEditor.extCommands[cmd].call(this, btn); var _s2 = this; setTimeout(function() { try { _s2._syncState(); } catch (e) {} }, 0); return; }
         // Commands that open a modal — don't refocus editor after
         var modalCmds = {
             insertLink:        function() { this._modalLink(); },
@@ -644,7 +644,12 @@ class LocalNotesEditor {
             tplGoals:         function() { this._insertTemplate('goals'); },
             tplHabit:         function() { this._insertTemplate('habit'); }
         };
-        if (map[cmd]) { map[cmd].call(this); return; }
+        if (map[cmd]) {
+            map[cmd].call(this);
+            // refresh toggle-button highlighting after custom commands too (they used to return before _syncState)
+            var _self = this; setTimeout(function() { try { _self._syncState(); } catch (e) {} }, 0);
+            return;
+        }
 
         // Inline formatting commands — expand to word if cursor is collapsed
         var inlineFmtCmds = {
@@ -1105,13 +1110,41 @@ class LocalNotesEditor {
         // Still collapsed (cursor not on a word) — nothing to apply
         if (r.collapsed) return;
 
-        var sp = document.createElement('span');
-        sp.style.fontSize = px;
-        try { r.surroundContents(sp); }
-        catch (e) { var f = r.extractContents(); sp.appendChild(f); r.insertNode(sp); }
-        var nr = document.createRange();
-        nr.selectNodeContents(sp); sel.removeAllRanges(); sel.addRange(nr);
+        // Размер применяется к КАЖДОМУ текстовому узлу выделения отдельно. Раньше выделение из нескольких абзацев
+        // целиком оборачивалось в один <span> (с <h2>/<ul>/<p> внутри): такая «обёртка» — один блок выше листа,
+        // разбивка на страницы не могла её разрезать, и текст налезал на щель между листами.
+        var ed = this.ed, sc = r.startContainer, so = r.startOffset, ec = r.endContainer, eo = r.endOffset, nodes = [];
+        var root = r.commonAncestorContainer;
+        if (root.nodeType === 3) nodes.push(root);
+        else {
+            var tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), tn;
+            while ((tn = tw.nextNode())) {
+                if (!r.intersectsNode(tn)) continue;
+                var pe = tn.parentElement;
+                if (!pe || !ed.contains(pe) || (pe.closest && pe.closest('[contenteditable="false"]'))) continue;
+                if (!tn.nodeValue.length || (!tn.nodeValue.trim() && tn !== sc && tn !== ec)) continue;   // пробелы между блоками
+                nodes.push(tn);
+            }
+        }
+        var spans = [];
+        nodes.forEach(function (n) {
+            var from = n === sc ? so : 0, to = n === ec ? eo : n.nodeValue.length;
+            if (to <= from) return;
+            var t = n;
+            if (to < n.nodeValue.length) n.splitText(to);
+            if (from > 0) t = n.splitText(from);
+            var par = t.parentNode;
+            if (par.nodeType === 1 && par.tagName === 'SPAN' && par.childNodes.length === 1 && par.style.fontSize && !par.className) { par.style.fontSize = px; spans.push(par); return; }
+            var sp = document.createElement('span'); sp.style.fontSize = px;
+            par.insertBefore(sp, t); sp.appendChild(t); spans.push(sp);
+        });
+        if (spans.length) {
+            var nr = document.createRange();
+            nr.setStartBefore(spans[0]); nr.setEndAfter(spans[spans.length - 1]);
+            sel.removeAllRanges(); sel.addRange(nr);
+        }
         this._syncState();
+        this._notifyChange();   // размер меняет высоту строк: пересчёт листов, автосохранение, счётчики
     }
 
     // ── Ribbon (tabs, dropdown menus, zoom) ──────────────────────────────

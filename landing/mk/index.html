@@ -42,8 +42,10 @@
   <link rel="alternate" hreflang="sl" href="https://localnotes-three.vercel.app/landing/sl/" />
   <link rel="alternate" hreflang="x-default" href="https://localnotes-three.vercel.app/landing/" />
   <link rel="icon" href="../favicon.png" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="/localnoteseditor/bootstrap-icons/font/bootstrap-icons.min.css" />
   <link rel="stylesheet" href="../css/landing.css" />
+  <link rel="stylesheet" href="../css/landing-v2.css?v=2" />
+  <meta name="theme-color" content="#0a0a0a" />
 </head>
 <body>
 
@@ -55,10 +57,11 @@
   <li><a href="#how">Како работи</a></li>
   <li><a href="#note-format">Формат .note</a></li>
   <li><a href="#editor">Уредувач</a></li>
+    <li><a href="#office">Word</a></li>
   <li><a href="#usecases">Сценарија</a></li>
   <li><a href="#security">Безбедност</a></li>
   <li><a href="#faq">FAQ</a></li>
-  <li><a href="../" class="lang-switcher" style="border-color:rgba(174,252,110,0.3);">🇲🇰 MK</a></li>
+  <li><a href="../" class="lang-switcher" style="border-color:rgba(174,252,110,0.3);"><i class="bi bi-translate"></i> MK</a></li>
   <li><a href="https://localnotes-three.vercel.app/mk/" class="nav-cta" target="_blank" rel="noopener">Отвори</a></li>
 </ul>
   <button class="nav-hamburger" id="hamburger" aria-label="Мени"><span></span><span></span><span></span></button>
@@ -69,13 +72,14 @@
   <a href="#how">Како работи</a>
   <a href="#note-format">Формат .note</a>
   <a href="#editor">Уредувач</a>
+  <a href="#office">Word</a>
   <a href="#usecases">Сценарија</a>
   <a href="#security">Безбедност</a>
   <a href="#install">Инсталирање</a>
   <a href="#faq">FAQ</a>
   <a href="#languages">Јазици</a>
-  <a href="../"><i class="bi bi-filetype-html"></i> Промени јазик</a>
-  <a href="https://localnotes-three.vercel.app/mk/" target="_blank" rel="noopener" style="color:#aefc6e;font-weight:700;">Отвори апликација →</a>
+  <a href="../"><i class="bi bi-translate"></i> Промени јазик</a>
+  <a href="https://localnotes-three.vercel.app/mk/" target="_blank" rel="noopener" style="color:#aefc6e;font-weight:700;">Отвори апликација <i class="bi bi-arrow-right"></i></a>
 </div>
 
 <section class="hero" id="hero">
@@ -83,6 +87,7 @@
     <div class="hero-inner">
       <div class="hero-content">
         <div class="hero-eyebrow animate-in">Бесплатно · Без регистрација</div>
+        <a href="#office" class="hero-news animate-in delay-1"><i class="bi bi-stars"></i><span>Ново: Word .docx/.doc и картички како во Office</span><i class="bi bi-arrow-right"></i></a>
         <h1 class="hero-title animate-in delay-1">
           Вашите белешки.<br>
           <span class="accent blur-reveal"><span class="blur-text">Приватно. Шифрирано.</span><span class="blur-hint">допрете</span></span><br>
@@ -105,7 +110,7 @@
           <div class="mock-notes mock-notes-blur-wrap" id="mockNotes">
             <div class="mock-note"><div class="mock-note-title">Состанок</div><div class="mock-note-preview">Планирање Q4 — клучни одлуки…</div><span class="mock-note-tag tag-blue">работа</span></div>
             <div class="mock-note"><div class="mock-note-title">Листа за купување</div><div class="mock-note-preview">Млеко, леб, кафе, јаболка…</div><span class="mock-note-tag tag-green">лично</span></div>
-            <div class="mock-note"><div class="mock-note-title">Идеи 💡</div><div class="mock-note-preview">Нова концепција на проект…</div><span class="mock-note-tag tag-purple">идеи</span></div>
+            <div class="mock-note"><div class="mock-note-title">Идеи <i class="bi bi-lightbulb"></i></div><div class="mock-note-preview">Нова концепција на проект…</div><span class="mock-note-tag tag-purple">идеи</span></div>
           </div>
         </div>
       </div>
@@ -124,10 +129,10 @@
       <div>
         <div class="story-problem-title animate-in">Проблеми на постоечките апликации</div>
         <div class="story-problem">
-          <div class="problem-card animate-in delay-1"><div class="problem-card-icon">☁️</div><div class="problem-card-text"><strong>Сè се синхронизира со сервер.</strong> Notion, Evernote, Google Keep — вашите белешки живеат на туѓ компјутер. Едно нарушување и податоците се открие.</div></div>
-          <div class="problem-card animate-in delay-2"><div class="problem-card-icon">💳</div><div class="problem-card-text"><strong>Шифрирањето чини пари.</strong> Повеќето апликации го кријат вистинското шифрирање зад платен план. Приватноста не треба да биде премиум функција.</div></div>
-          <div class="problem-card animate-in delay-3"><div class="problem-card-icon"><i class="bi bi-copy"></i></div><div class="problem-card-text"><strong>Регистрација насекаде.</strong> За да напишете белешка, ви требаат е-пошта, лозинка и согласност со политика која дозволува користење на вашите податоци.</div></div>
-          <div class="problem-card animate-in delay-4"><div class="problem-card-icon"><i class="bi bi-filetype-html"></i></div><div class="problem-card-text"><strong>Нема офлајн поддршка.</strong> Повеќето веб апликации се бескорисни без интернет. Вашите белешки треба да бидат достапни секогаш и насекаде.</div></div>
+          <div class="problem-card animate-in delay-1"><div class="problem-card-icon"><i class="bi bi-cloud-arrow-up"></i></div><div class="problem-card-text"><strong>Сè се синхронизира со сервер.</strong> Notion, Evernote, Google Keep — вашите белешки живеат на туѓ компјутер. Едно нарушување и податоците се открие.</div></div>
+          <div class="problem-card animate-in delay-2"><div class="problem-card-icon"><i class="bi bi-credit-card-2-front"></i></div><div class="problem-card-text"><strong>Шифрирањето чини пари.</strong> Повеќето апликации го кријат вистинското шифрирање зад платен план. Приватноста не треба да биде премиум функција.</div></div>
+          <div class="problem-card animate-in delay-3"><div class="problem-card-icon"><i class="bi bi-person-plus"></i></div><div class="problem-card-text"><strong>Регистрација насекаде.</strong> За да напишете белешка, ви требаат е-пошта, лозинка и согласност со политика која дозволува користење на вашите податоци.</div></div>
+          <div class="problem-card animate-in delay-4"><div class="problem-card-icon"><i class="bi bi-wifi-off"></i></div><div class="problem-card-text"><strong>Нема офлајн поддршка.</strong> Повеќето веб апликации се бескорисни без интернет. Вашите белешки треба да бидат достапни секогаш и насекаде.</div></div>
         </div>
       </div>
       <div class="story-timeline">
@@ -154,11 +159,26 @@
     </div>
     <div class="features-grid">
       <div class="feature-card glass animate-in"><div class="feature-icon"><i class="bi bi-file-earmark-lock"></i></div><div class="feature-title">AES-256 шифрирање</div><div class="feature-desc">Воено ниво на шифрирање ги штити сите белешки. Податоците се шифрираат пред зачувување — само вие го имате клучот.</div></div>
-      <div class="feature-card glass animate-in delay-1"><div class="feature-icon">📱</div><div class="feature-title">Работи офлајн (PWA)</div><div class="feature-desc">Инсталирајте како Progressive Web App и користете насекаде — без интернет. Вашите белешки се секогаш достапни.</div></div>
-      <div class="feature-card glass animate-in delay-2"><div class="feature-icon">🌍</div><div class="feature-title">12 јазици</div><div class="feature-desc">Целосен интерфејс на македонски, руски, украински, полски, чешки, словачки, бугарски и други јазици.</div></div>
-      <div class="feature-card glass animate-in delay-1"><div class="feature-icon">📅</div><div class="feature-title">Вграден календар</div><div class="feature-desc">Прегледајте белешки по датум во приказ на месец, недела или дневен ред.</div></div>
-      <div class="feature-card glass animate-in delay-2"><div class="feature-icon">🏷️</div><div class="feature-title">Ознаки и бои</div><div class="feature-desc">Организирајте белешки со ознаки и бои. Пронајдете го она што го барате за секунди.</div></div>
-      <div class="feature-card glass animate-in delay-3"><div class="feature-icon"><i class="bi bi-three-dots"></i></div><div class="feature-title">Извоз</div><div class="feature-desc">Извезете белешки како .note, HTML или Markdown. Вашите податоци се секогаш преносливи.</div></div>
+      <div class="feature-card glass animate-in delay-1"><div class="feature-icon"><i class="bi bi-phone"></i></div><div class="feature-title">Работи офлајн (PWA)</div><div class="feature-desc">Инсталирајте како Progressive Web App и користете насекаде — без интернет. Вашите белешки се секогаш достапни.</div></div>
+      <div class="feature-card glass animate-in delay-2"><div class="feature-icon"><i class="bi bi-globe2"></i></div><div class="feature-title">12 јазици</div><div class="feature-desc">Целосен интерфејс на македонски, руски, украински, полски, чешки, словачки, бугарски и други јазици.</div></div>
+      <div class="feature-card glass animate-in delay-1"><div class="feature-icon"><i class="bi bi-calendar3"></i></div><div class="feature-title">Вграден календар</div><div class="feature-desc">Прегледајте белешки по датум во приказ на месец, недела или дневен ред.</div></div>
+      <div class="feature-card glass animate-in delay-2"><div class="feature-icon"><i class="bi bi-tags"></i></div><div class="feature-title">Ознаки и бои</div><div class="feature-desc">Организирајте белешки со ознаки и бои. Пронајдете го она што го барате за секунди.</div></div>
+      <div class="feature-card glass animate-in delay-3"><div class="feature-icon"><i class="bi bi-box-arrow-up"></i></div><div class="feature-title">Извоз</div><div class="feature-desc">Извезете белешки како .note, HTML или Markdown. Вашите податоци се секогаш преносливи.</div></div>
+          <div class="feature-card glass animate-in delay-1">
+        <div class="feature-icon"><i class="bi bi-filetype-docx"></i></div>
+        <div class="feature-title">Компатибилност со Word</div>
+        <div class="feature-desc">Увоз и извоз на .docx и .doc — префрлајте белешки во Microsoft Word и назад без губење на структурата.</div>
+      </div>
+      <div class="feature-card glass animate-in delay-2">
+        <div class="feature-icon"><i class="bi bi-layout-text-window"></i></div>
+        <div class="feature-title">Уредник како во Office</div>
+        <div class="feature-desc">Картички на лентата, распоред на страницата, содржина, фусноти, коментари и десетина други алатки познати од Office.</div>
+      </div>
+      <div class="feature-card glass animate-in delay-3">
+        <div class="feature-icon"><i class="bi bi-diagram-3"></i></div>
+        <div class="feature-title">Граф, задачи, палета</div>
+        <div class="feature-desc">Поврзувајте белешки во граф, планирајте на табла со задачи, скокајте каде било со палетата со команди и заклучете ја апликацијата со лозинка.</div>
+      </div>
     </div>
   </div>
 </section>
@@ -199,32 +219,32 @@
     </div>
     <div class="usecases-grid">
       <div class="usecase-card glass animate-in">
-        <div class="usecase-persona"><div class="usecase-avatar">👩‍💻</div><div><div class="usecase-name">Програмер</div><div class="usecase-role">Софтверски инженер</div></div></div>
+        <div class="usecase-persona"><div class="usecase-avatar"><i class="bi bi-laptop"></i></div><div><div class="usecase-name">Програмер</div><div class="usecase-role">Софтверски инженер</div></div></div>
         <p class="usecase-scenario">Чува фрагменти од код, API клучеви и белешки за проекти во шифрирана форма. Користи извоз во Markdown за документација. Работи офлајн во авион.</p>
         <div class="usecase-tags"><span class="usecase-tag">Markdown</span><span class="usecase-tag">Офлајн</span><span class="usecase-tag">Извоз</span></div>
       </div>
       <div class="usecase-card glass animate-in delay-1">
-        <div class="usecase-persona"><div class="usecase-avatar">📰</div><div><div class="usecase-name">Новинар</div><div class="usecase-role">Истражувачко новинарство</div></div></div>
+        <div class="usecase-persona"><div class="usecase-avatar"><i class="bi bi-newspaper"></i></div><div><div class="usecase-name">Новинар</div><div class="usecase-role">Истражувачко новинарство</div></div></div>
         <p class="usecase-scenario">Чува доверливи белешки за извори со AES-256 шифрирање. Без синхронизација во облак — без протекување. Ознаки за организација по теми.</p>
         <div class="usecase-tags"><span class="usecase-tag">Шифрирање</span><span class="usecase-tag">Ознаки</span><span class="usecase-tag">Приватност</span></div>
       </div>
       <div class="usecase-card glass animate-in delay-2">
-        <div class="usecase-persona"><div class="usecase-avatar">🎓</div><div><div class="usecase-name">Студент</div><div class="usecase-role">Универзитет</div></div></div>
+        <div class="usecase-persona"><div class="usecase-avatar"><i class="bi bi-mortarboard"></i></div><div><div class="usecase-name">Студент</div><div class="usecase-role">Универзитет</div></div></div>
         <p class="usecase-scenario">Води белешки со форматирање, чеклисти и слики. Користи календар за рокови. Инсталирано како PWA на телефон.</p>
         <div class="usecase-tags"><span class="usecase-tag">Форматирање</span><span class="usecase-tag">Календар</span><span class="usecase-tag">PWA</span></div>
       </div>
       <div class="usecase-card glass animate-in delay-1">
-        <div class="usecase-persona"><div class="usecase-avatar">🏥</div><div><div class="usecase-name">Лекар</div><div class="usecase-role">Здравствен работник</div></div></div>
+        <div class="usecase-persona"><div class="usecase-avatar"><i class="bi bi-heart-pulse"></i></div><div><div class="usecase-name">Лекар</div><div class="usecase-role">Здравствен работник</div></div></div>
         <p class="usecase-scenario">Води опсервациски белешки локално — без проблеми со приватноста, податоците не го напуштаат уредот. Извоз во HTML за извештаи.</p>
         <div class="usecase-tags"><span class="usecase-tag">Локално</span><span class="usecase-tag">Без сервер</span><span class="usecase-tag">HTML</span></div>
       </div>
       <div class="usecase-card glass animate-in delay-2">
-        <div class="usecase-persona"><div class="usecase-avatar">✍️</div><div><div class="usecase-name">Писател</div><div class="usecase-role">Романописец / Блогер</div></div></div>
+        <div class="usecase-persona"><div class="usecase-avatar"><i class="bi bi-pen"></i></div><div><div class="usecase-name">Писател</div><div class="usecase-role">Романописец / Блогер</div></div></div>
         <p class="usecase-scenario">Пишува поглавја и објави во уредувач на цел екран. Обоени ознаки за различни проекти. Извоз во Markdown за објавување.</p>
         <div class="usecase-tags"><span class="usecase-tag">Цел екран</span><span class="usecase-tag">Бои</span><span class="usecase-tag">Markdown</span></div>
       </div>
       <div class="usecase-card glass animate-in delay-3">
-        <div class="usecase-persona"><div class="usecase-avatar">🌍</div><div><div class="usecase-name">Патник</div><div class="usecase-role">Дигитален номад</div></div></div>
+        <div class="usecase-persona"><div class="usecase-avatar"><i class="bi bi-globe2"></i></div><div><div class="usecase-name">Патник</div><div class="usecase-role">Дигитален номад</div></div></div>
         <p class="usecase-scenario">Го користи Local Notes на 12 јазици во различни земји. Работи целосно офлајн во авиони и оддалечени места.</p>
         <div class="usecase-tags"><span class="usecase-tag">12 јазици</span><span class="usecase-tag">Офлајн</span><span class="usecase-tag">PWA</span></div>
       </div>
@@ -251,21 +271,21 @@
             </div>
           </div>
           <div class="nft-item">
-            <div class="nft-icon">📦</div>
+            <div class="nft-icon"><i class="bi bi-box-seam"></i></div>
             <div>
               <div class="nft-title">Што има внатре во .note датотека</div>
               <div class="nft-desc">Датотеката <code class="note-code">.note</code> е самостоен JSON пакет: содржина на белешката, метаподатоци, ознаки и — при вклучено шифрирање — AES-256 шифртекст кој само вашата лозинка може да го дешифрира. Без сопственички формат, без врзување за добавувач.</div>
             </div>
           </div>
           <div class="nft-item">
-            <div class="nft-icon"><i class="bi bi-filetype-html"></i></div>
+            <div class="nft-icon"><i class="bi bi-usb-drive"></i></div>
             <div>
               <div class="nft-title">Офлајн-прв, секогаш преносив</div>
               <div class="nft-desc">Извезете која било белешка како датотека <code class="note-code">.note</code> и носете ја на USB, испраќајте преку Signal или архивирајте со децении. Увезете назад во Local Notes на кој било уред — без сметка, без интернет.</div>
             </div>
           </div>
           <div class="nft-item">
-            <div class="nft-icon">🛡️</div>
+            <div class="nft-icon"><i class="bi bi-shield-check"></i></div>
             <div>
               <div class="nft-title">Zero-knowledge по основа</div>
               <div class="nft-desc">При шифрирање на белешка, клучот никогаш не го напушта вашиот уред. Local Notes го користи вградениот Web Crypto API на прелистувачот — истиот стандард што го користат банките. Дури и ако некој ја пресретне вашата датотека <code class="note-code">.note</code>, ќе гледа само шифртекст.</div>
@@ -276,7 +296,7 @@
       <div class="note-format-visual animate-in delay-2">
         <div class="note-file-card glass">
           <div class="nfc-header">
-            <div class="nfc-icon"><i class="bi bi-filetype-pdf"></i></div>
+            <div class="nfc-icon"><i class="bi bi-file-earmark-text"></i></div>
             <div>
               <div class="nfc-name">meeting-notes.note</div>
               <div class="nfc-size">2.4 KB · Шифрирано</div>
@@ -297,7 +317,7 @@
             <span class="nfc-badge">Отворен формат</span>
           </div>
         </div>
-        <p class="note-format-hint">↑ Реална структура на шифрирана .note датотека. Содржината е нечитлива без вашата лозинка.</p>
+        <p class="note-format-hint"><i class="bi bi-arrow-up"></i> Реална структура на шифрирана .note датотека. Содржината е нечитлива без вашата лозинка.</p>
       </div>
     </div>
   </div>
@@ -339,8 +359,8 @@
           <div class="editor-mock-text">
             <p>Клучни одлуки од сесијата:</p>
             <div class="editor-checklist">
-              <div class="editor-check done"><span class="check-box">✓</span> Финализирање на приоритетите</div>
-              <div class="editor-check done"><span class="check-box">✓</span> Назначување одговорни</div>
+              <div class="editor-check done"><span class="check-box"><i class="bi bi-check-lg"></i></span> Финализирање на приоритетите</div>
+              <div class="editor-check done"><span class="check-box"><i class="bi bi-check-lg"></i></span> Назначување одговорни</div>
               <div class="editor-check"><span class="check-box"></span> Планирање состанок за буџет</div>
               <div class="editor-check"><span class="check-box"></span> Преглед на безбедносниот ревизија</div>
             </div>
@@ -357,6 +377,55 @@
   </div>
 </section>
 
+<!-- ── Word & Office ─────────────────────────────────────────── -->
+<section class="office-section" id="office">
+  <div class="container">
+    <div class="office-header">
+      <div class="section-label animate-in">Word и Office</div>
+      <h2 class="section-title animate-in delay-1">Уредник како Office. Датотеки како Word.</h2>
+      <p class="section-subtitle animate-in delay-2">Картички Датотека, Распоред, Референци и Преглед, поставување на страница, содржина, фусноти — како и увоз и извоз на .docx и .doc.</p>
+    </div>
+    <div class="ribbon-mock animate-in" aria-hidden="true">
+      <div class="rm-titlebar"><span class="rm-dots"><i></i><i></i><i></i></span><span class="rm-title">meeting-notes.docx</span></div>
+      <div class="rm-tabs"><span class="rm-tab">Датотека</span><span class="rm-tab">Почетна</span><span class="rm-tab">Вметнување</span><span class="rm-tab active">Распоред</span><span class="rm-tab">Референци</span><span class="rm-tab">Преглед</span><span class="rm-tab">Преглед</span></div>
+      <div class="rm-body"><div class="rm-group"><div class="rm-btns"><span class="rm-btn"><i class="bi bi-arrows-expand"></i><em>Маргини</em></span><span class="rm-btn"><i class="bi bi-phone-landscape"></i><em>Ориентација</em></span><span class="rm-btn"><i class="bi bi-file-earmark"></i><em>Големина</em></span><span class="rm-btn"><i class="bi bi-layout-three-columns"></i><em>Колони</em></span></div><div class="rm-glabel">Поставување на страница</div></div><div class="rm-group"><div class="rm-btns"><span class="rm-btn"><i class="bi bi-distribute-vertical"></i><em>Растојание</em></span><span class="rm-btn"><i class="bi bi-type"></i><em>Пренос</em></span></div><div class="rm-glabel">Пасус</div></div><div class="rm-group"><div class="rm-btns"><span class="rm-btn"><i class="bi bi-file-break"></i><em>Прекин на стр.</em></span></div><div class="rm-glabel">Прекини</div></div><div class="rm-group"><div class="rm-btns"><span class="rm-btn"><i class="bi bi-list-nested"></i><em>Содржина</em></span><span class="rm-btn"><i class="bi bi-chat-square-text"></i><em>Нов коментар</em></span></div><div class="rm-glabel">Содржина</div></div></div>
+      <div class="rm-page"><div class="rm-sheet"><b></b><u></u><u></u><u class="s"></u><i></i><u></u><u class="s"></u></div></div>
+    </div>
+    <div class="office-grid">
+      <div class="office-card glass animate-in delay-0">
+        <div class="office-card-icon"><i class="bi bi-filetype-docx"></i></div>
+        <div><div class="office-card-title">Увоз и извоз на Word</div><div class="office-card-desc">Отворајте датотеки .docx и .doc и зачувувајте белешки како вистински .docx или како .doc компатибилен со Word 97–2003. Стиловите, листите, табелите и сликите се зачувуваат.</div></div>
+      </div>
+      <div class="office-card glass animate-in delay-1">
+        <div class="office-card-icon"><i class="bi bi-file-earmark-ruled"></i></div>
+        <div><div class="office-card-title">Поставување на страница</div><div class="office-card-desc">A4, Letter и други формати, маргини, ориентација, колони, заглавја, подножја и броеви на страници — во печатење, PDF и датотеки на Word.</div></div>
+      </div>
+      <div class="office-card glass animate-in delay-2">
+        <div class="office-card-icon"><i class="bi bi-list-nested"></i></div>
+        <div><div class="office-card-title">Содржина и фусноти</div><div class="office-card-desc">Автоматска содржина од насловите, фусноти со нумерација, натписи на слики и обележувачи.</div></div>
+      </div>
+      <div class="office-card glass animate-in delay-3">
+        <div class="office-card-icon"><i class="bi bi-chat-square-text"></i></div>
+        <div><div class="office-card-title">Преглед</div><div class="office-card-desc">Коментари на изборот, јазик за проверка на правопис и проверка на пристапноста: недостасува алт текст, празни наслови, нејасни врски.</div></div>
+      </div>
+      <div class="office-card glass animate-in delay-0">
+        <div class="office-card-icon"><i class="bi bi-brush"></i></div>
+        <div><div class="office-card-title">Помошници за форматирање</div><div class="office-card-desc">Пренос на форматирање, промена на букви, брзи стилови, иницијал, текстуално поле, засенчување на пасус, знаци ¶ и насока на текстот LTR/RTL.</div></div>
+      </div>
+      <div class="office-card glass animate-in delay-1">
+        <div class="office-card-icon"><i class="bi bi-volume-up"></i></div>
+        <div><div class="office-card-title">Читање гласно и режим на читање</div><div class="office-card-desc">Слушајте го изборот или целата белешка, отворете навигациски панел со наслови или заклучете го уредувањето во режим на читање.</div></div>
+      </div>
+      <div class="office-card glass animate-in delay-2">
+        <div class="office-card-icon"><i class="bi bi-phone"></i></div>
+        <div><div class="office-card-title">Направено и за телефони</div><div class="office-card-desc">На мали екрани лентата со картички е закачена, а се лизга само редот со алатки — страницата не се движи настрана.</div></div>
+      </div>
+    </div>
+    <div class="format-chips animate-in"><i class="bi bi-box-arrow-in-down"></i><span class="fmt-chip">.docx</span><span class="fmt-chip">.doc</span><span class="fmt-chip">.html</span><span class="fmt-chip">.md</span><span class="fmt-chip">.pdf</span><span class="fmt-chip">.txt</span><span class="fmt-chip">.note</span><i class="bi bi-box-arrow-up"></i></div>
+    <p class="office-note animate-in"><i class="bi bi-info-circle"></i> Извезениот .doc е компатибилен со Word 97–2003; увозот на стар бинарен .doc ги задржува текстот, табелите и врските.</p>
+  </div>
+</section>
+
 <!-- ── Install PWA ───────────────────────────────────────────── -->
 <section class="install-section" id="install">
   <div class="container">
@@ -368,32 +437,32 @@
       </div>
       <div class="install-platforms">
         <div class="install-platform glass animate-in">
-          <div class="install-platform-icon">🖥️</div>
+          <div class="install-platform-icon"><i class="bi bi-pc-display"></i></div>
           <div class="install-platform-name">Компјутер</div>
           <div class="install-platform-desc">Chrome, Edge, Firefox — кликнете на иконата за инсталирање во адресната лента</div>
           <div class="install-steps">
             <div class="install-step-item"><span class="install-step-num">1</span> Отворете ја апликацијата</div>
-            <div class="install-step-item"><span class="install-step-num">2</span> Кликнете ⊕ во адресната лента</div>
+            <div class="install-step-item"><span class="install-step-num">2</span> Кликнете <i class="bi bi-plus-circle"></i> во адресната лента</div>
             <div class="install-step-item"><span class="install-step-num">3</span> Кликнете «Инсталирај»</div>
           </div>
         </div>
         <div class="install-platform glass animate-in delay-1">
-          <div class="install-platform-icon">📱</div>
+          <div class="install-platform-icon"><i class="bi bi-phone"></i></div>
           <div class="install-platform-name">Android</div>
           <div class="install-platform-desc">Chrome за Android — додајте на почетниот екран со едно допирање</div>
           <div class="install-steps">
             <div class="install-step-item"><span class="install-step-num">1</span> Отворете во Chrome</div>
-            <div class="install-step-item"><span class="install-step-num">2</span> Допрете ⋮ мени</div>
+            <div class="install-step-item"><span class="install-step-num">2</span> Допрете <i class="bi bi-three-dots-vertical"></i> мени</div>
             <div class="install-step-item"><span class="install-step-num">3</span> «Додај на почетен екран»</div>
           </div>
         </div>
         <div class="install-platform glass animate-in delay-2">
-          <div class="install-platform-icon">🍎</div>
+          <div class="install-platform-icon"><i class="bi bi-apple"></i></div>
           <div class="install-platform-name">iOS / iPadOS</div>
-          <div class="install-platform-desc">Safari на iPhone или iPad — мени «Сподели» → на почетниот екран</div>
+          <div class="install-platform-desc">Safari на iPhone или iPad — мени «Сподели» <i class="bi bi-arrow-right"></i> на почетниот екран</div>
           <div class="install-steps">
             <div class="install-step-item"><span class="install-step-num">1</span> Отворете во Safari</div>
-            <div class="install-step-item"><span class="install-step-num">2</span> Допрете «Сподели» ↑</div>
+            <div class="install-step-item"><span class="install-step-num">2</span> Допрете «Сподели» <i class="bi bi-box-arrow-up"></i></div>
             <div class="install-step-item"><span class="install-step-num">3</span> «Додај на почетен екран»</div>
           </div>
         </div>
@@ -413,15 +482,15 @@
       <table class="comparison-table">
         <thead><tr><th>Функција</th><th class="highlight">Local Notes</th><th>Notion</th><th>Evernote</th><th>Google Keep</th></tr></thead>
         <tbody>
-          <tr><td>Бесплатно</td><td class="highlight"><span class="check">✓</span></td><td><span class="partial">Ограничено</span></td><td><span class="partial">Ограничено</span></td><td><span class="check">✓</span></td></tr>
-          <tr><td>Без регистрација</td><td class="highlight"><span class="check">✓</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td></tr>
-          <tr><td>AES-256 шифрирање</td><td class="highlight"><span class="check">✓</span></td><td><span class="cross">✗</span></td><td><span class="partial">Платено</span></td><td><span class="cross">✗</span></td></tr>
-          <tr><td>Без сервер / локално</td><td class="highlight"><span class="check">✓</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td></tr>
-          <tr><td>Офлајн (PWA)</td><td class="highlight"><span class="check">✓</span></td><td><span class="partial">Делумно</span></td><td><span class="partial">Делумно</span></td><td><span class="partial">Делумно</span></td></tr>
-          <tr><td>Без следење</td><td class="highlight"><span class="check">✓</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td></tr>
-          <tr><td>12 јазици на интерфејс</td><td class="highlight"><span class="check">✓</span></td><td><span class="partial">Малку</span></td><td><span class="partial">Малку</span></td><td><span class="partial">Малку</span></td></tr>
-          <tr><td>Извоз Markdown / HTML</td><td class="highlight"><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="partial">Платено</span></td><td><span class="cross">✗</span></td></tr>
-          <tr><td>Отворен изворен код</td><td class="highlight"><span class="check">✓</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td></tr>
+          <tr><td>Бесплатно</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="partial">Ограничено</span></td><td><span class="partial">Ограничено</span></td><td><span class="check"><i class="bi bi-check-lg"></i></span></td></tr>
+          <tr><td>Без регистрација</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td></tr>
+          <tr><td>AES-256 шифрирање</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="partial">Платено</span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td></tr>
+          <tr><td>Без сервер / локално</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td></tr>
+          <tr><td>Офлајн (PWA)</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="partial">Делумно</span></td><td><span class="partial">Делумно</span></td><td><span class="partial">Делумно</span></td></tr>
+          <tr><td>Без следење</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td></tr>
+          <tr><td>12 јазици на интерфејс</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="partial">Малку</span></td><td><span class="partial">Малку</span></td><td><span class="partial">Малку</span></td></tr>
+          <tr><td>Извоз Markdown / HTML</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="partial">Платено</span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td></tr>
+          <tr><td>Отворен изворен код</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td></tr>
         </tbody>
       </table>
       <p class="comparison-note">* Врз основа на јавно достапни информации за 2026 година.</p>
@@ -438,10 +507,10 @@
         <p class="section-subtitle animate-in delay-2">Local Notes е изграден со грижа за вашата приватност. Без сервер, без синхронизација во облак, без аналитика.</p>
       </div>
       <div class="security-badges">
-        <div class="security-badge glass animate-in"><div class="security-badge-icon">🛡️</div><div><div class="security-badge-title">Без сервер и облак</div><div class="security-badge-desc">Сите белешки се зачувани локално во IndexedDB на вашиот прелистувач. Ништо не го напушта вашиот уред.</div></div></div>
-        <div class="security-badge glass animate-in delay-1"><div class="security-badge-icon">👁️</div><div><div class="security-badge-title">Минимална аналитика</div><div class="security-badge-desc">Без аналитика, без колачиња, без следење. Буквално не можеме да ги видиме вашите податоци.</div></div></div>
-        <div class="security-badge glass animate-in delay-2"><div class="security-badge-icon">🔑</div><div><div class="security-badge-title">Без регистрација</div><div class="security-badge-desc">Отворете ја апликацијата и почнете да пишувате. Без е-пошта, без лозинка, без сметка.</div></div></div>
-        <div class="security-badge glass animate-in delay-3"><div class="security-badge-icon">🔐</div><div><div class="security-badge-title">AES-256 шифрирање</div><div class="security-badge-desc">Индустриски стандард за шифрирање ги штити вашите белешки. Само вие можете да ги дешифрирате.</div></div></div>
+        <div class="security-badge glass animate-in"><div class="security-badge-icon"><i class="bi bi-shield-check"></i></div><div><div class="security-badge-title">Без сервер и облак</div><div class="security-badge-desc">Сите белешки се зачувани локално во IndexedDB на вашиот прелистувач. Ништо не го напушта вашиот уред.</div></div></div>
+        <div class="security-badge glass animate-in delay-1"><div class="security-badge-icon"><i class="bi bi-eye-slash"></i></div><div><div class="security-badge-title">Минимална аналитика</div><div class="security-badge-desc">Без аналитика, без колачиња, без следење. Буквално не можеме да ги видиме вашите податоци.</div></div></div>
+        <div class="security-badge glass animate-in delay-2"><div class="security-badge-icon"><i class="bi bi-key"></i></div><div><div class="security-badge-title">Без регистрација</div><div class="security-badge-desc">Отворете ја апликацијата и почнете да пишувате. Без е-пошта, без лозинка, без сметка.</div></div></div>
+        <div class="security-badge glass animate-in delay-3"><div class="security-badge-icon"><i class="bi bi-lock"></i></div><div><div class="security-badge-title">AES-256 шифрирање</div><div class="security-badge-desc">Индустриски стандард за шифрирање ги штити вашите белешки. Само вие можете да ги дешифрирате.</div></div></div>
       </div>
     </div>
   </div>
@@ -455,18 +524,18 @@
       <p class="section-subtitle animate-in delay-2">Local Notes зборува на вашиот јазик. Изберете го саканиот интерфејс.</p>
     </div>
     <div class="lang-grid">
-      <a href="../" class="lang-item animate-in"><span class="lang-flag">🇬🇧</span><div><div class="lang-name">English</div><div class="lang-native">English</div></div></a>
-      <a href="../ru/" class="lang-item animate-in delay-1"><span class="lang-flag">🇷🇺</span><div><div class="lang-name">Русский</div><div class="lang-native">Russian</div></div></a>
-      <a href="../ua/" class="lang-item animate-in delay-2"><span class="lang-flag">🇺🇦</span><div><div class="lang-name">Українська</div><div class="lang-native">Ukrainian</div></div></a>
-      <a href="../pl/" class="lang-item animate-in delay-3"><span class="lang-flag">🇵🇱</span><div><div class="lang-name">Polski</div><div class="lang-native">Polish</div></div></a>
-      <a href="../cs/" class="lang-item animate-in"><span class="lang-flag">🇨🇿</span><div><div class="lang-name">Čeština</div><div class="lang-native">Czech</div></div></a>
-      <a href="../sk/" class="lang-item animate-in delay-1"><span class="lang-flag">🇸🇰</span><div><div class="lang-name">Slovenčina</div><div class="lang-native">Slovak</div></div></a>
-      <a href="../bg/" class="lang-item animate-in delay-2"><span class="lang-flag">🇧🇬</span><div><div class="lang-name">Български</div><div class="lang-native">Bulgarian</div></div></a>
-      <a href="../hr/" class="lang-item animate-in delay-3"><span class="lang-flag">🇭🇷</span><div><div class="lang-name">Hrvatski</div><div class="lang-native">Croatian</div></div></a>
-      <a href="../sr/" class="lang-item animate-in"><span class="lang-flag">🇷🇸</span><div><div class="lang-name">Српски</div><div class="lang-native">Serbian</div></div></a>
-      <a href="../bs/" class="lang-item animate-in delay-1"><span class="lang-flag">🇧🇦</span><div><div class="lang-name">Bosanski</div><div class="lang-native">Bosnian</div></div></a>
-      <a href="../mk/" class="lang-item active animate-in delay-2"><span class="lang-flag">🇲🇰</span><div><div class="lang-name">Македонски</div><div class="lang-native">Macedonian</div></div></a>
-      <a href="../sl/" class="lang-item animate-in delay-3"><span class="lang-flag">🇸🇮</span><div><div class="lang-name">Slovenščina</div><div class="lang-native">Slovenian</div></div></a>
+      <a href="../" class="lang-item animate-in"><span class="lang-flag lang-code">GB</span><div><div class="lang-name">English</div><div class="lang-native">English</div></div></a>
+      <a href="../ru/" class="lang-item animate-in delay-1"><span class="lang-flag lang-code">RU</span><div><div class="lang-name">Русский</div><div class="lang-native">Russian</div></div></a>
+      <a href="../ua/" class="lang-item animate-in delay-2"><span class="lang-flag lang-code">UA</span><div><div class="lang-name">Українська</div><div class="lang-native">Ukrainian</div></div></a>
+      <a href="../pl/" class="lang-item animate-in delay-3"><span class="lang-flag lang-code">PL</span><div><div class="lang-name">Polski</div><div class="lang-native">Polish</div></div></a>
+      <a href="../cs/" class="lang-item animate-in"><span class="lang-flag lang-code">CZ</span><div><div class="lang-name">Čeština</div><div class="lang-native">Czech</div></div></a>
+      <a href="../sk/" class="lang-item animate-in delay-1"><span class="lang-flag lang-code">SK</span><div><div class="lang-name">Slovenčina</div><div class="lang-native">Slovak</div></div></a>
+      <a href="../bg/" class="lang-item animate-in delay-2"><span class="lang-flag lang-code">BG</span><div><div class="lang-name">Български</div><div class="lang-native">Bulgarian</div></div></a>
+      <a href="../hr/" class="lang-item animate-in delay-3"><span class="lang-flag lang-code">HR</span><div><div class="lang-name">Hrvatski</div><div class="lang-native">Croatian</div></div></a>
+      <a href="../sr/" class="lang-item animate-in"><span class="lang-flag lang-code">RS</span><div><div class="lang-name">Српски</div><div class="lang-native">Serbian</div></div></a>
+      <a href="../bs/" class="lang-item animate-in delay-1"><span class="lang-flag lang-code">BA</span><div><div class="lang-name">Bosanski</div><div class="lang-native">Bosnian</div></div></a>
+      <a href="../mk/" class="lang-item active animate-in delay-2"><span class="lang-flag lang-code">MK</span><div><div class="lang-name">Македонски</div><div class="lang-native">Macedonian</div></div></a>
+      <a href="../sl/" class="lang-item animate-in delay-3"><span class="lang-flag lang-code">SI</span><div><div class="lang-name">Slovenščina</div><div class="lang-native">Slovenian</div></div></a>
     </div>
   </div>
 </section>
@@ -503,6 +572,15 @@
       <div class="faq-item glass animate-in delay-3">
         <button class="faq-question" aria-expanded="false"><span>Дали изворниот код е достапен?</span><i class="bi bi-plus faq-icon"></i></button>
         <div class="faq-answer"><p>Да. Local Notes е целосно отворен под MIT лиценца. Можете да прегледате, форкнете и придонесете на <a href="https://github.com/PsyGioX/localnotes" target="_blank" rel="noopener" style="color:var(--primary-light);">GitHub</a>.</p></div>
+      </div>
+      <div class="faq-item glass animate-in delay-3">
+        <button class="faq-question" aria-expanded="false">
+          <span>Дали можам да отворам и зачувам датотеки на Word (.docx, .doc)?</span>
+          <i class="bi bi-plus faq-icon"></i>
+        </button>
+        <div class="faq-answer">
+          <p>Да. Користете Датотека → Увоз од Word во уредникот или копчето за увоз во апликацијата. Белешките можат да се извезат како .docx или како .doc компатибилен со Word 97–2003. Сè се претвора во вашиот прелистувач — датотеките никаде не се испраќаат. Следењето промени не е поддржано, а стариот бинарен .doc ги задржува само текстот, табелите и врските.</p>
+        </div>
       </div>
     </div>
   </div>

@@ -36,13 +36,35 @@
 
 /* ── Page break, text box, drop cap, quick styles ── */
 .lne-editor .lne-pagebreak {
-    position: relative; height: 22px; margin: 10px 0; user-select: none; break-after: page;
-    border-top: 1px dashed var(--border-color, #999); border-bottom: 0;
+    /* Как «Разрыв страницы» в MS Word: серая полоса между листами с пунктирной линией и подписью по центру */
+    position: relative; height: 30px; margin: 14px 0; user-select: none; break-after: page; clear: both;
+    background: var(--canvas-bg, #e6e6e6); border: 0;
+    box-shadow: 0 0 0 100vmax var(--canvas-bg, #e6e6e6), inset 0 7px 6px -7px rgba(0,0,0,.28), inset 0 -7px 6px -7px rgba(0,0,0,.28);
+    clip-path: inset(0 -100vmax);
+}
+.lne-editor .lne-pagebreak::before {
+    content: ""; position: absolute; left: 0; right: 0; top: 50%; border-top: 1px dotted var(--text-secondary, #777);
 }
 .lne-editor .lne-pagebreak::after {
-    content: attr(data-label); position: absolute; left: 50%; top: -9px; transform: translateX(-50%);
-    padding: 0 10px; font: 400 11px/16px var(--font-ui, system-ui); color: var(--text-secondary, #777); background: var(--ox-bg, var(--paper-bg, #fff));
+    content: var(--ox-pb-label, attr(data-label)); position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    padding: 0 10px; font: 400 11px/16px var(--font-ui, system-ui); color: var(--text-secondary, #666); background: var(--canvas-bg, #e6e6e6); white-space: nowrap;
 }
+.lne-editor .lne-pagebreak.lne-pb-sel, .lne-editor .lne-pagebreak:hover { outline: 1px solid var(--accent-fg, #0b6a2e); outline-offset: -1px; }
+/* Разрыв страницы: серая полоса и тени на всю ширину ЛИСТА (а не только текста): выходим за поля листа */
+@media (min-width: 769px) {
+    .lne-editor[data-ox-page] .lne-pagebreak { margin-left: calc(-1 * var(--ox-pl, 25.4mm)); margin-right: calc(-1 * var(--ox-pr, 25.4mm)); }
+}
+/* Автоматическая разбивка на страницы: границы рисует фон листа, явный разрыв — компактная метка в конце страницы */
+.lne-editor.lne-ox-paged .lne-pagebreak { height: 0; min-height: 0; margin: 0; padding: 0; background: transparent; box-shadow: none; clip-path: none; overflow: visible; }
+/* сам элемент невидим и не занимает места на листе; кликается и подсвечивается подпись в щели */
+.lne-editor.lne-ox-paged .lne-pagebreak.lne-pb-sel, .lne-editor.lne-ox-paged .lne-pagebreak:hover { outline: 0; }
+.lne-editor.lne-ox-paged .lne-pagebreak::before { pointer-events: none; }
+.lne-editor.lne-ox-paged .lne-pagebreak::after { cursor: pointer; border-radius: 3px; }
+.lne-editor.lne-ox-paged .lne-pagebreak.lne-pb-sel::after, .lne-editor.lne-ox-paged .lne-pagebreak:hover::after { outline: 1px solid var(--accent-fg, #0b6a2e); color: var(--accent-fg, #0b6a2e); }
+/* линия и подпись разрыва — в серой щели между листами (--pb-top считает _oxPaginate) */
+.lne-editor.lne-ox-paged .lne-pagebreak::before { display: block; left: calc(-1 * var(--ox-pl, 25.4mm)); right: calc(-1 * var(--ox-pr, 25.4mm)); top: var(--pb-top, 50%); }
+.lne-editor.lne-ox-paged .lne-pagebreak::after { top: var(--pb-top, 50%); background: var(--canvas-bg, #e6e6e6); }
+
 .lne-editor .lne-textbox, .noteContent .lne-textbox {
     border: 1.5px solid var(--border-color, #999); border-radius: 4px; padding: 10px 14px; margin: 12px 0; background: color-mix(in srgb, var(--accent-soft, #e8f1fb) 60%, transparent);
 }
@@ -58,8 +80,14 @@
 .lne-editor .lne-toc, .noteContent .lne-toc { border: 1px solid var(--border-color, #ccc); border-radius: 6px; padding: 10px 16px; margin: 12px 0; }
 .lne-toc .lne-toc-title { font-weight: 600; margin-bottom: 6px; }
 .lne-toc ul { list-style: none; margin: 0; padding: 0; }
-.lne-toc .lne-toc-item { padding: 2px 0; cursor: pointer; color: var(--accent-fg, #0b6a2e); }
-.lne-toc .lne-toc-item:hover { text-decoration: underline; }
+.lne-toc .lne-toc-item { display: flex; align-items: baseline; gap: 4px; padding: 2px 0; cursor: pointer; color: var(--accent-fg, #0b6a2e); }
+.lne-toc .lne-toc-item:hover .lne-toc-text { text-decoration: underline; }
+.lne-toc .lne-toc-text { flex: 0 1 auto; min-width: 0; }
+.lne-toc .lne-toc-leader { flex: 1 1 auto; min-width: 16px; height: 0; border-bottom: 1.5px dotted currentColor; opacity: .55; transform: translateY(-3px); }
+.lne-toc[data-leader="dash"] .lne-toc-leader { border-bottom-style: dashed; }
+.lne-toc[data-leader="none"] .lne-toc-leader { border-bottom-color: transparent; }
+.lne-toc .lne-toc-pg { flex: none; font-variant-numeric: tabular-nums; }
+.lne-toc[data-style="auto2"] .lne-toc-title { font-size: 1.25em; font-weight: 700; }
 .lne-editor sup.lne-fn, .noteContent sup.lne-fn { color: var(--accent-fg, #0b6a2e); cursor: pointer; font-weight: 600; padding: 0 1px; }
 .lne-editor .lne-fnlist, .noteContent .lne-fnlist { font-size: .82em; color: var(--text-secondary, #666); margin-top: 18px; user-select: text; }
 .lne-fnlist hr { width: 33%; margin: 0 0 6px; border: 0; border-top: 1px solid var(--border-color, #999); }
@@ -110,3 +138,8 @@
 @media print {
     .lne-ox-nav, .lne-body[data-ox-hdr]::before, .lne-body[data-ox-ftr]::after { display: none !important; }
 }
+
+/* Плавное появление документа после импорта Word */
+@keyframes lneOxIn { from { opacity: 0; } to { opacity: 1; } }
+.lne-editor.lne-ox-in { animation: lneOxIn .4s ease-out; }
+@media (prefers-reduced-motion: reduce) { .lne-editor.lne-ox-in { animation: none; } }

@@ -55,8 +55,11 @@
         st.setProperty('--ox-w', d[0] + 'mm'); st.setProperty('--ox-h', d[1] + 'mm');
         st.setProperty('--ox-pad', m.margins.t + 'mm ' + m.margins.r + 'mm ' + m.margins.b + 'mm ' + m.margins.l + 'mm');
         st.setProperty('--ox-cols', m.cols || 1);
+        st.setProperty('--ox-pl', m.margins.l + 'mm'); st.setProperty('--ox-pr', m.margins.r + 'mm');
         if (m.pageColor) { st.setProperty('--ox-bg', m.pageColor); st.setProperty('--ox-fg', luminance(m.pageColor) > 0.55 ? '#1b1b1b' : '#f2f2f2'); }
         else { st.removeProperty('--ox-bg'); st.removeProperty('--ox-fg'); }
+        // подпись разрыва страницы — из текущего языка интерфейса (у импортированных разрывов нет data-label)
+        st.setProperty('--ox-pb-label', JSON.stringify(this._('oxPageBreak', 'Page break')));
         ed.setAttribute('data-ox-page', '1');
         ed.classList.toggle('lne-ox-border', !!m.border);
         ed.classList.toggle('lne-ox-landscape', m.orient === 'landscape');
@@ -68,10 +71,12 @@
             if (f) body.setAttribute('data-ox-ftr', f); else body.removeAttribute('data-ox-ftr');
         }
         this._oxSyncButtons();
+        if (this._oxPgSchedule) this._oxPgSchedule(30);
     };
     P._oxSetMeta = function (patch, silent) {
         var m = this._oxMeta(); Object.keys(patch).forEach(function (k) { m[k] = patch[k]; });
         this._docMeta = m; this._oxApplyMeta();
+        if (this._oxAutoToc) this._oxAutoToc(true);
         if (!silent) this._notifyChange();
     };
 
@@ -94,6 +99,7 @@
         this._oxApplyMeta();
         this._oxRenumberFootnotes(true);
         this._oxRefreshNav();
+        this._oxPgSchedule(0);
     };
 
     // ═══════════════════════════ ribbon injection ═══════════════════════════
@@ -193,8 +199,6 @@
                 B('oxLtr', 'bi bi-text-indent-left', _('oxLtrTip', 'Left-to-right text direction')) + B('oxRtl', 'bi bi-text-indent-right', _('oxRtlTip', 'Right-to-left text direction'))
             ]) +
             G(_('oxGrpTextTools', 'Text tools'), [
-                BD('oxCase', 'bi bi-alphabet-uppercase', _('oxCaseTip', 'Change case'), _('oxCase', 'Case')) +
-                BL('oxPainter', 'bi bi-brush', _('oxPainterTip', 'Format painter: copy formatting to the next selection'), _('oxPainter', 'Painter')) +
                 BD('oxQuickStyles', 'bi bi-type-h1', _('oxQuickStylesTip', 'Quick styles: title, subtitle, caption'), _('oxQuickStyles', 'Styles'))
             ]));
 
@@ -214,7 +218,8 @@
         last.insertAdjacentHTML('beforeend',
             G(_('oxGrpNav', 'Navigation'), [
                 BL('oxNav', 'bi bi-layout-sidebar', _('oxNavTip', 'Navigation pane with document headings'), _('oxNav', 'Navigation')) +
-                BL('oxReadMode', 'bi bi-book', _('oxReadModeTip', 'Read mode (editing locked)'), _('oxReadMode', 'Read mode'))
+                BL('oxReadMode', 'bi bi-book', _('oxReadModeTip', 'Read mode (editing locked)'), _('oxReadMode', 'Read mode')) +
+                BL('oxPaginate', 'bi bi-files', _('oxPaginateTip', 'Split the document into pages by sheet height (like Print Layout)'), _('oxPaginate', 'Pages'))
             ]));
     };
 
@@ -262,7 +267,7 @@
         var m = this._oxMeta(), tb = this.toolbar, set = function (cmd, on) { var b = tb.querySelector('[data-cmd="' + cmd + '"]'); if (b) { b.classList.toggle('active', !!on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); } };
         set('oxPageBorder', m.border); set('oxHyphen', m.hyphen); set('oxSpell', this.ed.spellcheck !== false);
         set('oxMarks', this.ed.classList.contains('lne-ox-marks')); set('oxReadMode', this.ed.getAttribute('contenteditable') === 'false');
-        set('oxNav', !!this._oxNavEl); set('oxRead', this._oxSpeaking); set('oxPainter', !!this._oxPaint);
+        set('oxPaginate', !this._oxPgIsOff()); set('oxNav', !!this._oxNavEl); set('oxRead', this._oxSpeaking); set('oxPainter', !!this._oxPaint);
     };
 
     // ═══════════════════════════ FILE ═══════════════════════════
@@ -289,6 +294,7 @@
                 self.undoStack = []; self.redoStack = []; self._saveSnap();
             } else { self.ed.focus(); self._restoreRange(); document.execCommand('insertHTML', false, res.html); self._initAll(); }
             self._oxRenumberFootnotes(true); self._oxRefreshNav(); self._notifyChange(); self._updateStatusbar();
+            if (replace) { var ed0 = self.ed; ed0.classList.remove('lne-ox-in'); void ed0.offsetWidth; ed0.classList.add('lne-ox-in'); setTimeout(function () { ed0.classList.remove('lne-ox-in'); }, 500); }
             var note = res.partial ? ' ' + self._('oxImportPartial', 'Legacy .doc: text, tables and links were imported; formatting is limited — save as .docx for full fidelity.') : '';
             self._oxToast(self._('oxImported', 'Imported') + ': ' + file.name + note);
         };
@@ -332,7 +338,7 @@
             '@page{size:' + d[0] + 'mm ' + d[1] + 'mm;margin:' + mg.t + 'mm ' + mg.r + 'mm ' + mg.b + 'mm ' + mg.l + 'mm;' + (m.pageNum ? '@bottom-center{content:counter(page)}' : '') + '}' +
             'html,body{margin:0;padding:0}body{font-family:' + (LocalNotesEditor._prefs().font || 'system-ui,sans-serif') + ';font-size:' + (LocalNotesEditor._prefs().size || 15) + 'px;line-height:1.55;color:' + fg + ';' + (m.pageColor ? 'background:' + m.pageColor + ';-webkit-print-color-adjust:exact;print-color-adjust:exact;' : '') + (m.hyphen ? 'hyphens:auto;' : '') + '}' +
             '.doc{' + (m.cols > 1 ? 'column-count:' + m.cols + ';column-gap:10mm;' : '') + '}img{max-width:100%;height:auto}table{border-collapse:collapse;width:100%}td,th{border:1px solid #999;padding:5px 8px;vertical-align:top}pre{background:#f4f4f4;padding:8px;white-space:pre-wrap}blockquote{border-left:4px solid #ccc;margin-left:0;padding-left:14px;color:#555}' +
-            '.lne-pagebreak{break-after:page;height:0;border:0}.lne-toc{border:0}.hf{position:fixed;left:0;right:0;font-size:9pt;color:#666}.hf.h{top:-' + Math.max(6, mg.t - 8) + 'mm}.hf.f{bottom:-' + Math.max(6, mg.b - 8) + 'mm}' +
+            '.lne-pagebreak{break-after:page;height:0;border:0}.lne-toc{border:0}.lne-toc ul{list-style:none;margin:0;padding:0}.lne-toc-item{display:flex;gap:4px;align-items:baseline}.lne-toc-leader{flex:1;height:0;border-bottom:1px dotted #666}.lne-toc[data-leader=dash] .lne-toc-leader{border-bottom-style:dashed}.lne-toc[data-leader=none] .lne-toc-leader{border-bottom-color:transparent}.lne-toc-title{font-weight:600;margin-bottom:6px}.hf{position:fixed;left:0;right:0;font-size:9pt;color:#666}.hf.h{top:-' + Math.max(6, mg.t - 8) + 'mm}.hf.f{bottom:-' + Math.max(6, mg.b - 8) + 'mm}' +
             '.cl-item{list-style:none}.lne-callout{border-left:4px solid #888;padding:6px 10px;background:#f4f4f4}.lne-footnotes,.lne-fnlist{border-top:1px solid #999;margin-top:16px;font-size:.85em}' +
             (m.border ? '.doc{outline:1px solid #777;outline-offset:6mm}' : '') +
             '</style></head><body>' + (m.header ? '<div class="hf h">' + esc(m.header) + '</div>' : '') + (m.footer ? '<div class="hf f">' + esc(m.footer) + '</div>' : '') + '<div class="doc">' + body + '</div></body></html>');
@@ -415,7 +421,11 @@
             '<p style="font-size:12px;opacity:.7;margin:8px 0 0">' + esc(this._('oxHFHint', 'Shown in print / PDF and in exported Word files.')) + '</p>',
             function (ov, close) { self._oxSetMeta({ header: ov.querySelector('#ox-hdr').value.trim(), footer: ov.querySelector('#ox-ftr').value.trim(), pageNum: ov.querySelector('#ox-pn').checked }); close(); });
     };
-    CMD.oxPageBreak = function () { this._oxInsertHtml('<div class="lne-pagebreak" contenteditable="false" data-label="' + esc(this._('oxPageBreak', 'Page break')) + '"></div><p><br></p>'); };
+    CMD.oxPageBreak = function () {
+        this._oxInsertHtml('<div class="lne-pagebreak" contenteditable="false" data-label="' + esc(this._('oxPageBreak', 'Page break')) + '"></div><p><br></p>');
+        if (this._oxEnsureBreakLines && this._oxEnsureBreakLines()) this._notifyChange();   // разрыв в начале документа: добавили строку на листе ДО него
+        if (this._oxAutoToc) this._oxAutoToc();
+    };
 
     // ═══════════════════════════ HOME additions ═══════════════════════════
     CMD.oxMarks = function () { this.ed.classList.toggle('lne-ox-marks'); this._oxSyncButtons(); };
@@ -514,27 +524,118 @@
         });
         return out;
     };
-    P._oxBuildToc = function () {
-        var hs = this._oxHeadings(), self = this;
+    // ── Автооглавление (как «Автособираемое оглавление» в MS Word) ──
+    // Стили «Автособираемое 1/2», уровни 1–6, номера страниц с заполнителем (точки/тире/нет),
+    // обновление «только номера страниц» / «целиком» и автообновление при правке заголовков.
+    var TOC_DEF = { levels: 3, pages: true, leader: 'dot', style: 'auto1' };
+    P._oxTocCfgOf = function (nav) {
+        var c = Object.assign({}, TOC_DEF); if (!nav) return c;
+        var lv = parseInt(nav.getAttribute('data-levels'), 10); if (lv >= 1 && lv <= 6) c.levels = lv;
+        if (nav.getAttribute('data-pages') === '0') c.pages = false;
+        var ld = nav.getAttribute('data-leader'); if (ld === 'dot' || ld === 'dash' || ld === 'none') c.leader = ld;
+        if (nav.getAttribute('data-style') === 'auto2') c.style = 'auto2';
+        return c;
+    };
+    // Номера страниц: в редакторе один сплошной лист, поэтому считаем по высоте области текста
+    // страницы (размер − поля) и по явным разрывам страниц — каждый разрыв начинает новую страницу.
+    P._oxPageNumbers = function (hs) {
+        try {
+            if (this.ed.classList.contains('lne-ox-paged') && window.LNDocx) {   // реальная разбивка на страницы
+                var g = pgGeom(this);
+                return hs.map(function (h) { return h.el ? Math.max(1, Math.floor((g.Y(h.el.getBoundingClientRect().top) - g.mt + 2) / g.U) + 1) : ''; });
+            }
+            var ed = this.ed, m = this._oxMeta(), d = window.LNDocx ? window.LNDocx.pageDims(m) : [210, 297];
+            var er = ed.getBoundingClientRect(), cs = getComputedStyle(ed);
+            var sc = ed.offsetHeight ? er.height / ed.offsetHeight : 1; if (!isFinite(sc) || sc <= 0) sc = 1;
+            var pageH = Math.max(120, (d[1] - m.margins.t - m.margins.b) * 96 / 25.4) * sc;
+            var top0 = er.top + (parseFloat(cs.paddingTop) || 0) * sc, bot = er.bottom - (parseFloat(cs.paddingBottom) || 0) * sc;
+            var pbs = Array.prototype.slice.call(ed.querySelectorAll('.lne-pagebreak')).map(function (b) { var r = b.getBoundingClientRect(); return { t: r.top, b: r.bottom }; });
+            var starts = [top0].concat(pbs.map(function (q) { return q.b; })), ends = pbs.map(function (q) { return q.t; }).concat([bot]);
+            var base = [], acc = 1;
+            starts.forEach(function (st, i) { base.push(acc); acc += Math.max(1, Math.ceil((ends[i] - st - 2) / pageH)); });
+            return hs.map(function (h) {
+                if (!h.el) return '';
+                var y = h.el.getBoundingClientRect().top, i = 0;
+                while (i < pbs.length && pbs[i].t <= y) i++;
+                return base[i] + Math.max(0, Math.floor((y - starts[i] + 1) / pageH));
+            });
+        } catch (e) { return []; }
+    };
+    P._oxBuildToc = function (opt) {
+        var cfg = Object.assign({}, TOC_DEF, opt || {}), hs = this._oxHeadings();
         if (!hs.length) return null;
         var minL = Math.min.apply(null, hs.map(function (h) { return h.level; }));
+        var list = hs.filter(function (h) { return h.level - minL < cfg.levels; });
+        var nums = cfg.pages ? this._oxPageNumbers(list) : [];
         var nav = document.createElement('nav'); nav.className = 'lne-toc'; nav.setAttribute('contenteditable', 'false');
-        nav.innerHTML = '<div class="lne-toc-title">' + esc(this._('oxTocTitle', 'Contents')) + '</div>' +
-            '<ul>' + hs.filter(function (h) { return h.level - minL < 3; }).map(function (h) { return '<li class="lne-toc-item" data-level="' + (h.level - minL + 1) + '" data-target="' + h.id + '" style="margin-left:' + (h.level - minL) * 18 + 'px">' + esc(h.text) + '</li>'; }).join('') + '</ul>';
+        nav.setAttribute('data-style', cfg.style); nav.setAttribute('data-levels', cfg.levels);
+        nav.setAttribute('data-pages', cfg.pages ? '1' : '0'); nav.setAttribute('data-leader', cfg.leader);
+        var title = cfg.style === 'auto2' ? this._('oxTocAuto2Title', 'Table of Contents') : this._('oxTocAuto1Title', 'Contents');
+        nav.innerHTML = '<div class="lne-toc-title">' + esc(title) + '</div><ul>' + list.map(function (h, i) {
+            return '<li class="lne-toc-item" data-level="' + (h.level - minL + 1) + '" data-target="' + h.id + '" style="margin-left:' + (h.level - minL) * 18 + 'px">' +
+                '<span class="lne-toc-text">' + esc(h.text) + '</span>' +
+                (cfg.pages ? '<span class="lne-toc-leader"></span><span class="lne-toc-pg">' + esc(nums[i] === undefined ? '' : nums[i]) + '</span>' : '') + '</li>';
+        }).join('') + '</ul>';
         return nav;
     };
+    // пересчитать только номера страниц в уже вставленном оглавлении
+    P._oxTocRefreshPages = function (nav) {
+        if (!nav || !this._oxTocCfgOf(nav).pages) return;
+        var ed = this.ed, items = Array.prototype.slice.call(nav.querySelectorAll('.lne-toc-item'));
+        var hs = items.map(function (li) { var t = li.getAttribute('data-target'); return { el: t ? ed.querySelector('#' + (window.CSS && CSS.escape ? CSS.escape(t) : t)) : null }; });
+        var nums = this._oxPageNumbers(hs);
+        items.forEach(function (li, i) { var pg = li.querySelector('.lne-toc-pg'); if (pg && nums[i] !== undefined) pg.textContent = nums[i]; });
+    };
+    P._oxTocPut = function (opt) {
+        var old = this.ed.querySelector('.lne-toc'), cfg = Object.assign({}, old ? this._oxTocCfgOf(old) : TOC_DEF, opt || {});
+        var nav = this._oxBuildToc(cfg); if (!nav) { this._oxToast(this._('oxNoHeadings', 'Add headings first')); return; }
+        this._saveSnap();
+        if (old) old.replaceWith(nav); else this._oxInsertHtml(nav.outerHTML + '<p><br></p>');
+        this._oxTocRefreshPages(this.ed.querySelector('.lne-toc'));
+        this._notifyChange();
+    };
+    // тихое автообновление: заменяет оглавление, только если что-то изменилось (заголовки, уровни, номера страниц)
+    P._oxAutoToc = function (quiet) {
+        var old = this.ed.querySelector('.lne-toc'); if (!old) return false;
+        var nav = this._oxBuildToc(this._oxTocCfgOf(old)); if (!nav) return false;
+        if (nav.outerHTML === old.outerHTML) return false;
+        old.replaceWith(nav); this._oxTocRefreshPages(nav);
+        if (!quiet) this._notifyChange();
+        return true;
+    };
+    P._oxTocDialog = function () {
+        var self = this, _ = this._.bind(this), old = this.ed.querySelector('.lne-toc'), c = this._oxTocCfgOf(old);
+        var opt = function (v, label, cur) { return '<option value="' + v + '"' + (cur === v ? ' selected' : '') + '>' + esc(label) + '</option>'; };
+        this._modal(_('oxTocCustom', 'Custom Table of Contents…'), 'bi bi-list-nested',
+            '<div class="lne-checks"><label class="lne-chk"><input type="checkbox" id="ox-toc-pg"' + (c.pages ? ' checked' : '') + '><span>' + esc(_('oxTocShowPages', 'Show page numbers')) + '</span></label></div>' +
+            '<div class="lne-row"><div class="lne-fg" style="flex:1"><label>' + esc(_('oxTocLeader', 'Tab leader')) + '</label><select class="lne-inp" id="ox-toc-ld">' +
+            opt('dot', _('oxTocLeaderDots', 'Dots'), c.leader) + opt('dash', _('oxTocLeaderDashes', 'Dashes'), c.leader) + opt('none', _('oxTocLeaderNone', 'None'), c.leader) + '</select></div>' +
+            '<div class="lne-fg" style="flex:1"><label>' + esc(_('oxTocLevels', 'Levels')) + '</label><select class="lne-inp" id="ox-toc-lv">' +
+            [1, 2, 3, 4, 5, 6].map(function (n) { return opt(String(n), String(n), String(c.levels)); }).join('') + '</select></div></div>',
+            function (ov, close) {
+                var cfg = { pages: ov.querySelector('#ox-toc-pg').checked, leader: ov.querySelector('#ox-toc-ld').value, levels: +ov.querySelector('#ox-toc-lv').value, style: c.style };
+                close(); self._oxTocPut(cfg);
+            });
+    };
     CMD.oxToc = function (btn) {
-        var self = this, has = !!this.ed.querySelector('.lne-toc');
-        menu(this, btn, [{ label: has ? this._('oxTocReplace', 'Replace table of contents') : this._('oxTocInsert', 'Insert table of contents'), icon: 'bi bi-list-nested', action: function () {
-            var nav = self._oxBuildToc(); if (!nav) { self._oxToast(self._('oxNoHeadings', 'Add headings first')); return; }
-            self._saveSnap(); var old = self.ed.querySelector('.lne-toc');
-            if (old) old.replaceWith(nav); else self._oxInsertHtml(nav.outerHTML + '<p><br></p>');
-            self._notifyChange(); } },
-            { label: this._('oxTocRemove', 'Remove table of contents'), icon: 'bi bi-trash3', action: function () { var o = self.ed.querySelector('.lne-toc'); if (o) { self._saveSnap(); o.remove(); self._notifyChange(); } } }]);
+        var self = this, _ = this._.bind(this), old = this.ed.querySelector('.lne-toc'), cfg = this._oxTocCfgOf(old);
+        var items = [
+            { label: _('oxTocAuto1', 'Automatic Table 1'), hint: _('oxTocAuto1Title', 'Contents'), icon: 'bi bi-list-nested', active: !!old && cfg.style === 'auto1', action: function () { self._oxTocPut({ style: 'auto1' }); } },
+            { label: _('oxTocAuto2', 'Automatic Table 2'), hint: _('oxTocAuto2Title', 'Table of Contents'), icon: 'bi bi-list-ol', active: !!old && cfg.style === 'auto2', action: function () { self._oxTocPut({ style: 'auto2' }); } },
+            'sep',
+            { label: _('oxTocCustom', 'Custom Table of Contents…'), icon: 'bi bi-sliders', action: function () { self._oxTocDialog(); } }];
+        if (old) items.push('sep',
+            { label: _('oxTocUpdatePages', 'Update page numbers only'), icon: 'bi bi-123', action: function () { self._saveSnap(); self._oxTocRefreshPages(self.ed.querySelector('.lne-toc')); self._notifyChange(); } },
+            { label: _('oxTocUpdateAll', 'Update entire table'), icon: 'bi bi-arrow-repeat', action: function () { self._saveSnap(); if (!self._oxAutoToc()) self._oxTocRefreshPages(self.ed.querySelector('.lne-toc')); } },
+            'sep',
+            { label: _('oxTocRemove', 'Remove table of contents'), icon: 'bi bi-trash3', action: function () { var o = self.ed.querySelector('.lne-toc'); if (o) { self._saveSnap(); o.remove(); self._notifyChange(); } } });
+        menu(this, btn, items);
     };
     CMD.oxTocUpdate = function () {
-        var old = this.ed.querySelector('.lne-toc');
-        if (old) { var nav = this._oxBuildToc(); if (nav) { this._saveSnap(); old.replaceWith(nav); } }
+        if (this.ed.querySelector('.lne-toc')) {
+            this._saveSnap();
+            if (!this._oxAutoToc(true)) { if (!this._oxBuildToc()) this._oxToast(this._('oxNoHeadings', 'Add headings first')); }
+        }
         this._oxRenumberFootnotes(); this._oxRefreshNav(); this._notifyChange();
     };
     P._oxRenumberFootnotes = function (quiet) {
@@ -657,13 +758,294 @@
         });
     };
 
+    // ═══════════════════════════ AUTO PAGINATION ═══════════════════════════
+    // Страницы по высоте листа (как режим разметки в Word) БЕЗ изменения содержимого заметки:
+    //  • границы страниц рисует фон листа (repeating-linear-gradient: белая страница → серый промежуток);
+    //  • блок, не помещающийся в остаток страницы, сдвигается на следующую страницу через margin-top,
+    //    а абзацы/пункты списков делятся по строкам (минимум 2 строки сверху и снизу) — для этого у блока
+    //    есть float ::before с shape-outside, вытесняющий строки из «мёртвой зоны» (нижнее поле + промежуток
+    //    + верхнее поле). Всё записывается в отдельный <style> внутри редактора, DOM текста не трогаем.
+    //  • явный разрыв страницы переносит следующий блок на новую страницу.
+    var PG_GAP = 28, PG_SEQ = 0;
+    P._oxPgIsOff = function () {
+        if (this._oxPgOff === undefined) { try { this._oxPgOff = localStorage.getItem('ln-ox-paginate') === '0'; } catch (e) { this._oxPgOff = false; } }
+        return !!this._oxPgOff;
+    };
+    P._oxPgActive = function () {
+        if (!this.ed || this._oxPgIsOff() || !window.LNDocx) return false;
+        if (window.matchMedia && !window.matchMedia('(min-width: 769px)').matches) return false;
+        return (this._oxMeta().cols || 1) <= 1;
+    };
+    function pgGeom(self) {
+        var ed = self.ed, m = self._oxMeta(), d = window.LNDocx.pageDims(m), mm = 96 / 25.4;
+        // масштаб экран→CSS (зум редактора). Делим на offsetWidth (граница-к-границе вместе с полями), а не на computed width:
+        // у редактора content-box + padding, и деление на «чистую» ширину давало 1.03 вместо 1.00 (и 1.575 вместо 1.50 при зуме 150%) —
+        // погрешность росла с высотой документа, и на поздних страницах текст ложился на серую щель между листами.
+        var er = ed.getBoundingClientRect(), ow = ed.offsetWidth;
+        var sc = (ow > 0 && er.width > 0) ? er.width / ow : 1; if (!isFinite(sc) || sc <= 0) sc = 1;
+        var P0 = d[1] * mm, mt = m.margins.t * mm, mb = m.margins.b * mm;
+        return { P: P0, mt: mt, mb: mb, C: P0 - mt - mb, U: P0 + PG_GAP, sc: sc, Y: function (v) { return (v - er.top) / sc; } };
+    }
+    P._oxPgSchedule = function (ms) {
+        var self = this; clearTimeout(this._oxPgT);
+        this._oxPgT = setTimeout(function () { self._oxPgT = null; try { self._oxPaginate(); } catch (e) { if (window.console) console.warn('paginate', e); } }, ms == null ? 120 : ms);
+    };
+    // Правила привязаны к :nth-child, поэтому при смене числа блоков (Enter, удаление, вставка) пересчитываем СРАЗУ —
+    // до отрисовки кадра, иначе сдвиги и подпись разрыва на мгновение цепляются за чужие блоки. Обычный набор — throttle 120 мс.
+    var PG_SEL = 'p,li,h1,h2,h3,h4,h5,h6,div,ul,ol,blockquote,pre,table';
+    P._oxPgInput = function () {
+        if (!this.ed.classList.contains('lne-ox-paged')) { this._oxPgSchedule(250); return; }
+        var n = this.ed.querySelectorAll(PG_SEL).length;
+        if (n !== this._oxPgN) { clearTimeout(this._oxPgT); this._oxPgT = null; try { this._oxPaginate(); } catch (e) { if (window.console) console.warn('paginate', e); } return; }
+        if (this._oxPgT) return;
+        var self = this; this._oxPgT = setTimeout(function () { self._oxPgT = null; try { self._oxPaginate(); } catch (e) { if (window.console) console.warn('paginate', e); } }, 120);
+    };
+    // строки блока: [{rt: верх строки относительно блока, lh: высота строки}]
+    function pgLines(el, g, top) {
+        var cs = getComputedStyle(el), fs = parseFloat(cs.fontSize) || 15, lh = parseFloat(cs.lineHeight); if (!(lh > 0)) lh = fs * 1.2;
+        var rg = document.createRange(); rg.selectNodeContents(el);
+        var rs = Array.prototype.slice.call(rg.getClientRects()).filter(function (r) { return r.height > 2; })
+            .map(function (r) { return { t: g.Y(r.top), b: g.Y(r.bottom) }; }).sort(function (a, b) { return a.t - b.t; });
+        var out = [];
+        rs.forEach(function (r) {
+            var L = out[out.length - 1];
+            if (L && r.t < L.b - 2) { L.t = Math.min(L.t, r.t); L.b = Math.max(L.b, r.b); } else out.push({ t: r.t, b: r.b });
+        });
+        return out.map(function (L) { return { rt: (L.t + L.b) / 2 - lh / 2 - top, lh: lh }; });
+    }
+    // Перед каждым разрывом страницы должна быть строка, в которую можно поставить курсор (как в Word, где разрыв живёт
+    // внутри абзаца). Разрыв — contenteditable=false: если он первый в документе, идёт сразу после другого разрыва или
+    // после нередактируемого блока (оглавление и т.п.), на листе «до разрыва» печатать негде. Добавляем пустой абзац.
+    P._oxEnsureBreakLines = function () {
+        var ed = this.ed, ch = false;
+        if (!ed) return false;
+        Array.prototype.forEach.call(ed.querySelectorAll('.lne-pagebreak'), function (pb) {
+            if (pb.parentNode !== ed) return;
+            var pr = pb.previousElementSibling;
+            if (pr && !pr.classList.contains('lne-pagebreak') && pr.getAttribute('contenteditable') !== 'false') return;
+            var p = document.createElement('p'); p.appendChild(document.createElement('br'));
+            ed.insertBefore(p, pb); ch = true;
+        });
+        return ch;
+    };
+    // Пересчёт сбрасывает стили листов и на миг укорачивает документ — браузер «прижимает» прокрутку к новой длине и
+    // не возвращает её обратно (отображение прыгало к первому листу при наборе на втором). Запоминаем прокрутку окна и
+    // всех прокручиваемых предков и возвращаем её тут же, до отрисовки кадра.
+    // Заметки, сохранённые старой версией, могут содержать <span style="font-size…"> вокруг целых абзацев/списков
+    // (блоки внутри строчного элемента). Разбивка на листы работает с прямыми потомками редактора и не может
+    // разрезать такую обёртку, поэтому текст налезал на щель между листами. Разворачиваем обёртку: её стиль переносим
+    // на содержимое каждого блока.
+    var BLK_RE = /^(P|H[1-6]|UL|OL|LI|DIV|BLOCKQUOTE|PRE|TABLE)$/;
+    function pushDown(w, node) {
+        if (node.nodeType !== 1) return;
+        var tg = node.tagName;
+        if (tg === 'UL' || tg === 'OL') { Array.prototype.slice.call(node.children).forEach(function (c) { pushDown(w, c); }); return; }
+        if (tg === 'TABLE') { Array.prototype.forEach.call(node.querySelectorAll('td,th'), function (c) { pushDown(w, c); }); return; }
+        if (node.matches && node.matches('.lne-pagebreak,.lne-toc,[contenteditable="false"]')) return;
+        var kids = Array.prototype.slice.call(node.childNodes);
+        if (kids.some(function (c) { return c.nodeType === 1 && BLK_RE.test(c.tagName); })) { kids.forEach(function (c) { pushDown(w, c); }); return; }
+        if (!node.firstChild) return;
+        var inner = w.cloneNode(false); while (node.firstChild) inner.appendChild(node.firstChild); node.appendChild(inner);
+    }
+    P._oxFixBlockWrappers = function () {
+        var ed = this.ed, ch = false;
+        if (!ed) return false;
+        Array.prototype.slice.call(ed.children).forEach(function (w) {
+            if (w.tagName !== 'SPAN' && w.tagName !== 'FONT') return;
+            if (!Array.prototype.some.call(w.children, function (c) { return BLK_RE.test(c.tagName); })) return;
+            Array.prototype.slice.call(w.childNodes).forEach(function (c) {
+                if (c.nodeType === 1 && BLK_RE.test(c.tagName)) pushDown(w, c);
+                else if (c.nodeType === 3 && c.nodeValue.trim()) { var p = document.createElement('p'), i2 = w.cloneNode(false); i2.appendChild(document.createTextNode(c.nodeValue)); p.appendChild(i2); w.insertBefore(p, c); c.remove(); }
+                else if (c.nodeType === 1) { /* строчные вставки (br и т.п.) оставляем как есть */ }
+            });
+            while (w.firstChild) { var c = w.firstChild; if (c.nodeType === 3 && !c.nodeValue.trim()) c.remove(); else ed.insertBefore(c, w); }
+            w.remove(); ch = true;
+        });
+        return ch;
+    };
+    P._oxPaginate = function () {
+        var ed = this.ed; if (!ed || !ed.isConnected) return;
+        try { this._oxFixBlockWrappers(); } catch (e) {}
+        var sv = [], n = ed.parentNode;
+        while (n && n.nodeType === 1) { if (n.scrollTop || n.scrollLeft) sv.push([n, n.scrollTop, n.scrollLeft]); n = n.parentNode; }
+        var wx = window.pageXOffset, wy = window.pageYOffset;
+        try { this._oxPaginateRun(); }
+        finally {
+            sv.forEach(function (e) { if (e[0].scrollTop !== e[1]) e[0].scrollTop = e[1]; if (e[0].scrollLeft !== e[2]) e[0].scrollLeft = e[2]; });
+            if (window.pageYOffset !== wy || window.pageXOffset !== wx) window.scrollTo(wx, wy);
+        }
+    };
+    P._oxPaginateRun = function () {
+        var ed = this.ed; if (!ed || !ed.isConnected || ed.offsetWidth === 0) return;
+        try { this._oxEnsureBreakLines(); } catch (e) {}
+        var st = this._oxPgStyle;
+        if (!this._oxPgActive()) { if (st) st.textContent = ''; ed.classList.remove('lne-ox-paged'); ed.removeAttribute('data-ox-pg'); return; }
+        if (!st) { st = this._oxPgStyle = document.createElement('style'); (this.wrapper || document.head).appendChild(st); }
+        if (!this._oxPgId) this._oxPgId = 'pg' + (++PG_SEQ);
+        var id = this._oxPgId, base = '.lne-editor[data-ox-pg="' + id + '"]';
+        ed.setAttribute('data-ox-pg', id); st.textContent = ''; ed.classList.add('lne-ox-paged');
+        var g = pgGeom(this); if (g.C < 80) { ed.classList.remove('lne-ox-paged'); return; }
+        var Y = g.Y, P0 = g.P, U = g.U;
+        var pageOf = function (y) { return Math.max(0, Math.floor((y - g.mt + 0.5) / U)); };
+        var topOf = function (k) { return k * U + g.mt; }, botOf = function (k) { return k * U + P0 - g.mb; };
+
+        // 1) единицы раскладки в «естественном» положении (без сдвигов)
+        var units = [], prevB = g.mt;
+        var push1 = function (el, sel, kind, first) {
+            var r = el.getBoundingClientRect(), t = Y(r.top), b = Y(r.bottom);
+            var cs = getComputedStyle(el), fs = parseFloat(cs.fontSize) || 15, lh = parseFloat(cs.lineHeight); if (!(lh > 0)) lh = fs * 1.2;
+            var u = { el: el, sel: sel, kind: kind, t: t, b: b, h: b - t, gap: t - prevB, first: !!first, lh: lh,
+                split: (kind === 'p' || kind === 'li') && !(cs.paddingTop !== '0px') && !/^(?!none|normal)/.test('') };
+            if (u.split) { var pb = getComputedStyle(el, '::before').content; if (pb && pb !== 'none' && pb !== 'normal') u.split = false; }
+            u.off = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.borderTopWidth) || 0);
+            units.push(u); prevB = b;
+        };
+        Array.prototype.forEach.call(ed.children, function (el, i) {
+            var cs = getComputedStyle(el);
+            if (cs.display === 'none' || cs.position === 'absolute' || cs.position === 'fixed' || cs.float !== 'none') return;
+            if (el.getBoundingClientRect().height === 0 && !el.classList.contains('lne-pagebreak')) return;
+            var sel = base + ' > :nth-child(' + (i + 1) + ')', tag = el.tagName;
+            if (el.classList.contains('lne-pagebreak')) return push1(el, sel, 'pb');
+            if (/^H[1-6]$/.test(tag)) return push1(el, sel, 'h');
+            if (tag === 'P') return push1(el, sel, 'p');
+            if ((tag === 'UL' || tag === 'OL') && el.getBoundingClientRect().height / g.sc > g.C) {      // длинный список: по пунктам
+                Array.prototype.forEach.call(el.children, function (li, j) {
+                    if (li.tagName === 'LI' && !li.classList.contains('cl-item')) push1(li, sel + ' > li:nth-child(' + (j + 1) + ')', 'li', j === 0);
+                    else if (li.tagName === 'LI') push1(li, sel + ' > li:nth-child(' + (j + 1) + ')', 'blk', j === 0);
+                });
+                return;
+            }
+            push1(el, sel, 'blk');
+        });
+
+        // 2) раскладка по страницам
+        var s = 0, rules = [], minTop = null;
+        var trySplit = function (u, y1) {
+            var lines = u.lines || (u.lines = pgLines(u.el, g, u.t)), n = lines.length;
+            if (n < 4) return null;
+            var ex = [], bs = 0, jStart = 0;
+            for (var j = 0; j < n; j++) {
+                var lt = y1 + lines[j].rt + bs, lb = lt + lines[j].lh, kj = pageOf(lt), bj = botOf(kj);
+                if (lt >= bj - 1 || lb > bj + 0.5) {
+                    var jb = j;
+                    if (n - jb < 2) jb = n - 2;                              // «вдова»: на новой странице не меньше 2 строк
+                    if (jb - jStart < 2) { if (!ex.length) return null; jb = j; }   // «сирота»: на старой странице не меньше 2 строк
+                    var ltb = y1 + lines[jb].rt + bs, D = topOf(kj + 1) - ltb;
+                    if (D <= 0) continue;
+                    var a = lines[jb].rt - u.off + bs;
+                    ex.push([a, a + D]); bs += D; jStart = jb; j = jb;
+                }
+            }
+            return ex.length ? { ex: ex, total: bs } : null;
+        };
+        units.forEach(function (u, i) {
+            var y1 = u.t + s, push = 0, split = null;
+            if (minTop !== null) { if (y1 < minTop - 0.5) { push += minTop - y1; y1 = minTop; } minTop = null; }
+            for (var guard = 0; guard < 6; guard++) {
+                var k = pageOf(y1), bot = botOf(k);
+                if (u.kind === 'pb') break;                                  // разрыв не двигаем: он остаётся в конце своей страницы
+                if (y1 >= bot - 1) { push += topOf(k + 1) - y1; y1 = topOf(k + 1); continue; }
+                var need = u.h;
+                if (u.kind === 'h') { var nx = units[i + 1]; if (nx && nx.kind !== 'pb') need += (nx.t - u.b) + Math.min(nx.h, nx.lh * 2); }
+                if (u.kind === 'pb' || y1 + need <= bot + 0.5) break;
+                if (u.kind === 'h' && y1 + u.h <= bot + 0.5 && u.h > g.C) break;
+                if (u.split && !split) { var r = trySplit(u, y1); if (r) { split = r; break; } }
+                if (u.h <= g.C && !u.first) { push += topOf(k + 1) - y1; y1 = topOf(k + 1); continue; }
+                break;
+            }
+            if (push > 0.5) rules.push(u.sel + '{margin-top:' + (u.gap + push).toFixed(2) + 'px !important}');
+            if (split) {
+                var last = split.ex[split.ex.length - 1][1], pts = [];
+                split.ex.forEach(function (e) { pts.push('0 ' + e[0].toFixed(2) + 'px', '100% ' + e[0].toFixed(2) + 'px', '100% ' + e[1].toFixed(2) + 'px', '0 ' + e[1].toFixed(2) + 'px'); });
+                rules.push(u.sel + '::before{content:"";float:left;width:100%;height:' + last.toFixed(2) + 'px;margin:0;pointer-events:none;shape-outside:polygon(' + pts.join(',') + ')}');
+                s += split.total;
+            }
+            s += push;
+            if (u.kind === 'pb') {
+                var kb = pageOf(y1);
+                // подпись и линия разрыва рисуются в серой щели МЕЖДУ листами: смещение от верха элемента до середины щели
+                rules.push(u.sel + '{--pb-top:' + (kb * U + P0 + PG_GAP / 2 - y1).toFixed(2) + 'px}');
+                minTop = topOf(kb + 1);
+            }
+        });
+
+        // 3) число страниц, фон-«листы» и минимальная высота
+        var lastU = units[units.length - 1], mbLast = lastU ? (parseFloat(getComputedStyle(lastU.el).marginBottom) || 0) : 0;
+        var need = (lastU ? lastU.b + s + mbLast : g.mt) + g.mb;
+        var N = Math.max(1, Math.ceil((need - P0) / U) + 1), minH = N * P0 + (N - 1) * PG_GAP;
+        var cv = 'var(--canvas-bg, #e6e6e6)', sh = 'color-mix(in srgb, ' + cv + ' 70%, #000)';
+        rules.unshift(base + '.lne-ox-paged{min-height:' + minH.toFixed(2) + 'px !important;background-image:repeating-linear-gradient(to bottom,transparent 0,transparent ' + P0.toFixed(2) + 'px,' +
+            sh + ' ' + P0.toFixed(2) + 'px,' + cv + ' ' + (P0 + 7).toFixed(2) + 'px,' + cv + ' ' + (U - 7).toFixed(2) + 'px,' + sh + ' ' + U.toFixed(2) + 'px) !important}');
+        st.textContent = rules.join('\n');
+        this._oxPgPages = N; this._oxPgN = ed.querySelectorAll(PG_SEL).length;
+        var nav = ed.querySelector('.lne-toc'); if (nav) this._oxTocRefreshPages(nav);
+    };
+    CMD.oxPaginate = function () {
+        this._oxPgOff = !this._oxPgIsOff();
+        try { localStorage.setItem('ln-ox-paginate', this._oxPgOff ? '0' : '1'); } catch (e) {}
+        this._oxPaginate(); this._oxSyncButtons();
+        var nav = this.ed.querySelector('.lne-toc'); if (nav) this._oxTocRefreshPages(nav);
+    };
+
+    // ═══════════════════════════ toolbar state feedback ═══════════════════════════
+    // Подсветка кнопок-переключателей, зависящих от позиции курсора (цитата, код, чек-лист, LTR/RTL, буквица, заливка)
+    // и пересинхронизация кнопок вкладок «Макет»/«Вид» при каждом обновлении состояния.
+    P._oxSyncCaretButtons = function () {
+        if (!this.toolbar || !this.ed) return;
+        var tb = this.toolbar, ed = this.ed, sel = window.getSelection(), n = null;
+        if (sel && sel.rangeCount) { n = sel.anchorNode; if (n && n.nodeType === 3) n = n.parentNode; if (n && !ed.contains(n)) n = null; }
+        var inside = function (css) { var c = n && n.closest ? n.closest(css) : null; return !!(c && c !== ed && ed.contains(c)); };
+        var blk = null; if (n && n.closest) { blk = n.closest('p,h1,h2,h3,h4,h5,h6,li,blockquote,pre,div'); if (blk === ed || (blk && !ed.contains(blk))) blk = null; }
+        var dirOf = function () { var c = blk; while (c && c !== ed) { var d = c.getAttribute && c.getAttribute('dir'); if (d) return d.toLowerCase(); c = c.parentNode; } return ''; };
+        var shaded = false; if (blk) { var bg = blk.style && blk.style.backgroundColor; shaded = !!(bg && bg !== 'transparent' && bg !== 'rgba(0, 0, 0, 0)'); }
+        var set = function (cmd, on) { var b = tb.querySelector('[data-cmd="' + cmd + '"]'); if (b) { b.classList.toggle('active', !!on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); } };
+        var dir = dirOf();
+        set('insertBlockquote', inside('blockquote'));
+        set('insertCode', inside('pre'));
+        set('insertChecklist', inside('.cl-item, .checklist-item-wrapper'));
+        set('oxLtr', dir === 'ltr');
+        set('oxRtl', dir === 'rtl');
+        set('oxDropCap', !!(blk && blk.classList && blk.classList.contains('lne-dropcap')));
+        set('oxShade', shaded);
+        set('showBlocks', ed.classList.contains('lne-show-blocks'));
+        set('focusMode', !!this._focusMode);
+        ['bold', 'italic', 'underline', 'strikeThrough', 'superscript', 'subscript', 'insertUnorderedList', 'insertOrderedList', 'justifyLeft', 'justifyCenter', 'justifyRight', 'justifyFull'].forEach(function (c) {
+            var b = tb.querySelector('[data-cmd="' + c + '"]'); if (b) b.setAttribute('aria-pressed', b.classList.contains('active') ? 'true' : 'false');
+        });
+        this._oxSyncButtons();
+    };
+    var _ssOrig = P._syncState;
+    P._syncState = function () {
+        var r = _ssOrig.apply(this, arguments);
+        try { this._oxSyncCaretButtons(); } catch (e) {}
+        return r;
+    };
+
     // ═══════════════════════════ editor-side wiring ═══════════════════════════
     var _wire = P._wireEditor;
     P._wireEditor = function () {
         var r = _wire.apply(this, arguments), self = this, tmr = null;
         this._docMeta = this._docMeta || defMeta(); this._oxApplyMeta();
+        this.ed.addEventListener('input', function () { self._oxPgInput(); });
+        // клик по разрыву страницы выделяет его; Delete/Backspace удаляют выделенный разрыв
+        this.ed.addEventListener('click', function (e) {
+            var pb = e.target.closest && e.target.closest('.lne-pagebreak');
+            Array.prototype.forEach.call(self.ed.querySelectorAll('.lne-pagebreak.lne-pb-sel'), function (x) { if (x !== pb) x.classList.remove('lne-pb-sel'); });
+            if (pb && self.ed.getAttribute('contenteditable') !== 'false') pb.classList.add('lne-pb-sel');
+        });
+        this.ed.addEventListener('keydown', function (e) {
+            if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+            var pb = self.ed.querySelector('.lne-pagebreak.lne-pb-sel'); if (!pb) return;
+            e.preventDefault(); self._saveSnap(); pb.remove(); self._notifyChange(); self._oxPgSchedule(0);
+            if (self._oxAutoToc) self._oxAutoToc();
+        });
+        this.ed.addEventListener('load', function () { self._oxPgSchedule(80); }, true);     // картинки меняют высоту
+        // страховка: любое изменение inline-стилей (размер, интервалы, отступы…) без события input тоже пересчитывает листы
+        if (window.MutationObserver) { try { new MutationObserver(function () { self._oxPgSchedule(80); }).observe(this.ed, { subtree: true, attributes: true, attributeFilter: ['style'] }); } catch (e) {} }
+        if (window.ResizeObserver) { var lw = 0; try { new ResizeObserver(function () { var w = Math.round(self.ed.offsetWidth); if (w !== lw) { lw = w; self._oxPgSchedule(60); } }).observe(this.ed); } catch (e) {} }
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { self._oxPgSchedule(0); });
         this.ed.addEventListener('input', function () {
-            clearTimeout(tmr); tmr = setTimeout(function () { if (self.ed.querySelector('sup.lne-fn') || self.ed.querySelector('.lne-fnlist')) self._oxRenumberFootnotes(true); if (self._oxNavEl) self._oxRefreshNav(); }, 500);
+            clearTimeout(tmr); tmr = setTimeout(function () { if (self.ed.querySelector('.lne-toc') && self._oxAutoToc()) self._oxPgSchedule(60); if (self.ed.querySelector('sup.lne-fn') || self.ed.querySelector('.lne-fnlist')) self._oxRenumberFootnotes(true); if (self._oxNavEl) self._oxRefreshNav(); }, 500);
         });
         this.ed.addEventListener('click', function (e) {
             var toc = e.target.closest && e.target.closest('.lne-toc-item');

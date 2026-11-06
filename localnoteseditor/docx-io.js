@@ -585,18 +585,20 @@
         var lines = [];
         var seen = new Set();
         (items.length ? items : []).forEach(function (a) {
-            var li = a.closest('li') || a, t = li.textContent.trim();
+            var li = a.closest('li') || a, tx = li.querySelector && li.querySelector('.lne-toc-text'), pgEl = li.querySelector && li.querySelector('.lne-toc-pg'), t = (tx || li).textContent.trim();
             if (!t || seen.has(li)) return; seen.add(li);
             var lv = parseInt(li.getAttribute('data-level') || (a.getAttribute && a.getAttribute('data-level')) || '1', 10) || 1;
-            lines.push({ t: t, lv: Math.min(Math.max(lv, 1), 3) });
+            lines.push({ t: t, lv: Math.min(Math.max(lv, 1), 6), pg: pgEl ? pgEl.textContent.trim() : '' });
         });
+        var showPg = el.getAttribute('data-pages') !== '0', ldr = el.getAttribute('data-leader') === 'dash' ? 'hyphen' : (el.getAttribute('data-leader') === 'none' ? 'none' : 'dot'), maxLv = Math.min(6, Math.max(1, parseInt(el.getAttribute('data-levels') || '3', 10) || 3));
         var title = el.querySelector('.lne-toc-title'), head = title ? '<w:p><w:pPr><w:pStyle w:val="TOCHeading"/></w:pPr>' + run(title.textContent.trim(), {}) + '</w:p>' : '';
         if (!lines.length) lines.push({ t: ' ', lv: 1 });
         var xml = head;
         lines.forEach(function (ln, i) {
-            var pre = i === 0 ? '<w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> TOC \\o "1-3" \\h \\z \\u </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r>' : '';
+            var pre = i === 0 ? '<w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> TOC \\o "1-' + maxLv + '" \\h \\z \\u' + (showPg ? '' : ' \\n') + ' </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r>' : '';
             var post = i === lines.length - 1 ? '<w:r><w:fldChar w:fldCharType="end"/></w:r>' : '';
-            xml += '<w:p><w:pPr><w:pStyle w:val="TOC' + ln.lv + '"/></w:pPr>' + pre + run(ln.t, {}) + post + '</w:p>';
+            var tabs = showPg ? '<w:tabs><w:tab w:val="right" w:leader="' + ldr + '" w:pos="9000"/></w:tabs>' : '';
+            xml += '<w:p><w:pPr><w:pStyle w:val="TOC' + ln.lv + '"/>' + tabs + '</w:pPr>' + pre + run(ln.t, {}) + (showPg && ln.pg ? '<w:r><w:tab/></w:r>' + run(ln.pg, {}) : '') + post + '</w:p>';
         });
         return xml;
     }
@@ -625,7 +627,7 @@
             pst('Caption', 'caption', 'Normal', '<w:spacing w:after="200" w:line="240" w:lineRule="auto"/>', '<w:i/><w:iCs/><w:color w:val="44546A"/><w:sz w:val="18"/><w:szCs w:val="18"/>') +
             pst('ListParagraph', 'List Paragraph', 'Normal', '<w:spacing w:after="40"/><w:ind w:left="720"/><w:contextualSpacing/>', '') +
             pst('TOCHeading', 'TOC Heading', 'Heading1', '<w:outlineLvl w:val="9"/>', '') +
-            pst('TOC1', 'toc 1', 'Normal', '<w:spacing w:after="100"/>', '') + pst('TOC2', 'toc 2', 'Normal', '<w:spacing w:after="100"/><w:ind w:left="220"/>', '') + pst('TOC3', 'toc 3', 'Normal', '<w:spacing w:after="100"/><w:ind w:left="440"/>', '') +
+            pst('TOC1', 'toc 1', 'Normal', '<w:spacing w:after="100"/>', '') + pst('TOC2', 'toc 2', 'Normal', '<w:spacing w:after="100"/><w:ind w:left="220"/>', '') + pst('TOC3', 'toc 3', 'Normal', '<w:spacing w:after="100"/><w:ind w:left="440"/>', '') + pst('TOC4', 'toc 4', 'Normal', '<w:spacing w:after="100"/><w:ind w:left="660"/>', '') + pst('TOC5', 'toc 5', 'Normal', '<w:spacing w:after="100"/><w:ind w:left="880"/>', '') + pst('TOC6', 'toc 6', 'Normal', '<w:spacing w:after="100"/><w:ind w:left="1100"/>', '') +
             pst('FootnoteText', 'footnote text', 'Normal', '<w:spacing w:after="0" w:line="240" w:lineRule="auto"/>', '<w:sz w:val="20"/><w:szCs w:val="20"/>') +
             pst('CommentText', 'annotation text', 'Normal', '<w:spacing w:line="240" w:lineRule="auto"/>', '<w:sz w:val="20"/><w:szCs w:val="20"/>') +
             pst('Header', 'header', 'Normal', '<w:spacing w:after="0" w:line="240" w:lineRule="auto"/>', '<w:color w:val="595959"/>') + pst('Footer', 'footer', 'Normal', '<w:spacing w:after="0" w:line="240" w:lineRule="auto"/>', '<w:color w:val="595959"/>') +
@@ -943,7 +945,7 @@
                     var rf = kid(rp, 'rFonts'); var ff = rf && (wattr(rf, 'ascii') || wattr(rf, 'hAnsi')); if (ff && !/^(calibri|aptos|times new roman|cambria|arial)( light| display)?$/i.test(ff) || (ff && state.keepFonts)) st += 'font-family:' + ff.replace(/[^\w\s-]/g, '') + ';';
                     var sz = parseInt(wattr(kid(rp, 'sz'), 'val') || '0', 10); if (sz && sz !== 22 && sz !== 24 && !state.noSize) st += 'font-size:' + Math.round(sz / 2 * 4 / 3) + 'px;';
                 }
-                var html = '';
+                var html = '', segs = [];
                 for (var x = r.firstElementChild; x; x = x.nextElementSibling) {
                     var n = x.localName;
                     if (n === 'fldChar') {
@@ -958,7 +960,7 @@
                     if (fieldStack.some(function (f) { return /^\s*(PAGE|NUMPAGES)\b/.test(f.instr); })) continue;
                     if (n === 't' || n === 'delText') { if (n === 't') html += he(x.textContent); }
                     else if (n === 'tab') html += '&emsp;';
-                    else if (n === 'br' || n === 'cr') { if (wattr(x, 'type') === 'page') state.pageBreak = true; else html += '<br>'; }
+                    else if (n === 'br' || n === 'cr') { if (wattr(x, 'type') === 'page') { segs.push(html); html = ''; } else html += '<br>'; }
                     else if (n === 'noBreakHyphen') html += '-';
                     else if (n === 'softHyphen') html += '';
                     else if (n === 'sym') { var ch2 = parseInt(wattr(x, 'char') || '0', 16); if (ch2) html += he(String.fromCharCode(ch2 > 0xF000 ? ch2 - 0xF000 : ch2)); }
@@ -966,15 +968,19 @@
                     else if (n === 'drawing' || n === 'pict' || n === 'object') html += await convDrawing(x);
                     else if (n === 'AlternateContent') { var ch3 = kid(x, 'Choice') || kid(x, 'Fallback'); if (ch3) html += await convDrawing(ch3); }
                 }
-                if (!html) return '';
+                segs.push(html);
+                if (segs.length === 1 && !html) return '';
+                var hf = fieldStack.filter(function (f) { return /^\s*HYPERLINK\s+"([^"]+)"/i.test(f.instr) && f.phase === 'result'; })[0];
+                var wrapSeg = function (html) {
+                    if (!html) return '';
                 if (flags.b) html = '<strong>' + html + '</strong>'; if (flags.i) html = '<em>' + html + '</em>'; if (flags.u) html = '<u>' + html + '</u>'; if (flags.s) html = '<s>' + html + '</s>';
                 if (flags.sup) html = '<sup>' + html + '</sup>'; if (flags.sub) html = '<sub>' + html + '</sub>';
                 if (st) html = '<span style="' + st + '">' + html + '</span>';
                 if (state.cmt.length && comments[state.cmt[0]]) { var cm = comments[state.cmt[0]]; html = '<span class="lne-comment" data-cid="c' + state.cmt[0] + '" data-comment="' + he(cm.text) + '" data-author="' + he(cm.author) + '" data-date="' + he(cm.date) + '">' + html + '</span>'; }
-                // гиперссылка-поле HYPERLINK "url"
-                var hf = fieldStack.filter(function (f) { return /^\s*HYPERLINK\s+"([^"]+)"/i.test(f.instr) && f.phase === 'result'; })[0];
                 if (hf) { var url = /HYPERLINK\s+"([^"]+)"/i.exec(hf.instr)[1]; if (!/^javascript:/i.test(url)) html = '<a href="' + he(url) + '" target="_blank" rel="noopener">' + html + '</a>'; }
-                return html;
+                    return html;
+                };
+                return segs.map(wrapSeg).join('\uE000PB\uE000');
             }
             await walk(pEl, null);
             return out;
@@ -993,7 +999,7 @@
         // ── абзацы/списки/таблицы ──
         async function convContainer(parent, opts) {
             opts = opts || {};
-            var html = '', stack = []; // открытые списки
+            var html = '', stack = [], PB_MARK = '\uE000PB\uE000', PB_DIV = '<div class="lne-pagebreak" contenteditable="false"></div>'; // открытые списки
             function closeTo(n) { while (stack.length > n) { var s = stack.pop(); html += '</li></' + s.tag + '>'; } }
             for (var c = parent.firstElementChild; c; c = c.nextElementSibling) {
                 var ln = c.localName;
@@ -1010,7 +1016,13 @@
                     var ind = kid(pp, 'ind'), left = ind ? parseInt(wattr(ind, 'left') || wattr(ind, 'start') || '0', 10) : 0;
                     var shd = kid(pp, 'shd'), fill = shd && wattr(shd, 'fill'); if (fill && /^[0-9a-f]{6}$/i.test(fill)) ps += 'background-color:#' + fill + ';';
                     var rtl = kid(pp, 'bidi') && onOff(kid(pp, 'bidi'));
-                    if (pp && kid(pp, 'pageBreakBefore')) { closeTo(0); html += '<div class="lne-pagebreak" contenteditable="false"></div>'; }
+                    var pbb = kid(pp, 'pageBreakBefore'), pbbOn = pbb ? onOff(pbb) : (sid ? styleChain(sid).some(function (s0) { var e0 = kid(kid(s0.el, 'pPr'), 'pageBreakBefore'); return e0 && onOff(e0); }) : false);
+                    if (pbbOn) { closeTo(0); html += PB_DIV; }
+                    // разрыв раздела («со следующей страницы», нечётной, чётной) — тоже начало новой страницы
+                    var secEl = kid(pp, 'sectPr'), secType = secEl && kid(secEl, 'type'), secBreak = !!secEl && (!secType || /^(nextPage|oddPage|evenPage)$/.test(wattr(secType, 'val') || 'nextPage'));
+                    // разрыв внутри абзаца: «текст до» / разрыв / «текст после»
+                    var pbSegs = inner.indexOf(PB_MARK) >= 0 ? inner.split(PB_MARK) : null;
+                    if (pbSegs && (numId && numId !== '0' || kind.h)) { inner = pbSegs.join(' ').replace(/^\s+|\s+$/g, ''); state.pageBreak = true; pbSegs = null; }
                     var emptyP = !inner.replace(/<[^>]+>/g, '').trim() && !/<img/.test(inner);
                     if (numId && numId !== '0' && !kind.h) {
                         var ni = numInfo(numId, ilvl), tag = ni.ordered ? 'ol' : 'ul', lvl = Math.min(ilvl, 8);
@@ -1026,14 +1038,21 @@
                         closeTo(0);
                         if (left > 0 && !kind.h) ps += 'margin-left:' + Math.round(left / 15) + 'px;';
                         var attrs = (ps ? ' style="' + ps + '"' : '') + (rtl ? ' dir="rtl"' : '');
-                        if (kind.h) html += '<h' + kind.h + attrs + '>' + (inner || '<br>') + '</h' + kind.h + '>';
+                        if (pbSegs) {
+                            // пустой первый/последний фрагмент (абзац из одного разрыва) не даёт лишней пустой строки
+                            pbSegs.forEach(function (sg, si) {
+                                if (si > 0) html += PB_DIV;
+                                if (!sg.replace(/<[^>]+>/g, '').trim() && !/<img/.test(sg) && (si === 0 || si === pbSegs.length - 1)) return;
+                                html += '<p' + attrs + '>' + (sg.replace(/<[^>]+>/g, '').trim() || /<img/.test(sg) ? sg : '<br>') + '</p>';
+                            });
+                        } else if (kind.h) html += '<h' + kind.h + attrs + '>' + (inner || '<br>') + '</h' + kind.h + '>';
                         else if (kind.title) html += '<p class="lne-title"' + attrs + '>' + (inner || '<br>') + '</p>';
                         else if (kind.subtitle) html += '<p class="lne-subtitle"' + attrs + '>' + (inner || '<br>') + '</p>';
                         else if (kind.quote) html += '<blockquote' + attrs + '>' + (inner || '<br>') + '</blockquote>';
                         else if (kind.code) html += '<pre' + attrs + '>' + (inner.replace(/<br>/g, '\n') || '\n') + '</pre>';
                         else html += '<p' + attrs + '>' + (emptyP ? '<br>' : inner) + '</p>';
                     }
-                    if (state.pageBreak) { closeTo(0); html += '<div class="lne-pagebreak" contenteditable="false"></div>'; }
+                    if (state.pageBreak || secBreak) { closeTo(0); html += PB_DIV; }
                 } else if (ln === 'tbl') { closeTo(0); html += await convTable(c); }
                 else if (ln === 'sdt') { var sc = kid(c, 'sdtContent'); if (sc) { closeTo(0); html += await convContainer(sc); } }
                 else if (ln === 'AlternateContent') { var chx = kid(c, 'Choice') || kid(c, 'Fallback'); if (chx) { closeTo(0); html += await convContainer(chx); } }
@@ -1341,8 +1360,76 @@
         return res;
     }
 
+    // ───────── индикатор занятости (импорт/экспорт Word): оверлей со спиннером, строка с именем файла и бегущая полоса ─────────
+    // Показывается сразу и до начала тяжёлой работы (разбор docx блокирует главный поток), держится минимум ~400 мс; вложенные вызовы считаются счётчиком.
+    var Busy = (function () {
+        var n = 0, el = null, shownAt = 0, tShow = null, tHide = null, styled = false, cur = { label: '', sub: '' };
+        function addStyle() {
+            if (styled || !w.document) return; styled = true;
+            var st = w.document.createElement('style');
+            st.textContent =
+                '.ln-busy{position:fixed;inset:0;z-index:99990;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.38);opacity:0;transition:opacity .2s ease;cursor:progress}' +
+                '.ln-busy.on{opacity:1}' +
+                '.ln-busy-card{min-width:240px;max-width:min(86vw,380px);padding:20px 24px 18px;border-radius:12px;background:var(--modal-bg,var(--paper-bg,#fff));color:var(--text-color,#222);box-shadow:0 12px 40px rgba(0,0,0,.35);text-align:center;font:500 14px/1.4 var(--font-ui,system-ui,sans-serif);transform:translateY(8px) scale(.97);transition:transform .22s ease}' +
+                '.ln-busy.on .ln-busy-card{transform:none}' +
+                '.ln-busy-ring{will-change:transform;width:34px;height:34px;margin:0 auto 12px;border-radius:50%;border:3px solid color-mix(in srgb,currentColor 18%,transparent);border-top-color:var(--accent-fg,var(--primary-color,#0b6a2e));animation:lnBusySpin .8s linear infinite}' +
+                '.ln-busy-sub{margin-top:4px;font-weight:400;font-size:12.5px;opacity:.65;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
+                '.ln-busy-bar{position:relative;height:3px;margin-top:14px;border-radius:3px;overflow:hidden;background:color-mix(in srgb,currentColor 14%,transparent)}' +
+                '.ln-busy-bar::after{content:"";position:absolute;top:0;bottom:0;left:0;width:38%;border-radius:3px;background:var(--accent-fg,var(--primary-color,#0b6a2e));animation:lnBusyBar 1.2s ease-in-out infinite;will-change:transform}' +
+                '@keyframes lnBusySpin{to{transform:rotate(360deg)}}' +
+                '@keyframes lnBusyBar{0%{transform:translateX(-100%)}100%{transform:translateX(270%)}}' +
+                '@media (prefers-reduced-motion:reduce){.ln-busy,.ln-busy-card{transition:none}.ln-busy-ring{animation-duration:2.4s}.ln-busy-bar::after{animation-duration:3s}}';
+            w.document.head.appendChild(st);
+        }
+        function paint() {
+            if (!el) return;
+            el.querySelector('.ln-busy-lbl').textContent = cur.label;
+            var sb = el.querySelector('.ln-busy-sub'); sb.textContent = cur.sub || ''; sb.style.display = cur.sub ? '' : 'none';
+        }
+        function show() {
+            if (el || !w.document || !w.document.body) return; addStyle();
+            el = w.document.createElement('div'); el.className = 'ln-busy'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite');
+            el.innerHTML = '<div class="ln-busy-card"><div class="ln-busy-ring" aria-hidden="true"></div><div class="ln-busy-lbl"></div><div class="ln-busy-sub"></div><div class="ln-busy-bar" aria-hidden="true"></div></div>';
+            w.document.body.appendChild(el); paint(); shownAt = Date.now();
+            void el.offsetWidth; el.classList.add('on');
+        }
+        function hide() {
+            tHide = null; if (!el || n > 0) return;
+            var e = el; el = null; e.classList.remove('on'); setTimeout(function () { if (e.parentNode) e.parentNode.removeChild(e); }, 230);
+        }
+        return {
+            begin: function (label, sub) {
+                n++; clearTimeout(tHide); tHide = null; cur = { label: label || cur.label, sub: sub || '' };
+                if (el) paint(); else show();
+            },
+            // дать браузеру отрисовать оверлей ДО тяжёлой синхронной работы (иначе главный поток занят и кадр не успевает)
+            ready: function () {
+                return new Promise(function (res) {
+                    var done = false, fin = function () { if (!done) { done = true; res(); } };
+                    try { w.requestAnimationFrame(function () { w.requestAnimationFrame(fin); }); } catch (e) {}
+                    setTimeout(fin, 120);
+                });
+            },
+            sub: function (sub) { cur.sub = sub || ''; paint(); },
+            end: function () {
+                n = Math.max(0, n - 1); if (n > 0) return;
+                clearTimeout(tShow); tShow = null;
+                if (el) tHide = setTimeout(hide, Math.max(0, 400 - (Date.now() - shownAt)) + 60);
+            }
+        };
+    })();
+    function busyWrap(fn, key, fb, withName) {
+        return async function (a) {
+            Busy.begin(tr(key, fb), withName && a && a.name ? a.name : '');
+            try { await Busy.ready(); return await fn.apply(this, arguments); } finally { Busy.end(); }
+        };
+    }
+    importFile = busyWrap(importFile, 'oxImporting', 'Importing…', true);
+    exportDocx = busyWrap(exportDocx, 'oxExporting', 'Exporting…', false);
+    exportDoc = busyWrap(exportDoc, 'oxExporting', 'Exporting…', false);
+
     w.LNDocx = {
-        exportDocx: exportDocx, exportDoc: exportDoc, importDocx: importDocx, importDoc: importDoc, importFile: importFile,
+        exportDocx: exportDocx, exportDoc: exportDoc, importDocx: importDocx, importDoc: importDoc, importFile: importFile, busy: Busy,
         defaultMeta: defaultMeta, PAGE_SIZES: PAGE_SIZES, MARGIN_PRESETS: MARGIN_PRESETS, pageDims: pageDims,
         _buildZip: buildZip, _readZip: readZip, _zipText: zipText, _parseCFB: parseCFB
     };

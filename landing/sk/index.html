@@ -42,8 +42,10 @@
   <link rel="alternate" hreflang="sl" href="https://localnotes-three.vercel.app/landing/sl/" />
   <link rel="alternate" hreflang="x-default" href="https://localnotes-three.vercel.app/landing/" />
   <link rel="icon" href="../favicon.png" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="/localnoteseditor/bootstrap-icons/font/bootstrap-icons.min.css" />
   <link rel="stylesheet" href="../css/landing.css" />
+  <link rel="stylesheet" href="../css/landing-v2.css?v=2" />
+  <meta name="theme-color" content="#0a0a0a" />
 </head>
 <body>
 
@@ -55,10 +57,11 @@
   <li><a href="#how">Ako funguje</a></li>
   <li><a href="#note-format">Formát .note</a></li>
   <li><a href="#editor">Editor</a></li>
+    <li><a href="#office">Word</a></li>
   <li><a href="#usecases">Použitie</a></li>
   <li><a href="#security">Bezpečnosť</a></li>
   <li><a href="#faq">FAQ</a></li>
-  <li><a href="../" class="lang-switcher" style="border-color:rgba(174,252,110,0.3);">🇸🇰 SK</a></li>
+  <li><a href="../" class="lang-switcher" style="border-color:rgba(174,252,110,0.3);"><i class="bi bi-translate"></i> SK</a></li>
   <li><a href="https://localnotes-three.vercel.app/sk/" class="nav-cta" target="_blank" rel="noopener">Otvoriť</a></li>
 </ul>
   <button class="nav-hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
@@ -69,13 +72,14 @@
   <a href="#how">Ako funguje</a>
   <a href="#note-format">Formát .note</a>
   <a href="#editor">Editor</a>
+  <a href="#office">Word</a>
   <a href="#usecases">Použitie</a>
   <a href="#security">Bezpečnosť</a>
   <a href="#install">Inštalácia</a>
   <a href="#faq">FAQ</a>
   <a href="#languages">Jazyky</a>
-  <a href="../"><i class="bi bi-filetype-html"></i> Zmeniť jazyk</a>
-  <a href="https://localnotes-three.vercel.app/sk/" target="_blank" rel="noopener" style="color:#aefc6e;font-weight:700;">Otvoriť aplikáciu →</a>
+  <a href="../"><i class="bi bi-translate"></i> Zmeniť jazyk</a>
+  <a href="https://localnotes-three.vercel.app/sk/" target="_blank" rel="noopener" style="color:#aefc6e;font-weight:700;">Otvoriť aplikáciu <i class="bi bi-arrow-right"></i></a>
 </div>
 
 <section class="hero" id="hero">
@@ -83,6 +87,7 @@
     <div class="hero-inner">
       <div class="hero-content">
         <div class="hero-eyebrow animate-in">Zadarmo · Bez registrácie</div>
+        <a href="#office" class="hero-news animate-in delay-1"><i class="bi bi-stars"></i><span>Novo: Word .docx/.doc a karty ako v Office</span><i class="bi bi-arrow-right"></i></a>
         <h1 class="hero-title animate-in delay-1">
           Vaše poznámky.<br>
           <span class="accent blur-reveal"><span class="blur-text">Súkromne. Šifrovane.</span><span class="blur-hint">kliknite</span></span><br>
@@ -105,7 +110,7 @@
           <div class="mock-notes mock-notes-blur-wrap" id="mockNotes">
             <div class="mock-note"><div class="mock-note-title">Stretnutie</div><div class="mock-note-preview">Plánovanie Q4 — kľúčové rozhodnutia…</div><span class="mock-note-tag tag-blue">práca</span></div>
             <div class="mock-note"><div class="mock-note-title">Nákupný zoznam</div><div class="mock-note-preview">Mlieko, chlieb, káva, jablká…</div><span class="mock-note-tag tag-green">osobné</span></div>
-            <div class="mock-note"><div class="mock-note-title">Nápady 💡</div><div class="mock-note-preview">Nová koncepcia projektu…</div><span class="mock-note-tag tag-purple">nápady</span></div>
+            <div class="mock-note"><div class="mock-note-title">Nápady <i class="bi bi-lightbulb"></i></div><div class="mock-note-preview">Nová koncepcia projektu…</div><span class="mock-note-tag tag-purple">nápady</span></div>
           </div>
         </div>
       </div>
@@ -125,10 +130,10 @@
       <div>
         <div class="story-problem-title animate-in">Problémy existujúcich aplikácií</div>
         <div class="story-problem">
-          <div class="problem-card animate-in delay-1"><div class="problem-card-icon">☁️</div><div class="problem-card-text"><strong>Všetko sa synchronizuje so serverom.</strong> Notion, Evernote, Google Keep — vaše poznámky žijú na cudzom počítači. Jeden únik a dáta sú odhalené.</div></div>
-          <div class="problem-card animate-in delay-2"><div class="problem-card-icon">💳</div><div class="problem-card-text"><strong>Šifrovanie stojí peniaze.</strong> Väčšina aplikácií skrýva skutočné šifrovanie za plateným plánom. Súkromie by nemalo byť prémiovou funkciou.</div></div>
-          <div class="problem-card animate-in delay-3"><div class="problem-card-icon"><i class="bi bi-copy"></i></div><div class="problem-card-text"><strong>Registrácia všade.</strong> Aby ste napísali poznámku, potrebujete email, heslo a súhlas so zásadami, ktoré umožňujú používať vaše dáta.</div></div>
-          <div class="problem-card animate-in delay-4"><div class="problem-card-icon"><i class="bi bi-filetype-html"></i></div><div class="problem-card-text"><strong>Žiadna podpora offline.</strong> Väčšina webových aplikácií je bez internetu zbytočná. Vaše poznámky by mali byť dostupné vždy a všade.</div></div>
+          <div class="problem-card animate-in delay-1"><div class="problem-card-icon"><i class="bi bi-cloud-arrow-up"></i></div><div class="problem-card-text"><strong>Všetko sa synchronizuje so serverom.</strong> Notion, Evernote, Google Keep — vaše poznámky žijú na cudzom počítači. Jeden únik a dáta sú odhalené.</div></div>
+          <div class="problem-card animate-in delay-2"><div class="problem-card-icon"><i class="bi bi-credit-card-2-front"></i></div><div class="problem-card-text"><strong>Šifrovanie stojí peniaze.</strong> Väčšina aplikácií skrýva skutočné šifrovanie za plateným plánom. Súkromie by nemalo byť prémiovou funkciou.</div></div>
+          <div class="problem-card animate-in delay-3"><div class="problem-card-icon"><i class="bi bi-person-plus"></i></div><div class="problem-card-text"><strong>Registrácia všade.</strong> Aby ste napísali poznámku, potrebujete email, heslo a súhlas so zásadami, ktoré umožňujú používať vaše dáta.</div></div>
+          <div class="problem-card animate-in delay-4"><div class="problem-card-icon"><i class="bi bi-wifi-off"></i></div><div class="problem-card-text"><strong>Žiadna podpora offline.</strong> Väčšina webových aplikácií je bez internetu zbytočná. Vaše poznámky by mali byť dostupné vždy a všade.</div></div>
         </div>
       </div>
       <div class="story-timeline">
@@ -156,11 +161,26 @@
     </div>
     <div class="features-grid">
       <div class="feature-card glass animate-in"><div class="feature-icon"><i class="bi bi-file-earmark-lock"></i></div><div class="feature-title">Šifrovanie AES-256</div><div class="feature-desc">Vojenské šifrovanie chráni každú poznámku. Dáta sú šifrované pred uložením — len vy máte kľúč.</div></div>
-      <div class="feature-card glass animate-in delay-1"><div class="feature-icon">📱</div><div class="feature-title">Funguje offline (PWA)</div><div class="feature-desc">Nainštalujte ako Progressive Web App a používajte kdekoľvek — bez internetu. Vaše poznámky sú vždy dostupné.</div></div>
-      <div class="feature-card glass animate-in delay-2"><div class="feature-icon">🌍</div><div class="feature-title">12 jazykov</div><div class="feature-desc">Plné rozhranie v slovenčine, češtine, ruštine, poľštine, bulharčine, chorvátčine a ďalších jazykoch.</div></div>
-      <div class="feature-card glass animate-in delay-1"><div class="feature-icon">📅</div><div class="feature-title">Vstavaný kalendár</div><div class="feature-desc">Prehliadajte poznámky podľa dátumu v zobrazení mesiaca, týždňa alebo agendy.</div></div>
-      <div class="feature-card glass animate-in delay-2"><div class="feature-icon">🏷️</div><div class="feature-title">Štítky a farby</div><div class="feature-desc">Organizujte poznámky pomocou štítkov a farebných označení. Nájdite čo hľadáte za sekundy.</div></div>
-      <div class="feature-card glass animate-in delay-3"><div class="feature-icon"><i class="bi bi-three-dots"></i></div><div class="feature-title">Export</div><div class="feature-desc">Exportujte poznámky ako .note, HTML alebo Markdown. Vaše dáta sú vždy prenositeľné.</div></div>
+      <div class="feature-card glass animate-in delay-1"><div class="feature-icon"><i class="bi bi-phone"></i></div><div class="feature-title">Funguje offline (PWA)</div><div class="feature-desc">Nainštalujte ako Progressive Web App a používajte kdekoľvek — bez internetu. Vaše poznámky sú vždy dostupné.</div></div>
+      <div class="feature-card glass animate-in delay-2"><div class="feature-icon"><i class="bi bi-globe2"></i></div><div class="feature-title">12 jazykov</div><div class="feature-desc">Plné rozhranie v slovenčine, češtine, ruštine, poľštine, bulharčine, chorvátčine a ďalších jazykoch.</div></div>
+      <div class="feature-card glass animate-in delay-1"><div class="feature-icon"><i class="bi bi-calendar3"></i></div><div class="feature-title">Vstavaný kalendár</div><div class="feature-desc">Prehliadajte poznámky podľa dátumu v zobrazení mesiaca, týždňa alebo agendy.</div></div>
+      <div class="feature-card glass animate-in delay-2"><div class="feature-icon"><i class="bi bi-tags"></i></div><div class="feature-title">Štítky a farby</div><div class="feature-desc">Organizujte poznámky pomocou štítkov a farebných označení. Nájdite čo hľadáte za sekundy.</div></div>
+      <div class="feature-card glass animate-in delay-3"><div class="feature-icon"><i class="bi bi-box-arrow-up"></i></div><div class="feature-title">Export</div><div class="feature-desc">Exportujte poznámky ako .note, HTML alebo Markdown. Vaše dáta sú vždy prenositeľné.</div></div>
+          <div class="feature-card glass animate-in delay-1">
+        <div class="feature-icon"><i class="bi bi-filetype-docx"></i></div>
+        <div class="feature-title">Kompatibilita s Wordom</div>
+        <div class="feature-desc">Import a export .docx a .doc — prenášajte poznámky do Microsoft Wordu a späť bez straty štruktúry.</div>
+      </div>
+      <div class="feature-card glass animate-in delay-2">
+        <div class="feature-icon"><i class="bi bi-layout-text-window"></i></div>
+        <div class="feature-title">Editor ako v Office</div>
+        <div class="feature-desc">Karty pásu, rozloženie strany, obsah, poznámky pod čiarou, komentáre a ďalšie známe nástroje z Office.</div>
+      </div>
+      <div class="feature-card glass animate-in delay-3">
+        <div class="feature-icon"><i class="bi bi-diagram-3"></i></div>
+        <div class="feature-title">Graf, úlohy, paleta</div>
+        <div class="feature-desc">Prepájajte poznámky do grafu, plánujte na nástenke úloh, preskakujte kamkoľvek paletou príkazov a zamknite aplikáciu heslom.</div>
+      </div>
     </div>
   </div>
 </section>
@@ -201,32 +221,32 @@
     </div>
     <div class="usecases-grid">
       <div class="usecase-card glass animate-in">
-        <div class="usecase-persona"><div class="usecase-avatar">👩‍💻</div><div><div class="usecase-name">Vývojár</div><div class="usecase-role">Softvérový inžinier</div></div></div>
+        <div class="usecase-persona"><div class="usecase-avatar"><i class="bi bi-laptop"></i></div><div><div class="usecase-name">Vývojár</div><div class="usecase-role">Softvérový inžinier</div></div></div>
         <p class="usecase-scenario">Ukladá snippety kódu, API kľúče a projektové poznámky v šifrovanej podobe. Používa export do Markdown pre dokumentáciu. Pracuje offline v lietadle.</p>
         <div class="usecase-tags"><span class="usecase-tag">Markdown</span><span class="usecase-tag">Offline</span><span class="usecase-tag">Export</span></div>
       </div>
       <div class="usecase-card glass animate-in delay-1">
-        <div class="usecase-persona"><div class="usecase-avatar">📰</div><div><div class="usecase-name">Novinár</div><div class="usecase-role">Investigatívna žurnalistika</div></div></div>
+        <div class="usecase-persona"><div class="usecase-avatar"><i class="bi bi-newspaper"></i></div><div><div class="usecase-name">Novinár</div><div class="usecase-role">Investigatívna žurnalistika</div></div></div>
         <p class="usecase-scenario">Uchováva dôverné poznámky o zdrojoch so šifrovaním AES-256. Žiadna cloudová synchronizácia — žiadne úniky. Štítky pre organizáciu podľa tém.</p>
         <div class="usecase-tags"><span class="usecase-tag">Šifrovanie</span><span class="usecase-tag">Štítky</span><span class="usecase-tag">Súkromie</span></div>
       </div>
       <div class="usecase-card glass animate-in delay-2">
-        <div class="usecase-persona"><div class="usecase-avatar">🎓</div><div><div class="usecase-name">Študent</div><div class="usecase-role">Univerzita</div></div></div>
+        <div class="usecase-persona"><div class="usecase-avatar"><i class="bi bi-mortarboard"></i></div><div><div class="usecase-name">Študent</div><div class="usecase-role">Univerzita</div></div></div>
         <p class="usecase-scenario">Vedie poznámky s formátovaním, checklistami a obrázkami. Používa kalendár pre termíny. Nainštalované ako PWA na telefóne.</p>
         <div class="usecase-tags"><span class="usecase-tag">Formátovanie</span><span class="usecase-tag">Kalendár</span><span class="usecase-tag">PWA</span></div>
       </div>
       <div class="usecase-card glass animate-in delay-1">
-        <div class="usecase-persona"><div class="usecase-avatar">🏥</div><div><div class="usecase-name">Lekár</div><div class="usecase-role">Zdravotnícky pracovník</div></div></div>
+        <div class="usecase-persona"><div class="usecase-avatar"><i class="bi bi-heart-pulse"></i></div><div><div class="usecase-name">Lekár</div><div class="usecase-role">Zdravotnícky pracovník</div></div></div>
         <p class="usecase-scenario">Vedie observačné poznámky lokálne — žiadne problémy s ochranou súkromia, dáta neopúšťajú zariadenie. Export do HTML pre správy.</p>
         <div class="usecase-tags"><span class="usecase-tag">Lokálne</span><span class="usecase-tag">Bez servera</span><span class="usecase-tag">HTML</span></div>
       </div>
       <div class="usecase-card glass animate-in delay-2">
-        <div class="usecase-persona"><div class="usecase-avatar">✍️</div><div><div class="usecase-name">Spisovateľ</div><div class="usecase-role">Romanopisec / Bloger</div></div></div>
+        <div class="usecase-persona"><div class="usecase-avatar"><i class="bi bi-pen"></i></div><div><div class="usecase-name">Spisovateľ</div><div class="usecase-role">Romanopisec / Bloger</div></div></div>
         <p class="usecase-scenario">Píše kapitoly a príspevky v celoobrazovm editore. Farebné štítky pre rôzne projekty. Export do Markdown pre publikovanie.</p>
         <div class="usecase-tags"><span class="usecase-tag">Celá obrazovka</span><span class="usecase-tag">Farby</span><span class="usecase-tag">Markdown</span></div>
       </div>
       <div class="usecase-card glass animate-in delay-3">
-        <div class="usecase-persona"><div class="usecase-avatar">🌍</div><div><div class="usecase-name">Cestovateľ</div><div class="usecase-role">Digitálny nomád</div></div></div>
+        <div class="usecase-persona"><div class="usecase-avatar"><i class="bi bi-globe2"></i></div><div><div class="usecase-name">Cestovateľ</div><div class="usecase-role">Digitálny nomád</div></div></div>
         <p class="usecase-scenario">Používa Local Notes v 12 jazykoch v rôznych krajinách. Funguje plne offline v lietadlách a odľahlých miestach.</p>
         <div class="usecase-tags"><span class="usecase-tag">12 jazykov</span><span class="usecase-tag">Offline</span><span class="usecase-tag">PWA</span></div>
       </div>
@@ -244,14 +264,14 @@
         <p class="section-subtitle animate-in delay-2">Súbor <code class="note-code">.note</code> je prenosný šifrovaný kontajner navrhnutý s jediným cieľom: vaše poznámky patria vám — nie platforme, cloudu ani firme.</p>
         <div class="note-format-timeline animate-in delay-3">
           <div class="nft-item"><div class="nft-icon"><i class="bi bi-file-earmark-lock"></i></div><div><div class="nft-title">Zrodený z problému súkromia</div><div class="nft-desc">Každá populárna aplikácia na poznámky ukladá dáta na vzdialených serveroch. Jeden únik, jedna žiadosť úradov, jedna zmena zásad — a vaše súkromné myšlienky sú odhalené. Formát <code class="note-code">.note</code> to znemožňuje svojou podstatou.</div></div></div>
-          <div class="nft-item"><div class="nft-icon">📦</div><div><div class="nft-title">Čo je vnútri súboru .note</div><div class="nft-desc">Súbor <code class="note-code">.note</code> je samostatný JSON balík: obsah poznámky, metadáta, štítky a — pri zapnutom šifrovaní — šifrovaný text AES-256, ktorý môže dešifrovať iba vaše heslo. Žiadny proprietárny formát, žiadne uzamknutie k dodávateľovi.</div></div></div>
-          <div class="nft-item"><div class="nft-icon"><i class="bi bi-filetype-html"></i></div><div><div class="nft-title">Offline-first, vždy prenositeľný</div><div class="nft-desc">Exportujte ľubovoľnú poznámku ako súbor <code class="note-code">.note</code> a noste ju na USB, posielajte cez Signal alebo archivujte na desaťročia. Importujte späť do Local Notes na akomkoľvek zariadení — bez účtu, bez internetu.</div></div></div>
-          <div class="nft-item"><div class="nft-icon">🛡️</div><div><div class="nft-title">Zero-knowledge ako základ</div><div class="nft-desc">Pri šifrovaní poznámky kľúč nikdy neopustí vaše zariadenie. Local Notes používa vstavaný Web Crypto API prehliadača — rovnaký štandard, ktorý používajú banky. Aj keby niekto zachytil váš súbor <code class="note-code">.note</code>, uvidí iba šifrovaný text.</div></div></div>
+          <div class="nft-item"><div class="nft-icon"><i class="bi bi-box-seam"></i></div><div><div class="nft-title">Čo je vnútri súboru .note</div><div class="nft-desc">Súbor <code class="note-code">.note</code> je samostatný JSON balík: obsah poznámky, metadáta, štítky a — pri zapnutom šifrovaní — šifrovaný text AES-256, ktorý môže dešifrovať iba vaše heslo. Žiadny proprietárny formát, žiadne uzamknutie k dodávateľovi.</div></div></div>
+          <div class="nft-item"><div class="nft-icon"><i class="bi bi-usb-drive"></i></div><div><div class="nft-title">Offline-first, vždy prenositeľný</div><div class="nft-desc">Exportujte ľubovoľnú poznámku ako súbor <code class="note-code">.note</code> a noste ju na USB, posielajte cez Signal alebo archivujte na desaťročia. Importujte späť do Local Notes na akomkoľvek zariadení — bez účtu, bez internetu.</div></div></div>
+          <div class="nft-item"><div class="nft-icon"><i class="bi bi-shield-check"></i></div><div><div class="nft-title">Zero-knowledge ako základ</div><div class="nft-desc">Pri šifrovaní poznámky kľúč nikdy neopustí vaše zariadenie. Local Notes používa vstavaný Web Crypto API prehliadača — rovnaký štandard, ktorý používajú banky. Aj keby niekto zachytil váš súbor <code class="note-code">.note</code>, uvidí iba šifrovaný text.</div></div></div>
         </div>
       </div>
       <div class="note-format-visual animate-in delay-2">
         <div class="note-file-card glass">
-          <div class="nfc-header"><div class="nfc-icon"><i class="bi bi-filetype-pdf"></i></div><div><div class="nfc-name">meeting-notes.note</div><div class="nfc-size">2.4 KB · Šifrované</div></div><div class="nfc-lock"><i class="bi bi-file-earmark-lock"></i></div></div>
+          <div class="nfc-header"><div class="nfc-icon"><i class="bi bi-file-earmark-text"></i></div><div><div class="nfc-name">meeting-notes.note</div><div class="nfc-size">2.4 KB · Šifrované</div></div><div class="nfc-lock"><i class="bi bi-file-earmark-lock"></i></div></div>
           <div class="nfc-body">
             <div class="nfc-line"><span class="nfc-key">"id"</span><span class="nfc-val">"a3f9…c12e"</span></div>
             <div class="nfc-line"><span class="nfc-key">"title"</span><span class="nfc-val">"Poznámky zo stretnutia"</span></div>
@@ -262,7 +282,7 @@
           </div>
           <div class="nfc-footer"><span class="nfc-badge">AES-256-GCM</span><span class="nfc-badge">Web Crypto API</span><span class="nfc-badge">Otvorený formát</span></div>
         </div>
-        <p class="note-format-hint">↑ Skutočná štruktúra šifrovaného súboru .note. Obsah je nečitateľný bez vášho hesla.</p>
+        <p class="note-format-hint"><i class="bi bi-arrow-up"></i> Skutočná štruktúra šifrovaného súboru .note. Obsah je nečitateľný bez vášho hesla.</p>
       </div>
     </div>
   </div>
@@ -304,8 +324,8 @@
           <div class="editor-mock-text">
             <p>Kľúčové rozhodnutia zo sezóny:</p>
             <div class="editor-checklist">
-              <div class="editor-check done"><span class="check-box">✓</span> Finalizovať priority roadmapy</div>
-              <div class="editor-check done"><span class="check-box">✓</span> Priradiť vedúcich funkcií</div>
+              <div class="editor-check done"><span class="check-box"><i class="bi bi-check-lg"></i></span> Finalizovať priority roadmapy</div>
+              <div class="editor-check done"><span class="check-box"><i class="bi bi-check-lg"></i></span> Priradiť vedúcich funkcií</div>
               <div class="editor-check"><span class="check-box"></span> Naplánovať stretnutie k rozpočtu</div>
               <div class="editor-check"><span class="check-box"></span> Skontrolovať výsledky bezpečnostného auditu</div>
             </div>
@@ -322,6 +342,55 @@
   </div>
 </section>
 
+<!-- ── Word & Office ─────────────────────────────────────────── -->
+<section class="office-section" id="office">
+  <div class="container">
+    <div class="office-header">
+      <div class="section-label animate-in">Word a Office</div>
+      <h2 class="section-title animate-in delay-1">Editor ako Office. Súbory ako Word.</h2>
+      <p class="section-subtitle animate-in delay-2">Karty Súbor, Rozloženie, Odkazy a Revízia, nastavenie strany, obsah, poznámky pod čiarou — a tiež import a export .docx a .doc.</p>
+    </div>
+    <div class="ribbon-mock animate-in" aria-hidden="true">
+      <div class="rm-titlebar"><span class="rm-dots"><i></i><i></i><i></i></span><span class="rm-title">meeting-notes.docx</span></div>
+      <div class="rm-tabs"><span class="rm-tab">Súbor</span><span class="rm-tab">Domov</span><span class="rm-tab">Vložiť</span><span class="rm-tab active">Rozloženie</span><span class="rm-tab">Odkazy</span><span class="rm-tab">Revízia</span><span class="rm-tab">Zobrazenie</span></div>
+      <div class="rm-body"><div class="rm-group"><div class="rm-btns"><span class="rm-btn"><i class="bi bi-arrows-expand"></i><em>Okraje</em></span><span class="rm-btn"><i class="bi bi-phone-landscape"></i><em>Orientácia</em></span><span class="rm-btn"><i class="bi bi-file-earmark"></i><em>Veľkosť</em></span><span class="rm-btn"><i class="bi bi-layout-three-columns"></i><em>Stĺpce</em></span></div><div class="rm-glabel">Nastavenie strany</div></div><div class="rm-group"><div class="rm-btns"><span class="rm-btn"><i class="bi bi-distribute-vertical"></i><em>Medzery</em></span><span class="rm-btn"><i class="bi bi-type"></i><em>Delenie slov</em></span></div><div class="rm-glabel">Odsek</div></div><div class="rm-group"><div class="rm-btns"><span class="rm-btn"><i class="bi bi-file-break"></i><em>Zlom strany</em></span></div><div class="rm-glabel">Zlomy</div></div><div class="rm-group"><div class="rm-btns"><span class="rm-btn"><i class="bi bi-list-nested"></i><em>Obsah</em></span><span class="rm-btn"><i class="bi bi-chat-square-text"></i><em>Nový komentár</em></span></div><div class="rm-glabel">Obsah</div></div></div>
+      <div class="rm-page"><div class="rm-sheet"><b></b><u></u><u></u><u class="s"></u><i></i><u></u><u class="s"></u></div></div>
+    </div>
+    <div class="office-grid">
+      <div class="office-card glass animate-in delay-0">
+        <div class="office-card-icon"><i class="bi bi-filetype-docx"></i></div>
+        <div><div class="office-card-title">Import a export Wordu</div><div class="office-card-desc">Otvárajte súbory .docx a .doc a ukladajte poznámky do skutočného .docx alebo do .doc kompatibilného s Wordom 97–2003. Štýly, zoznamy, tabuľky a obrázky zostanú zachované.</div></div>
+      </div>
+      <div class="office-card glass animate-in delay-1">
+        <div class="office-card-icon"><i class="bi bi-file-earmark-ruled"></i></div>
+        <div><div class="office-card-title">Nastavenie strany</div><div class="office-card-desc">A4, Letter a ďalšie formáty, okraje, orientácia, stĺpce, hlavičky, päty a čísla strán — v tlači, PDF aj súboroch Word.</div></div>
+      </div>
+      <div class="office-card glass animate-in delay-2">
+        <div class="office-card-icon"><i class="bi bi-list-nested"></i></div>
+        <div><div class="office-card-title">Obsah a poznámky</div><div class="office-card-desc">Automatický obsah z nadpisov, poznámky pod čiarou s číslovaním, titulky obrázkov a záložky.</div></div>
+      </div>
+      <div class="office-card glass animate-in delay-3">
+        <div class="office-card-icon"><i class="bi bi-chat-square-text"></i></div>
+        <div><div class="office-card-title">Revízia</div><div class="office-card-desc">Komentáre k výberu, jazyk kontroly pravopisu a kontrola prístupnosti: chýbajúci alt text, prázdne nadpisy, nejasné odkazy.</div></div>
+      </div>
+      <div class="office-card glass animate-in delay-0">
+        <div class="office-card-icon"><i class="bi bi-brush"></i></div>
+        <div><div class="office-card-title">Pomocníci formátovania</div><div class="office-card-desc">Kopírovať formát, zmena veľkosti písmen, rýchle štýly, iniciálka, textové pole, tieňovanie odseku, značky ¶ a smer textu LTR/RTL.</div></div>
+      </div>
+      <div class="office-card glass animate-in delay-1">
+        <div class="office-card-icon"><i class="bi bi-volume-up"></i></div>
+        <div><div class="office-card-title">Čítanie nahlas a režim čítania</div><div class="office-card-desc">Počúvajte výber alebo celú poznámku, otvorte navigačný panel s nadpismi alebo zamknite úpravy v režime čítania.</div></div>
+      </div>
+      <div class="office-card glass animate-in delay-2">
+        <div class="office-card-icon"><i class="bi bi-phone"></i></div>
+        <div><div class="office-card-title">Aj pre telefóny</div><div class="office-card-desc">Na malých displejoch zostáva pruh kariet pripnutý a posúva sa len rad nástrojov — stránka sa neposúva do strán.</div></div>
+      </div>
+    </div>
+    <div class="format-chips animate-in"><i class="bi bi-box-arrow-in-down"></i><span class="fmt-chip">.docx</span><span class="fmt-chip">.doc</span><span class="fmt-chip">.html</span><span class="fmt-chip">.md</span><span class="fmt-chip">.pdf</span><span class="fmt-chip">.txt</span><span class="fmt-chip">.note</span><i class="bi bi-box-arrow-up"></i></div>
+    <p class="office-note animate-in"><i class="bi bi-info-circle"></i> Exportovaný .doc je kompatibilný s Wordom 97–2003; pri importe starého binárneho .doc zostáva text, tabuľky a odkazy.</p>
+  </div>
+</section>
+
 <!-- ── Install PWA ───────────────────────────────────────────── -->
 <section class="install-section" id="install">
   <div class="container">
@@ -333,32 +402,32 @@
       </div>
       <div class="install-platforms">
         <div class="install-platform glass animate-in">
-          <div class="install-platform-icon">🖥️</div>
+          <div class="install-platform-icon"><i class="bi bi-pc-display"></i></div>
           <div class="install-platform-name">Počítač</div>
           <div class="install-platform-desc">Chrome, Edge, Firefox — kliknite na ikonu inštalácie v adresnom riadku</div>
           <div class="install-steps">
             <div class="install-step-item"><span class="install-step-num">1</span> Otvorte aplikáciu</div>
-            <div class="install-step-item"><span class="install-step-num">2</span> Kliknite ⊕ v adresnom riadku</div>
+            <div class="install-step-item"><span class="install-step-num">2</span> Kliknite <i class="bi bi-plus-circle"></i> v adresnom riadku</div>
             <div class="install-step-item"><span class="install-step-num">3</span> Kliknite «Inštalovať»</div>
           </div>
         </div>
         <div class="install-platform glass animate-in delay-1">
-          <div class="install-platform-icon">📱</div>
+          <div class="install-platform-icon"><i class="bi bi-phone"></i></div>
           <div class="install-platform-name">Android</div>
           <div class="install-platform-desc">Chrome pre Android — pridajte na domovskú obrazovku jedným klepnutím</div>
           <div class="install-steps">
             <div class="install-step-item"><span class="install-step-num">1</span> Otvorte v Chrome</div>
-            <div class="install-step-item"><span class="install-step-num">2</span> Klepnite ⋮ menu</div>
+            <div class="install-step-item"><span class="install-step-num">2</span> Klepnite <i class="bi bi-three-dots-vertical"></i> menu</div>
             <div class="install-step-item"><span class="install-step-num">3</span> «Pridať na domovskú obrazovku»</div>
           </div>
         </div>
         <div class="install-platform glass animate-in delay-2">
-          <div class="install-platform-icon">🍎</div>
+          <div class="install-platform-icon"><i class="bi bi-apple"></i></div>
           <div class="install-platform-name">iOS / iPadOS</div>
-          <div class="install-platform-desc">Safari na iPhone alebo iPad — menu «Zdieľať» → na domovskú obrazovku</div>
+          <div class="install-platform-desc">Safari na iPhone alebo iPad — menu «Zdieľať» <i class="bi bi-arrow-right"></i> na domovskú obrazovku</div>
           <div class="install-steps">
             <div class="install-step-item"><span class="install-step-num">1</span> Otvorte v Safari</div>
-            <div class="install-step-item"><span class="install-step-num">2</span> Klepnite «Zdieľať» ↑</div>
+            <div class="install-step-item"><span class="install-step-num">2</span> Klepnite «Zdieľať» <i class="bi bi-box-arrow-up"></i></div>
             <div class="install-step-item"><span class="install-step-num">3</span> «Pridať na plochu»</div>
           </div>
         </div>
@@ -378,15 +447,15 @@
       <table class="comparison-table">
         <thead><tr><th>Funkcia</th><th class="highlight">Local Notes</th><th>Notion</th><th>Evernote</th><th>Google Keep</th></tr></thead>
         <tbody>
-          <tr><td>Zadarmo</td><td class="highlight"><span class="check">✓</span></td><td><span class="partial">Obmedzené</span></td><td><span class="partial">Obmedzené</span></td><td><span class="check">✓</span></td></tr>
-          <tr><td>Bez registrácie</td><td class="highlight"><span class="check">✓</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td></tr>
-          <tr><td>Šifrovanie AES-256</td><td class="highlight"><span class="check">✓</span></td><td><span class="cross">✗</span></td><td><span class="partial">Platené</span></td><td><span class="cross">✗</span></td></tr>
-          <tr><td>Bez servera / lokálne</td><td class="highlight"><span class="check">✓</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td></tr>
-          <tr><td>Offline (PWA)</td><td class="highlight"><span class="check">✓</span></td><td><span class="partial">Čiastočne</span></td><td><span class="partial">Čiastočne</span></td><td><span class="partial">Čiastočne</span></td></tr>
-          <tr><td>Bez sledovania</td><td class="highlight"><span class="check">✓</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td></tr>
-          <tr><td>12 jazykov rozhrania</td><td class="highlight"><span class="check">✓</span></td><td><span class="partial">Málo</span></td><td><span class="partial">Málo</span></td><td><span class="partial">Málo</span></td></tr>
-          <tr><td>Export Markdown / HTML</td><td class="highlight"><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="partial">Platené</span></td><td><span class="cross">✗</span></td></tr>
-          <tr><td>Otvorený zdrojový kód</td><td class="highlight"><span class="check">✓</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td></tr>
+          <tr><td>Zadarmo</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="partial">Obmedzené</span></td><td><span class="partial">Obmedzené</span></td><td><span class="check"><i class="bi bi-check-lg"></i></span></td></tr>
+          <tr><td>Bez registrácie</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td></tr>
+          <tr><td>Šifrovanie AES-256</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="partial">Platené</span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td></tr>
+          <tr><td>Bez servera / lokálne</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td></tr>
+          <tr><td>Offline (PWA)</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="partial">Čiastočne</span></td><td><span class="partial">Čiastočne</span></td><td><span class="partial">Čiastočne</span></td></tr>
+          <tr><td>Bez sledovania</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td></tr>
+          <tr><td>12 jazykov rozhrania</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="partial">Málo</span></td><td><span class="partial">Málo</span></td><td><span class="partial">Málo</span></td></tr>
+          <tr><td>Export Markdown / HTML</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="partial">Platené</span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td></tr>
+          <tr><td>Otvorený zdrojový kód</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td></tr>
         </tbody>
       </table>
       <p class="comparison-note">* Na základe verejne dostupných informácií k roku 2026.</p>
@@ -403,10 +472,10 @@
         <p class="section-subtitle animate-in delay-2">Local Notes bol vytvorený s ohľadom na vaše súkromie. Žiadny server, žiadna cloudová synchronizácia, žiadna analytika.</p>
       </div>
       <div class="security-badges">
-        <div class="security-badge glass animate-in"><div class="security-badge-icon">🛡️</div><div><div class="security-badge-title">Bez servera a cloudu</div><div class="security-badge-desc">Všetky poznámky sú uložené lokálne v IndexedDB vášho prehliadača. Nič neopúšťa vaše zariadenie.</div></div></div>
-        <div class="security-badge glass animate-in delay-1"><div class="security-badge-icon">👁️</div><div><div class="security-badge-title">Minimálna analytika</div><div class="security-badge-desc">Žiadna analytika, žiadne cookies, žiadne sledovanie. Doslova nemôžeme vidieť vaše dáta.</div></div></div>
-        <div class="security-badge glass animate-in delay-2"><div class="security-badge-icon">🔑</div><div><div class="security-badge-title">Bez registrácie</div><div class="security-badge-desc">Otvorte aplikáciu a začnite písať. Žiadny email, žiadne heslo, žiadny účet.</div></div></div>
-        <div class="security-badge glass animate-in delay-3"><div class="security-badge-icon">🔐</div><div><div class="security-badge-title">Šifrovanie AES-256</div><div class="security-badge-desc">Priemyselný štandard šifrovania chráni vaše poznámky. Len vy ich môžete dešifrovať.</div></div></div>
+        <div class="security-badge glass animate-in"><div class="security-badge-icon"><i class="bi bi-shield-check"></i></div><div><div class="security-badge-title">Bez servera a cloudu</div><div class="security-badge-desc">Všetky poznámky sú uložené lokálne v IndexedDB vášho prehliadača. Nič neopúšťa vaše zariadenie.</div></div></div>
+        <div class="security-badge glass animate-in delay-1"><div class="security-badge-icon"><i class="bi bi-eye-slash"></i></div><div><div class="security-badge-title">Minimálna analytika</div><div class="security-badge-desc">Žiadna analytika, žiadne cookies, žiadne sledovanie. Doslova nemôžeme vidieť vaše dáta.</div></div></div>
+        <div class="security-badge glass animate-in delay-2"><div class="security-badge-icon"><i class="bi bi-key"></i></div><div><div class="security-badge-title">Bez registrácie</div><div class="security-badge-desc">Otvorte aplikáciu a začnite písať. Žiadny email, žiadne heslo, žiadny účet.</div></div></div>
+        <div class="security-badge glass animate-in delay-3"><div class="security-badge-icon"><i class="bi bi-lock"></i></div><div><div class="security-badge-title">Šifrovanie AES-256</div><div class="security-badge-desc">Priemyselný štandard šifrovania chráni vaše poznámky. Len vy ich môžete dešifrovať.</div></div></div>
       </div>
     </div>
   </div>
@@ -420,18 +489,18 @@
       <p class="section-subtitle animate-in delay-2">Local Notes hovorí vaším jazykom. Vyberte si preferované rozhranie.</p>
     </div>
     <div class="lang-grid">
-      <a href="../" class="lang-item animate-in"><span class="lang-flag">🇬🇧</span><div><div class="lang-name">English</div><div class="lang-native">English</div></div></a>
-      <a href="../ru/" class="lang-item animate-in delay-1"><span class="lang-flag">🇷🇺</span><div><div class="lang-name">Русский</div><div class="lang-native">Russian</div></div></a>
-      <a href="../ua/" class="lang-item animate-in delay-2"><span class="lang-flag">🇺🇦</span><div><div class="lang-name">Українська</div><div class="lang-native">Ukrainian</div></div></a>
-      <a href="../pl/" class="lang-item animate-in delay-3"><span class="lang-flag">🇵🇱</span><div><div class="lang-name">Polski</div><div class="lang-native">Polish</div></div></a>
-      <a href="../cs/" class="lang-item animate-in"><span class="lang-flag">🇨🇿</span><div><div class="lang-name">Čeština</div><div class="lang-native">Czech</div></div></a>
-      <a href="../sk/" class="lang-item active animate-in delay-1"><span class="lang-flag">🇸🇰</span><div><div class="lang-name">Slovenčina</div><div class="lang-native">Slovak</div></div></a>
-      <a href="../bg/" class="lang-item animate-in delay-2"><span class="lang-flag">🇧🇬</span><div><div class="lang-name">Български</div><div class="lang-native">Bulgarian</div></div></a>
-      <a href="../hr/" class="lang-item animate-in delay-3"><span class="lang-flag">🇭🇷</span><div><div class="lang-name">Hrvatski</div><div class="lang-native">Croatian</div></div></a>
-      <a href="../sr/" class="lang-item animate-in"><span class="lang-flag">🇷🇸</span><div><div class="lang-name">Српски</div><div class="lang-native">Serbian</div></div></a>
-      <a href="../bs/" class="lang-item animate-in delay-1"><span class="lang-flag">🇧🇦</span><div><div class="lang-name">Bosanski</div><div class="lang-native">Bosnian</div></div></a>
-      <a href="../mk/" class="lang-item animate-in delay-2"><span class="lang-flag">🇲🇰</span><div><div class="lang-name">Македонски</div><div class="lang-native">Macedonian</div></div></a>
-      <a href="../sl/" class="lang-item animate-in delay-3"><span class="lang-flag">🇸🇮</span><div><div class="lang-name">Slovenščina</div><div class="lang-native">Slovenian</div></div></a>
+      <a href="../" class="lang-item animate-in"><span class="lang-flag lang-code">GB</span><div><div class="lang-name">English</div><div class="lang-native">English</div></div></a>
+      <a href="../ru/" class="lang-item animate-in delay-1"><span class="lang-flag lang-code">RU</span><div><div class="lang-name">Русский</div><div class="lang-native">Russian</div></div></a>
+      <a href="../ua/" class="lang-item animate-in delay-2"><span class="lang-flag lang-code">UA</span><div><div class="lang-name">Українська</div><div class="lang-native">Ukrainian</div></div></a>
+      <a href="../pl/" class="lang-item animate-in delay-3"><span class="lang-flag lang-code">PL</span><div><div class="lang-name">Polski</div><div class="lang-native">Polish</div></div></a>
+      <a href="../cs/" class="lang-item animate-in"><span class="lang-flag lang-code">CZ</span><div><div class="lang-name">Čeština</div><div class="lang-native">Czech</div></div></a>
+      <a href="../sk/" class="lang-item active animate-in delay-1"><span class="lang-flag lang-code">SK</span><div><div class="lang-name">Slovenčina</div><div class="lang-native">Slovak</div></div></a>
+      <a href="../bg/" class="lang-item animate-in delay-2"><span class="lang-flag lang-code">BG</span><div><div class="lang-name">Български</div><div class="lang-native">Bulgarian</div></div></a>
+      <a href="../hr/" class="lang-item animate-in delay-3"><span class="lang-flag lang-code">HR</span><div><div class="lang-name">Hrvatski</div><div class="lang-native">Croatian</div></div></a>
+      <a href="../sr/" class="lang-item animate-in"><span class="lang-flag lang-code">RS</span><div><div class="lang-name">Српски</div><div class="lang-native">Serbian</div></div></a>
+      <a href="../bs/" class="lang-item animate-in delay-1"><span class="lang-flag lang-code">BA</span><div><div class="lang-name">Bosanski</div><div class="lang-native">Bosnian</div></div></a>
+      <a href="../mk/" class="lang-item animate-in delay-2"><span class="lang-flag lang-code">MK</span><div><div class="lang-name">Македонски</div><div class="lang-native">Macedonian</div></div></a>
+      <a href="../sl/" class="lang-item animate-in delay-3"><span class="lang-flag lang-code">SI</span><div><div class="lang-name">Slovenščina</div><div class="lang-native">Slovenian</div></div></a>
     </div>
   </div>
 </section>
@@ -468,6 +537,15 @@
       <div class="faq-item glass animate-in delay-3">
         <button class="faq-question" aria-expanded="false"><span>Je zdrojový kód dostupný?</span><i class="bi bi-plus faq-icon"></i></button>
         <div class="faq-answer"><p>Áno. Local Notes je plne otvorený pod licenciou MIT. Môžete preskúmať, forknúť a prispievať na <a href="https://github.com/PsyGioX/localnotes" target="_blank" rel="noopener" style="color:var(--primary-light);">GitHub</a>.</p></div>
+      </div>
+      <div class="faq-item glass animate-in delay-3">
+        <button class="faq-question" aria-expanded="false">
+          <span>Môžem otvárať a ukladať súbory Word (.docx, .doc)?</span>
+          <i class="bi bi-plus faq-icon"></i>
+        </button>
+        <div class="faq-answer">
+          <p>Áno. Použite Súbor › Import Wordu v editore alebo tlačidlo importu v aplikácii. Poznámky možno exportovať ako .docx alebo .doc kompatibilný s Wordom 97–2003. Všetko sa konvertuje vo vašom prehliadači — súbory sa nikam nenahrávajú. Sledovanie zmien nie je podporované a starý binárny .doc zachová len text, tabuľky a odkazy.</p>
+        </div>
       </div>
     </div>
   </div>

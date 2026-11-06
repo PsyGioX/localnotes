@@ -4412,10 +4412,16 @@ async function exportToWord(noteContent, kind) {
 }
 
 async function importNotesWord(files) {
-    let imported = 0, errors = 0, partial = false;
-    for (const file of files) {
+    let imported = 0, errors = 0, partial = false, idx = 0;
+    const _list = Array.from(files), _busy = window.LNDocx && LNDocx.busy;
+    if (_busy) _busy.begin(typeof t === 'function' && t('oxImporting') !== 'oxImporting' ? t('oxImporting') : 'Importing…', '');
+    try {
+    if (_busy) await _busy.ready();
+    for (const file of _list) {
+        idx++;
         try {
             if (!window.LNDocx) throw new Error('Word module is not loaded yet');
+            if (_busy && _list.length > 1) _busy.sub(file.name + ' (' + idx + '/' + _list.length + ')');
             const r = await LNDocx.importFile(file);
             if (r.partial) partial = true;
             const content = r.html || '';
@@ -4423,6 +4429,7 @@ async function importNotesWord(files) {
             imported++;
         } catch (e) { errors++; showCustomAlert(typeof t === 'function' ? t('error') : 'Error', typeof t === 'function' ? t('importFileError', { name: file.name, message: e.message }) || (file.name + ': ' + e.message) : file.name + ': ' + e.message, 'error'); }
     }
+    } finally { if (_busy) _busy.end(); }
     if (imported > 0) {
         const msg = errors > 0
             ? (typeof t === 'function' ? t('importCompletedWithErrors', { count: imported, errors }) || `Imported ${imported}, errors: ${errors}` : `Imported ${imported}, errors: ${errors}`)

@@ -42,8 +42,10 @@
   <link rel="alternate" hreflang="sl" href="https://localnotes-three.vercel.app/landing/sl/" />
   <link rel="alternate" hreflang="x-default" href="https://localnotes-three.vercel.app/landing/" />
   <link rel="icon" href="../favicon.png" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="/localnoteseditor/bootstrap-icons/font/bootstrap-icons.min.css" />
   <link rel="stylesheet" href="../css/landing.css" />
+  <link rel="stylesheet" href="../css/landing-v2.css?v=2" />
+  <meta name="theme-color" content="#0a0a0a" />
 </head>
 <body>
 
@@ -55,10 +57,11 @@
   <li><a href="#how">Kako deluje</a></li>
   <li><a href="#note-format">Format .note</a></li>
   <li><a href="#editor">Urejevalnik</a></li>
+    <li><a href="#office">Word</a></li>
   <li><a href="#usecases">Primeri</a></li>
   <li><a href="#security">Varnost</a></li>
   <li><a href="#faq">FAQ</a></li>
-  <li><a href="../" class="lang-switcher" style="border-color:rgba(174,252,110,0.3);">🇸🇮 SL</a></li>
+  <li><a href="../" class="lang-switcher" style="border-color:rgba(174,252,110,0.3);"><i class="bi bi-translate"></i> SL</a></li>
   <li><a href="https://localnotes-three.vercel.app/sl/" class="nav-cta" target="_blank" rel="noopener">Odpri</a></li>
 </ul>
   <button class="nav-hamburger" id="hamburger" aria-label="Meni"><span></span><span></span><span></span></button>
@@ -69,13 +72,14 @@
   <a href="#how">Kako deluje</a>
   <a href="#note-format">Format .note</a>
   <a href="#editor">Urejevalnik</a>
+  <a href="#office">Word</a>
   <a href="#usecases">Primeri</a>
   <a href="#security">Varnost</a>
   <a href="#install">Namestitev</a>
   <a href="#faq">FAQ</a>
   <a href="#languages">Jeziki</a>
-  <a href="../"><i class="bi bi-filetype-html"></i> Spremeni jezik</a>
-  <a href="https://localnotes-three.vercel.app/sl/" target="_blank" rel="noopener" style="color:#aefc6e;font-weight:700;">Odpri aplikacijo →</a>
+  <a href="../"><i class="bi bi-translate"></i> Spremeni jezik</a>
+  <a href="https://localnotes-three.vercel.app/sl/" target="_blank" rel="noopener" style="color:#aefc6e;font-weight:700;">Odpri aplikacijo <i class="bi bi-arrow-right"></i></a>
 </div>
 
 <section class="hero" id="hero">
@@ -83,6 +87,7 @@
     <div class="hero-inner">
       <div class="hero-content">
         <div class="hero-eyebrow animate-in">Brezplačno · Brez registracije</div>
+        <a href="#office" class="hero-news animate-in delay-1"><i class="bi bi-stars"></i><span>Novo: Word .docx/.doc in zavihki kot v Officu</span><i class="bi bi-arrow-right"></i></a>
         <h1 class="hero-title animate-in delay-1">
           Vaše beležke.<br>
           <span class="accent blur-reveal"><span class="blur-text">Zasebno. Šifrirano.</span><span class="blur-hint">dotaknite</span></span><br>
@@ -105,7 +110,7 @@
           <div class="mock-notes mock-notes-blur-wrap" id="mockNotes">
             <div class="mock-note"><div class="mock-note-title">Sestanek</div><div class="mock-note-preview">Načrtovanje Q4 — ključne odločitve…</div><span class="mock-note-tag tag-blue">delo</span></div>
             <div class="mock-note"><div class="mock-note-title">Nakupovalni seznam</div><div class="mock-note-preview">Mleko, kruh, kava, jabolka…</div><span class="mock-note-tag tag-green">osebno</span></div>
-            <div class="mock-note"><div class="mock-note-title">Ideje 💡</div><div class="mock-note-preview">Nova zasnova projekta…</div><span class="mock-note-tag tag-purple">ideje</span></div>
+            <div class="mock-note"><div class="mock-note-title">Ideje <i class="bi bi-lightbulb"></i></div><div class="mock-note-preview">Nova zasnova projekta…</div><span class="mock-note-tag tag-purple">ideje</span></div>
           </div>
         </div>
       </div>
@@ -124,10 +129,10 @@
       <div>
         <div class="story-problem-title animate-in">Težave obstoječih aplikacij</div>
         <div class="story-problem">
-          <div class="problem-card animate-in delay-1"><div class="problem-card-icon">☁️</div><div class="problem-card-text"><strong>Vse se sinhronizira s strežnikom.</strong> Notion, Evernote, Google Keep — vaše beležke živijo na tujem računalniku. En vdor in podatki so razkriti.</div></div>
-          <div class="problem-card animate-in delay-2"><div class="problem-card-icon">💳</div><div class="problem-card-text"><strong>Šifriranje stane.</strong> Večina aplikacij skriva pravo šifriranje za plačanim načrtom. Zasebnost ne bi smela biti premium funkcija.</div></div>
-          <div class="problem-card animate-in delay-3"><div class="problem-card-icon"><i class="bi bi-copy"></i></div><div class="problem-card-text"><strong>Registracija povsod.</strong> Da bi napisali beležko, potrebujete e-pošto, geslo in soglasje s pravilniki, ki dovoljujejo uporabo vaših podatkov.</div></div>
-          <div class="problem-card animate-in delay-4"><div class="problem-card-icon"><i class="bi bi-filetype-html"></i></div><div class="problem-card-text"><strong>Ni podpore za brez povezave.</strong> Večina spletnih aplikacij je brez interneta neuporabna. Vaše beležke morajo biti dostopne vedno in povsod.</div></div>
+          <div class="problem-card animate-in delay-1"><div class="problem-card-icon"><i class="bi bi-cloud-arrow-up"></i></div><div class="problem-card-text"><strong>Vse se sinhronizira s strežnikom.</strong> Notion, Evernote, Google Keep — vaše beležke živijo na tujem računalniku. En vdor in podatki so razkriti.</div></div>
+          <div class="problem-card animate-in delay-2"><div class="problem-card-icon"><i class="bi bi-credit-card-2-front"></i></div><div class="problem-card-text"><strong>Šifriranje stane.</strong> Večina aplikacij skriva pravo šifriranje za plačanim načrtom. Zasebnost ne bi smela biti premium funkcija.</div></div>
+          <div class="problem-card animate-in delay-3"><div class="problem-card-icon"><i class="bi bi-person-plus"></i></div><div class="problem-card-text"><strong>Registracija povsod.</strong> Da bi napisali beležko, potrebujete e-pošto, geslo in soglasje s pravilniki, ki dovoljujejo uporabo vaših podatkov.</div></div>
+          <div class="problem-card animate-in delay-4"><div class="problem-card-icon"><i class="bi bi-wifi-off"></i></div><div class="problem-card-text"><strong>Ni podpore za brez povezave.</strong> Večina spletnih aplikacij je brez interneta neuporabna. Vaše beležke morajo biti dostopne vedno in povsod.</div></div>
         </div>
       </div>
       <div class="story-timeline">
@@ -154,11 +159,26 @@
     </div>
     <div class="features-grid">
       <div class="feature-card glass animate-in"><div class="feature-icon"><i class="bi bi-file-earmark-lock"></i></div><div class="feature-title">AES-256 šifriranje</div><div class="feature-desc">Vojaška raven šifriranja ščiti vsako beležko. Podatki so šifrirani pred shranjevanjem — samo vi imate ključ.</div></div>
-      <div class="feature-card glass animate-in delay-1"><div class="feature-icon">📱</div><div class="feature-title">Deluje brez povezave (PWA)</div><div class="feature-desc">Namestite kot Progressive Web App in uporabljajte kjerkoli — brez interneta. Vaše beležke so vedno dostopne.</div></div>
-      <div class="feature-card glass animate-in delay-2"><div class="feature-icon">🌍</div><div class="feature-title">12 jezikov</div><div class="feature-desc">Celoten vmesnik v slovenščini, ruščini, ukrajinščini, poljščini, češčini, slovaščini, bolgarščini in drugih jezikih.</div></div>
-      <div class="feature-card glass animate-in delay-1"><div class="feature-icon">📅</div><div class="feature-title">Vgrajen koledar</div><div class="feature-desc">Pregledujte beležke po datumu v pogledu meseca, tedna ali dnevnega reda.</div></div>
-      <div class="feature-card glass animate-in delay-2"><div class="feature-icon">🏷️</div><div class="feature-title">Oznake in barve</div><div class="feature-desc">Organizirajte beležke z oznakami in barvami. Poiščite kar iščete v sekundah.</div></div>
-      <div class="feature-card glass animate-in delay-3"><div class="feature-icon"><i class="bi bi-three-dots"></i></div><div class="feature-title">Izvoz</div><div class="feature-desc">Izvozite beležke kot .note, HTML ali Markdown. Vaši podatki so vedno prenosljivi.</div></div>
+      <div class="feature-card glass animate-in delay-1"><div class="feature-icon"><i class="bi bi-phone"></i></div><div class="feature-title">Deluje brez povezave (PWA)</div><div class="feature-desc">Namestite kot Progressive Web App in uporabljajte kjerkoli — brez interneta. Vaše beležke so vedno dostopne.</div></div>
+      <div class="feature-card glass animate-in delay-2"><div class="feature-icon"><i class="bi bi-globe2"></i></div><div class="feature-title">12 jezikov</div><div class="feature-desc">Celoten vmesnik v slovenščini, ruščini, ukrajinščini, poljščini, češčini, slovaščini, bolgarščini in drugih jezikih.</div></div>
+      <div class="feature-card glass animate-in delay-1"><div class="feature-icon"><i class="bi bi-calendar3"></i></div><div class="feature-title">Vgrajen koledar</div><div class="feature-desc">Pregledujte beležke po datumu v pogledu meseca, tedna ali dnevnega reda.</div></div>
+      <div class="feature-card glass animate-in delay-2"><div class="feature-icon"><i class="bi bi-tags"></i></div><div class="feature-title">Oznake in barve</div><div class="feature-desc">Organizirajte beležke z oznakami in barvami. Poiščite kar iščete v sekundah.</div></div>
+      <div class="feature-card glass animate-in delay-3"><div class="feature-icon"><i class="bi bi-box-arrow-up"></i></div><div class="feature-title">Izvoz</div><div class="feature-desc">Izvozite beležke kot .note, HTML ali Markdown. Vaši podatki so vedno prenosljivi.</div></div>
+          <div class="feature-card glass animate-in delay-1">
+        <div class="feature-icon"><i class="bi bi-filetype-docx"></i></div>
+        <div class="feature-title">Združljivost z Wordom</div>
+        <div class="feature-desc">Uvoz in izvoz .docx in .doc — prenašajte zapiske v Microsoft Word in nazaj brez izgube strukture.</div>
+      </div>
+      <div class="feature-card glass animate-in delay-2">
+        <div class="feature-icon"><i class="bi bi-layout-text-window"></i></div>
+        <div class="feature-title">Urejevalnik kot v Officu</div>
+        <div class="feature-desc">Zavihki traku, postavitev strani, kazalo, sprotne opombe, komentarji in ducat drugih orodij, znanih iz Officea.</div>
+      </div>
+      <div class="feature-card glass animate-in delay-3">
+        <div class="feature-icon"><i class="bi bi-diagram-3"></i></div>
+        <div class="feature-title">Graf, naloge, paleta</div>
+        <div class="feature-desc">Povežite zapiske v graf, načrtujte na deski z nalogami, skočite kamor koli s paleto ukazov in zaklenite aplikacijo z geslom.</div>
+      </div>
     </div>
   </div>
 </section>
@@ -199,32 +219,32 @@
     </div>
     <div class="usecases-grid">
       <div class="usecase-card glass animate-in">
-        <div class="usecase-persona"><div class="usecase-avatar">👩‍💻</div><div><div class="usecase-name">Razvijalec</div><div class="usecase-role">Programski inženir</div></div></div>
+        <div class="usecase-persona"><div class="usecase-avatar"><i class="bi bi-laptop"></i></div><div><div class="usecase-name">Razvijalec</div><div class="usecase-role">Programski inženir</div></div></div>
         <p class="usecase-scenario">Shranjuje odlomke kode, API ključe in projektne beležke v šifrirani obliki. Uporablja izvoz v Markdown za dokumentacijo. Dela brez povezave v letalu.</p>
         <div class="usecase-tags"><span class="usecase-tag">Markdown</span><span class="usecase-tag">Brez povezave</span><span class="usecase-tag">Izvoz</span></div>
       </div>
       <div class="usecase-card glass animate-in delay-1">
-        <div class="usecase-persona"><div class="usecase-avatar">📰</div><div><div class="usecase-name">Novinar</div><div class="usecase-role">Preiskovalno novinarstvo</div></div></div>
+        <div class="usecase-persona"><div class="usecase-avatar"><i class="bi bi-newspaper"></i></div><div><div class="usecase-name">Novinar</div><div class="usecase-role">Preiskovalno novinarstvo</div></div></div>
         <p class="usecase-scenario">Hrani zaupne beležke o virih z AES-256 šifriranjem. Brez sinhronizacije v oblaku — brez uhajanja. Oznake za organizacijo po temah.</p>
         <div class="usecase-tags"><span class="usecase-tag">Šifriranje</span><span class="usecase-tag">Oznake</span><span class="usecase-tag">Zasebnost</span></div>
       </div>
       <div class="usecase-card glass animate-in delay-2">
-        <div class="usecase-persona"><div class="usecase-avatar">🎓</div><div><div class="usecase-name">Študent</div><div class="usecase-role">Univerza</div></div></div>
+        <div class="usecase-persona"><div class="usecase-avatar"><i class="bi bi-mortarboard"></i></div><div><div class="usecase-name">Študent</div><div class="usecase-role">Univerza</div></div></div>
         <p class="usecase-scenario">Vodi beležke z oblikovanjem, kontrolnimi seznami in slikami. Uporablja koledar za roke. Nameščeno kot PWA na telefonu.</p>
         <div class="usecase-tags"><span class="usecase-tag">Oblikovanje</span><span class="usecase-tag">Koledar</span><span class="usecase-tag">PWA</span></div>
       </div>
       <div class="usecase-card glass animate-in delay-1">
-        <div class="usecase-persona"><div class="usecase-avatar">🏥</div><div><div class="usecase-name">Zdravnik</div><div class="usecase-role">Zdravstveni delavec</div></div></div>
+        <div class="usecase-persona"><div class="usecase-avatar"><i class="bi bi-heart-pulse"></i></div><div><div class="usecase-name">Zdravnik</div><div class="usecase-role">Zdravstveni delavec</div></div></div>
         <p class="usecase-scenario">Vodi opazovalne beležke lokalno — brez težav z zasebnostjo, podatki ne zapustijo naprave. Izvoz v HTML za poročila.</p>
         <div class="usecase-tags"><span class="usecase-tag">Lokalno</span><span class="usecase-tag">Brez strežnika</span><span class="usecase-tag">HTML</span></div>
       </div>
       <div class="usecase-card glass animate-in delay-2">
-        <div class="usecase-persona"><div class="usecase-avatar">✍️</div><div><div class="usecase-name">Pisatelj</div><div class="usecase-role">Romanopisec / Bloger</div></div></div>
+        <div class="usecase-persona"><div class="usecase-avatar"><i class="bi bi-pen"></i></div><div><div class="usecase-name">Pisatelj</div><div class="usecase-role">Romanopisec / Bloger</div></div></div>
         <p class="usecase-scenario">Piše poglavja in objave v urejevalniku na celozaslonskem načinu. Barvne oznake za različne projekte. Izvoz v Markdown za objavo.</p>
         <div class="usecase-tags"><span class="usecase-tag">Cel zaslon</span><span class="usecase-tag">Barve</span><span class="usecase-tag">Markdown</span></div>
       </div>
       <div class="usecase-card glass animate-in delay-3">
-        <div class="usecase-persona"><div class="usecase-avatar">🌍</div><div><div class="usecase-name">Popotnik</div><div class="usecase-role">Digitalni nomad</div></div></div>
+        <div class="usecase-persona"><div class="usecase-avatar"><i class="bi bi-globe2"></i></div><div><div class="usecase-name">Popotnik</div><div class="usecase-role">Digitalni nomad</div></div></div>
         <p class="usecase-scenario">Uporablja Local Notes v 12 jezikih v različnih državah. Deluje popolnoma brez povezave v letalih in oddaljenih krajih.</p>
         <div class="usecase-tags"><span class="usecase-tag">12 jezikov</span><span class="usecase-tag">Brez povezave</span><span class="usecase-tag">PWA</span></div>
       </div>
@@ -242,14 +262,14 @@
         <p class="section-subtitle animate-in delay-2">Datoteka <code class="note-code">.note</code> je prenosni šifrirani vsebnik, zasnovan z enim ciljem: vaše beležke pripadajo vam — ne platformi, oblaku ali podjetju.</p>
         <div class="note-format-timeline animate-in delay-3">
           <div class="nft-item"><div class="nft-icon"><i class="bi bi-file-earmark-lock"></i></div><div><div class="nft-title">Rojen iz problema zasebnosti</div><div class="nft-desc">Vsaka priljubljena aplikacija za beležke shranjuje podatke na oddaljenih strežnikih. En vdor, ena zahteva oblasti, ena sprememba pravilnika — in vaše zasebne misli so razkrite. Format <code class="note-code">.note</code> to onemogoča po svoji naravi.</div></div></div>
-          <div class="nft-item"><div class="nft-icon">📦</div><div><div class="nft-title">Kaj je znotraj datoteke .note</div><div class="nft-desc">Datoteka <code class="note-code">.note</code> je samostojen JSON paket: vsebina beležke, metapodatki, oznake in — pri vklopljenem šifriranju — AES-256 šifrirana vsebina, ki jo lahko dešifrira samo vaše geslo. Brez lastniškega formata, brez vezanosti na ponudnika.</div></div></div>
-          <div class="nft-item"><div class="nft-icon"><i class="bi bi-filetype-html"></i></div><div><div class="nft-title">Offline-first, vedno prenosljivo</div><div class="nft-desc">Izvozite katero koli beležko kot datoteko <code class="note-code">.note</code> in jo nosite na USB-ju, pošiljajte prek Signala ali arhivirajte za desetletja. Uvozite nazaj v Local Notes na kateri koli napravi — brez računa, brez interneta.</div></div></div>
-          <div class="nft-item"><div class="nft-icon">🛡️</div><div><div class="nft-title">Zero-knowledge kot temelj</div><div class="nft-desc">Pri šifriranju beležke ključ nikoli ne zapusti vaše naprave. Local Notes uporablja vgrajeni Web Crypto API brskalnika — isti standard, ki ga uporabljajo banke. Tudi če nekdo prestreže vašo datoteko <code class="note-code">.note</code>, bo videl samo šifrirano vsebino.</div></div></div>
+          <div class="nft-item"><div class="nft-icon"><i class="bi bi-box-seam"></i></div><div><div class="nft-title">Kaj je znotraj datoteke .note</div><div class="nft-desc">Datoteka <code class="note-code">.note</code> je samostojen JSON paket: vsebina beležke, metapodatki, oznake in — pri vklopljenem šifriranju — AES-256 šifrirana vsebina, ki jo lahko dešifrira samo vaše geslo. Brez lastniškega formata, brez vezanosti na ponudnika.</div></div></div>
+          <div class="nft-item"><div class="nft-icon"><i class="bi bi-usb-drive"></i></div><div><div class="nft-title">Offline-first, vedno prenosljivo</div><div class="nft-desc">Izvozite katero koli beležko kot datoteko <code class="note-code">.note</code> in jo nosite na USB-ju, pošiljajte prek Signala ali arhivirajte za desetletja. Uvozite nazaj v Local Notes na kateri koli napravi — brez računa, brez interneta.</div></div></div>
+          <div class="nft-item"><div class="nft-icon"><i class="bi bi-shield-check"></i></div><div><div class="nft-title">Zero-knowledge kot temelj</div><div class="nft-desc">Pri šifriranju beležke ključ nikoli ne zapusti vaše naprave. Local Notes uporablja vgrajeni Web Crypto API brskalnika — isti standard, ki ga uporabljajo banke. Tudi če nekdo prestreže vašo datoteko <code class="note-code">.note</code>, bo videl samo šifrirano vsebino.</div></div></div>
         </div>
       </div>
       <div class="note-format-visual animate-in delay-2">
         <div class="note-file-card glass">
-          <div class="nfc-header"><div class="nfc-icon"><i class="bi bi-filetype-pdf"></i></div><div><div class="nfc-name">meeting-notes.note</div><div class="nfc-size">2.4 KB · Šifrirano</div></div><div class="nfc-lock"><i class="bi bi-file-earmark-lock"></i></div></div>
+          <div class="nfc-header"><div class="nfc-icon"><i class="bi bi-file-earmark-text"></i></div><div><div class="nfc-name">meeting-notes.note</div><div class="nfc-size">2.4 KB · Šifrirano</div></div><div class="nfc-lock"><i class="bi bi-file-earmark-lock"></i></div></div>
           <div class="nfc-body">
             <div class="nfc-line"><span class="nfc-key">"id"</span><span class="nfc-val">"a3f9…c12e"</span></div>
             <div class="nfc-line"><span class="nfc-key">"title"</span><span class="nfc-val">"Beležke s sestanka"</span></div>
@@ -260,7 +280,7 @@
           </div>
           <div class="nfc-footer"><span class="nfc-badge">AES-256-GCM</span><span class="nfc-badge">Web Crypto API</span><span class="nfc-badge">Odprt format</span></div>
         </div>
-        <p class="note-format-hint">↑ Dejanska struktura šifrirane datoteke .note. Vsebina je nečitljiva brez vašega gesla.</p>
+        <p class="note-format-hint"><i class="bi bi-arrow-up"></i> Dejanska struktura šifrirane datoteke .note. Vsebina je nečitljiva brez vašega gesla.</p>
       </div>
     </div>
   </div>
@@ -302,8 +322,8 @@
           <div class="editor-mock-text">
             <p>Ključne odločitve seje:</p>
             <div class="editor-checklist">
-              <div class="editor-check done"><span class="check-box">✓</span> Dokončati prioritete načrta</div>
-              <div class="editor-check done"><span class="check-box">✓</span> Dodeliti vodje funkcij</div>
+              <div class="editor-check done"><span class="check-box"><i class="bi bi-check-lg"></i></span> Dokončati prioritete načrta</div>
+              <div class="editor-check done"><span class="check-box"><i class="bi bi-check-lg"></i></span> Dodeliti vodje funkcij</div>
               <div class="editor-check"><span class="check-box"></span> Načrtovati sestanek o proračunu</div>
               <div class="editor-check"><span class="check-box"></span> Pregledati rezultate varnostne revizije</div>
             </div>
@@ -320,6 +340,55 @@
   </div>
 </section>
 
+<!-- ── Word & Office ─────────────────────────────────────────── -->
+<section class="office-section" id="office">
+  <div class="container">
+    <div class="office-header">
+      <div class="section-label animate-in">Word in Office</div>
+      <h2 class="section-title animate-in delay-1">Urejevalnik kot Office. Datoteke kot Word.</h2>
+      <p class="section-subtitle animate-in delay-2">Zavihki Datoteka, Postavitev, Sklici in Pregled, priprava strani, kazalo, sprotne opombe — ter uvoz in izvoz .docx in .doc.</p>
+    </div>
+    <div class="ribbon-mock animate-in" aria-hidden="true">
+      <div class="rm-titlebar"><span class="rm-dots"><i></i><i></i><i></i></span><span class="rm-title">meeting-notes.docx</span></div>
+      <div class="rm-tabs"><span class="rm-tab">Datoteka</span><span class="rm-tab">Domov</span><span class="rm-tab">Vstavljanje</span><span class="rm-tab active">Postavitev</span><span class="rm-tab">Sklici</span><span class="rm-tab">Pregled</span><span class="rm-tab">Pogled</span></div>
+      <div class="rm-body"><div class="rm-group"><div class="rm-btns"><span class="rm-btn"><i class="bi bi-arrows-expand"></i><em>Robovi</em></span><span class="rm-btn"><i class="bi bi-phone-landscape"></i><em>Usmerjenost</em></span><span class="rm-btn"><i class="bi bi-file-earmark"></i><em>Velikost</em></span><span class="rm-btn"><i class="bi bi-layout-three-columns"></i><em>Stolpci</em></span></div><div class="rm-glabel">Priprava strani</div></div><div class="rm-group"><div class="rm-btns"><span class="rm-btn"><i class="bi bi-distribute-vertical"></i><em>Razmik</em></span><span class="rm-btn"><i class="bi bi-type"></i><em>Deljenje</em></span></div><div class="rm-glabel">Odstavek</div></div><div class="rm-group"><div class="rm-btns"><span class="rm-btn"><i class="bi bi-file-break"></i><em>Prelom strani</em></span></div><div class="rm-glabel">Prelomi</div></div><div class="rm-group"><div class="rm-btns"><span class="rm-btn"><i class="bi bi-list-nested"></i><em>Kazalo</em></span><span class="rm-btn"><i class="bi bi-chat-square-text"></i><em>Nov komentar</em></span></div><div class="rm-glabel">Kazalo</div></div></div>
+      <div class="rm-page"><div class="rm-sheet"><b></b><u></u><u></u><u class="s"></u><i></i><u></u><u class="s"></u></div></div>
+    </div>
+    <div class="office-grid">
+      <div class="office-card glass animate-in delay-0">
+        <div class="office-card-icon"><i class="bi bi-filetype-docx"></i></div>
+        <div><div class="office-card-title">Uvoz in izvoz Worda</div><div class="office-card-desc">Odpirajte datoteke .docx in .doc ter shranjujte zapiske kot pravi .docx ali kot .doc, združljiv z Wordom 97–2003. Slogi, seznami, tabele in slike ostanejo ohranjeni.</div></div>
+      </div>
+      <div class="office-card glass animate-in delay-1">
+        <div class="office-card-icon"><i class="bi bi-file-earmark-ruled"></i></div>
+        <div><div class="office-card-title">Priprava strani</div><div class="office-card-desc">A4, Letter in drugi formati, robovi, usmerjenost, stolpci, glave, noge in številke strani — pri tiskanju, v PDF-ju in v datotekah Word.</div></div>
+      </div>
+      <div class="office-card glass animate-in delay-2">
+        <div class="office-card-icon"><i class="bi bi-list-nested"></i></div>
+        <div><div class="office-card-title">Kazalo in opombe</div><div class="office-card-desc">Samodejno kazalo iz naslovov, sprotne opombe s številčenjem, napisi slik in zaznamki.</div></div>
+      </div>
+      <div class="office-card glass animate-in delay-3">
+        <div class="office-card-icon"><i class="bi bi-chat-square-text"></i></div>
+        <div><div class="office-card-title">Pregled</div><div class="office-card-desc">Komentarji na izbor, jezik preverjanja črkovanja in preverjanje dostopnosti: manjkajoče nadomestno besedilo, prazni naslovi, nejasne povezave.</div></div>
+      </div>
+      <div class="office-card glass animate-in delay-0">
+        <div class="office-card-icon"><i class="bi bi-brush"></i></div>
+        <div><div class="office-card-title">Pomočniki za oblikovanje</div><div class="office-card-desc">Poslikovalnik oblike, sprememba velikosti črk, hitri slogi, začetnica, besedilno polje, senčenje odstavka, oznake ¶ in smer besedila LTR/RTL.</div></div>
+      </div>
+      <div class="office-card glass animate-in delay-1">
+        <div class="office-card-icon"><i class="bi bi-volume-up"></i></div>
+        <div><div class="office-card-title">Branje naglas in bralni način</div><div class="office-card-desc">Poslušajte izbor ali celoten zapisek, odprite podokno za krmarjenje z naslovi ali zaklenite urejanje v bralnem načinu.</div></div>
+      </div>
+      <div class="office-card glass animate-in delay-2">
+        <div class="office-card-icon"><i class="bi bi-phone"></i></div>
+        <div><div class="office-card-title">Narejeno tudi za telefone</div><div class="office-card-desc">Na majhnih zaslonih je vrstica zavihkov pripeta, drsi le vrstica z orodji — stran se ne premika vstran.</div></div>
+      </div>
+    </div>
+    <div class="format-chips animate-in"><i class="bi bi-box-arrow-in-down"></i><span class="fmt-chip">.docx</span><span class="fmt-chip">.doc</span><span class="fmt-chip">.html</span><span class="fmt-chip">.md</span><span class="fmt-chip">.pdf</span><span class="fmt-chip">.txt</span><span class="fmt-chip">.note</span><i class="bi bi-box-arrow-up"></i></div>
+    <p class="office-note animate-in"><i class="bi bi-info-circle"></i> Izvoženi .doc je združljiv z Wordom 97–2003; uvoz starega binarnega .doc ohrani besedilo, tabele in povezave.</p>
+  </div>
+</section>
+
 <!-- ── Install PWA ───────────────────────────────────────────── -->
 <section class="install-section" id="install">
   <div class="container">
@@ -331,32 +400,32 @@
       </div>
       <div class="install-platforms">
         <div class="install-platform glass animate-in">
-          <div class="install-platform-icon">🖥️</div>
+          <div class="install-platform-icon"><i class="bi bi-pc-display"></i></div>
           <div class="install-platform-name">Računalnik</div>
           <div class="install-platform-desc">Chrome, Edge, Firefox — kliknite ikono namestitve v naslovni vrstici</div>
           <div class="install-steps">
             <div class="install-step-item"><span class="install-step-num">1</span> Odprite aplikacijo</div>
-            <div class="install-step-item"><span class="install-step-num">2</span> Kliknite ⊕ v naslovni vrstici</div>
+            <div class="install-step-item"><span class="install-step-num">2</span> Kliknite <i class="bi bi-plus-circle"></i> v naslovni vrstici</div>
             <div class="install-step-item"><span class="install-step-num">3</span> Kliknite «Namesti»</div>
           </div>
         </div>
         <div class="install-platform glass animate-in delay-1">
-          <div class="install-platform-icon">📱</div>
+          <div class="install-platform-icon"><i class="bi bi-phone"></i></div>
           <div class="install-platform-name">Android</div>
           <div class="install-platform-desc">Chrome za Android — dodajte na začetni zaslon z enim dotikom</div>
           <div class="install-steps">
             <div class="install-step-item"><span class="install-step-num">1</span> Odprite v Chrome</div>
-            <div class="install-step-item"><span class="install-step-num">2</span> Dotaknite se ⋮ menija</div>
+            <div class="install-step-item"><span class="install-step-num">2</span> Dotaknite se <i class="bi bi-three-dots-vertical"></i> menija</div>
             <div class="install-step-item"><span class="install-step-num">3</span> «Dodaj na začetni zaslon»</div>
           </div>
         </div>
         <div class="install-platform glass animate-in delay-2">
-          <div class="install-platform-icon">🍎</div>
+          <div class="install-platform-icon"><i class="bi bi-apple"></i></div>
           <div class="install-platform-name">iOS / iPadOS</div>
-          <div class="install-platform-desc">Safari na iPhone ali iPad — meni «Deli» → na začetni zaslon</div>
+          <div class="install-platform-desc">Safari na iPhone ali iPad — meni «Deli» <i class="bi bi-arrow-right"></i> na začetni zaslon</div>
           <div class="install-steps">
             <div class="install-step-item"><span class="install-step-num">1</span> Odprite v Safari</div>
-            <div class="install-step-item"><span class="install-step-num">2</span> Dotaknite se «Deli» ↑</div>
+            <div class="install-step-item"><span class="install-step-num">2</span> Dotaknite se «Deli» <i class="bi bi-box-arrow-up"></i></div>
             <div class="install-step-item"><span class="install-step-num">3</span> «Dodaj na začetni zaslon»</div>
           </div>
         </div>
@@ -376,15 +445,15 @@
       <table class="comparison-table">
         <thead><tr><th>Funkcija</th><th class="highlight">Local Notes</th><th>Notion</th><th>Evernote</th><th>Google Keep</th></tr></thead>
         <tbody>
-          <tr><td>Brezplačno</td><td class="highlight"><span class="check">✓</span></td><td><span class="partial">Omejeno</span></td><td><span class="partial">Omejeno</span></td><td><span class="check">✓</span></td></tr>
-          <tr><td>Brez registracije</td><td class="highlight"><span class="check">✓</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td></tr>
-          <tr><td>AES-256 šifriranje</td><td class="highlight"><span class="check">✓</span></td><td><span class="cross">✗</span></td><td><span class="partial">Plačljivo</span></td><td><span class="cross">✗</span></td></tr>
-          <tr><td>Brez strežnika / lokalno</td><td class="highlight"><span class="check">✓</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td></tr>
-          <tr><td>Brez povezave (PWA)</td><td class="highlight"><span class="check">✓</span></td><td><span class="partial">Delno</span></td><td><span class="partial">Delno</span></td><td><span class="partial">Delno</span></td></tr>
-          <tr><td>Brez sledenja</td><td class="highlight"><span class="check">✓</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td></tr>
-          <tr><td>12 jezikov vmesnika</td><td class="highlight"><span class="check">✓</span></td><td><span class="partial">Malo</span></td><td><span class="partial">Malo</span></td><td><span class="partial">Malo</span></td></tr>
-          <tr><td>Izvoz Markdown / HTML</td><td class="highlight"><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="partial">Plačljivo</span></td><td><span class="cross">✗</span></td></tr>
-          <tr><td>Odprtokodna programska oprema</td><td class="highlight"><span class="check">✓</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td></tr>
+          <tr><td>Brezplačno</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="partial">Omejeno</span></td><td><span class="partial">Omejeno</span></td><td><span class="check"><i class="bi bi-check-lg"></i></span></td></tr>
+          <tr><td>Brez registracije</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td></tr>
+          <tr><td>AES-256 šifriranje</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="partial">Plačljivo</span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td></tr>
+          <tr><td>Brez strežnika / lokalno</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td></tr>
+          <tr><td>Brez povezave (PWA)</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="partial">Delno</span></td><td><span class="partial">Delno</span></td><td><span class="partial">Delno</span></td></tr>
+          <tr><td>Brez sledenja</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td></tr>
+          <tr><td>12 jezikov vmesnika</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="partial">Malo</span></td><td><span class="partial">Malo</span></td><td><span class="partial">Malo</span></td></tr>
+          <tr><td>Izvoz Markdown / HTML</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="partial">Plačljivo</span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td></tr>
+          <tr><td>Odprtokodna programska oprema</td><td class="highlight"><span class="check"><i class="bi bi-check-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td><td><span class="cross"><i class="bi bi-x-lg"></i></span></td></tr>
         </tbody>
       </table>
       <p class="comparison-note">* Na podlagi javno dostopnih informacij za leto 2026.</p>
@@ -401,10 +470,10 @@
         <p class="section-subtitle animate-in delay-2">Local Notes je zgrajen s skrbjo za vašo zasebnost. Brez strežnika, brez sinhronizacije v oblaku, brez analitike.</p>
       </div>
       <div class="security-badges">
-        <div class="security-badge glass animate-in"><div class="security-badge-icon">🛡️</div><div><div class="security-badge-title">Brez strežnika in oblaka</div><div class="security-badge-desc">Vse beležke so shranjene lokalno v IndexedDB vašega brskalnika. Nič ne zapusti vaše naprave.</div></div></div>
-        <div class="security-badge glass animate-in delay-1"><div class="security-badge-icon">👁️</div><div><div class="security-badge-title">Nič sledenja</div><div class="security-badge-desc">Brez analitike, brez piškotkov, brez sledenja. Dobesedno ne moremo videti vaših podatkov.</div></div></div>
-        <div class="security-badge glass animate-in delay-2"><div class="security-badge-icon">🔑</div><div><div class="security-badge-title">Brez registracije</div><div class="security-badge-desc">Odprite aplikacijo in začnite pisati. Brez e-pošte, brez gesla, brez računa.</div></div></div>
-        <div class="security-badge glass animate-in delay-3"><div class="security-badge-icon">🔐</div><div><div class="security-badge-title">AES-256 šifriranje</div><div class="security-badge-desc">Industrijski standard šifriranja ščiti vaše beležke. Samo vi jih lahko dešifrirate.</div></div></div>
+        <div class="security-badge glass animate-in"><div class="security-badge-icon"><i class="bi bi-shield-check"></i></div><div><div class="security-badge-title">Brez strežnika in oblaka</div><div class="security-badge-desc">Vse beležke so shranjene lokalno v IndexedDB vašega brskalnika. Nič ne zapusti vaše naprave.</div></div></div>
+        <div class="security-badge glass animate-in delay-1"><div class="security-badge-icon"><i class="bi bi-eye-slash"></i></div><div><div class="security-badge-title">Nič sledenja</div><div class="security-badge-desc">Brez analitike, brez piškotkov, brez sledenja. Dobesedno ne moremo videti vaših podatkov.</div></div></div>
+        <div class="security-badge glass animate-in delay-2"><div class="security-badge-icon"><i class="bi bi-key"></i></div><div><div class="security-badge-title">Brez registracije</div><div class="security-badge-desc">Odprite aplikacijo in začnite pisati. Brez e-pošte, brez gesla, brez računa.</div></div></div>
+        <div class="security-badge glass animate-in delay-3"><div class="security-badge-icon"><i class="bi bi-lock"></i></div><div><div class="security-badge-title">AES-256 šifriranje</div><div class="security-badge-desc">Industrijski standard šifriranja ščiti vaše beležke. Samo vi jih lahko dešifrirate.</div></div></div>
       </div>
     </div>
   </div>
@@ -418,18 +487,18 @@
       <p class="section-subtitle animate-in delay-2">Local Notes govori vaš jezik. Izberite želeni vmesnik.</p>
     </div>
     <div class="lang-grid">
-      <a href="../" class="lang-item animate-in"><span class="lang-flag">🇬🇧</span><div><div class="lang-name">English</div><div class="lang-native">English</div></div></a>
-      <a href="../ru/" class="lang-item animate-in delay-1"><span class="lang-flag">🇷🇺</span><div><div class="lang-name">Русский</div><div class="lang-native">Russian</div></div></a>
-      <a href="../ua/" class="lang-item animate-in delay-2"><span class="lang-flag">🇺🇦</span><div><div class="lang-name">Українська</div><div class="lang-native">Ukrainian</div></div></a>
-      <a href="../pl/" class="lang-item animate-in delay-3"><span class="lang-flag">🇵🇱</span><div><div class="lang-name">Polski</div><div class="lang-native">Polish</div></div></a>
-      <a href="../cs/" class="lang-item animate-in"><span class="lang-flag">🇨🇿</span><div><div class="lang-name">Čeština</div><div class="lang-native">Czech</div></div></a>
-      <a href="../sk/" class="lang-item animate-in delay-1"><span class="lang-flag">🇸🇰</span><div><div class="lang-name">Slovenčina</div><div class="lang-native">Slovak</div></div></a>
-      <a href="../bg/" class="lang-item animate-in delay-2"><span class="lang-flag">🇧🇬</span><div><div class="lang-name">Български</div><div class="lang-native">Bulgarian</div></div></a>
-      <a href="../hr/" class="lang-item animate-in delay-3"><span class="lang-flag">🇭🇷</span><div><div class="lang-name">Hrvatski</div><div class="lang-native">Croatian</div></div></a>
-      <a href="../sr/" class="lang-item animate-in"><span class="lang-flag">🇷🇸</span><div><div class="lang-name">Српски</div><div class="lang-native">Serbian</div></div></a>
-      <a href="../bs/" class="lang-item animate-in delay-1"><span class="lang-flag">🇧🇦</span><div><div class="lang-name">Bosanski</div><div class="lang-native">Bosnian</div></div></a>
-      <a href="../mk/" class="lang-item animate-in delay-2"><span class="lang-flag">🇲🇰</span><div><div class="lang-name">Македонски</div><div class="lang-native">Macedonian</div></div></a>
-      <a href="../sl/" class="lang-item active animate-in delay-3"><span class="lang-flag">🇸🇮</span><div><div class="lang-name">Slovenščina</div><div class="lang-native">Slovenian</div></div></a>
+      <a href="../" class="lang-item animate-in"><span class="lang-flag lang-code">GB</span><div><div class="lang-name">English</div><div class="lang-native">English</div></div></a>
+      <a href="../ru/" class="lang-item animate-in delay-1"><span class="lang-flag lang-code">RU</span><div><div class="lang-name">Русский</div><div class="lang-native">Russian</div></div></a>
+      <a href="../ua/" class="lang-item animate-in delay-2"><span class="lang-flag lang-code">UA</span><div><div class="lang-name">Українська</div><div class="lang-native">Ukrainian</div></div></a>
+      <a href="../pl/" class="lang-item animate-in delay-3"><span class="lang-flag lang-code">PL</span><div><div class="lang-name">Polski</div><div class="lang-native">Polish</div></div></a>
+      <a href="../cs/" class="lang-item animate-in"><span class="lang-flag lang-code">CZ</span><div><div class="lang-name">Čeština</div><div class="lang-native">Czech</div></div></a>
+      <a href="../sk/" class="lang-item animate-in delay-1"><span class="lang-flag lang-code">SK</span><div><div class="lang-name">Slovenčina</div><div class="lang-native">Slovak</div></div></a>
+      <a href="../bg/" class="lang-item animate-in delay-2"><span class="lang-flag lang-code">BG</span><div><div class="lang-name">Български</div><div class="lang-native">Bulgarian</div></div></a>
+      <a href="../hr/" class="lang-item animate-in delay-3"><span class="lang-flag lang-code">HR</span><div><div class="lang-name">Hrvatski</div><div class="lang-native">Croatian</div></div></a>
+      <a href="../sr/" class="lang-item animate-in"><span class="lang-flag lang-code">RS</span><div><div class="lang-name">Српски</div><div class="lang-native">Serbian</div></div></a>
+      <a href="../bs/" class="lang-item animate-in delay-1"><span class="lang-flag lang-code">BA</span><div><div class="lang-name">Bosanski</div><div class="lang-native">Bosnian</div></div></a>
+      <a href="../mk/" class="lang-item animate-in delay-2"><span class="lang-flag lang-code">MK</span><div><div class="lang-name">Македонски</div><div class="lang-native">Macedonian</div></div></a>
+      <a href="../sl/" class="lang-item active animate-in delay-3"><span class="lang-flag lang-code">SI</span><div><div class="lang-name">Slovenščina</div><div class="lang-native">Slovenian</div></div></a>
     </div>
   </div>
 </section>
@@ -466,6 +535,15 @@
       <div class="faq-item glass animate-in delay-3">
         <button class="faq-question" aria-expanded="false"><span>Ali je izvorna koda na voljo?</span><i class="bi bi-plus faq-icon"></i></button>
         <div class="faq-answer"><p>Da. Local Notes je popolnoma odprt pod licenco MIT. Lahko pregledate, forknete in prispevate na <a href="https://github.com/PsyGioX/localnotes" target="_blank" rel="noopener" style="color:var(--primary-light);">GitHub</a>.</p></div>
+      </div>
+      <div class="faq-item glass animate-in delay-3">
+        <button class="faq-question" aria-expanded="false">
+          <span>Ali lahko odprem in shranim datoteke Word (.docx, .doc)?</span>
+          <i class="bi bi-plus faq-icon"></i>
+        </button>
+        <div class="faq-answer">
+          <p>Da. Uporabite Datoteka → Uvoz iz Worda v urejevalniku ali gumb za uvoz v aplikaciji. Zapiske lahko izvozite kot .docx ali kot .doc, združljiv z Wordom 97–2003. Vse se pretvori v vašem brskalniku — datoteke se nikamor ne pošiljajo. Sledenje spremembam ni podprto, stari binarni .doc pa ohrani le besedilo, tabele in povezave.</p>
+        </div>
       </div>
     </div>
   </div>
