@@ -33,6 +33,7 @@ var scripts = [
     '/js/i18n.js?v=1.15.0',
     '/js/img.js?v=1.15.0',
     '/js/date-utils.js?v=1.15.0',
+    '/js/editor-pro.js?v=1.15.0',
     '/js/editor-integration.js?v=1.15.0',
     '/js/markdown.js?v=1.15.0',
     '/js/import-formats.js?v=1.15.0',

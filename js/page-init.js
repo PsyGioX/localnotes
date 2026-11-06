@@ -47,7 +47,8 @@ document.addEventListener('DOMContentLoaded', function() {
         '/css/action-bar.css?v=2024.2',
         '/css/onboarding-tour.css?v=2024.2',
         '/css/sidebar.css?v=2024.2',
-        '/css/modal-system.css?v=2024.2'
+        '/css/modal-system.css?v=2024.2',
+        '/css/editor-fullpage.css?v=2024.2'
     ];
     sheets.forEach(function(href) {
         var link = document.createElement('link');

@@ -11,7 +11,7 @@
  * Исходники: https://github.com/PsyGioX/localnotes — Сайт: https://localnotes-three.vercel.app
  */
 // Service Worker для Local Notes
-const CACHE_VERSION = 'v1.16.5-office';
+const CACHE_VERSION = 'v1.17.0-editor-pro';
 const STATIC_CACHE  = `static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `dynamic-${CACHE_VERSION}`;
 const CACHE_LIMIT   = 60;
@@ -28,6 +28,7 @@ const STATIC_FILES = [
     '/css/img.css',
     '/css/highlight.css',
     '/css/editor-modal.css',
+    '/css/editor-fullpage.css',
     '/css/tags-calendar.css',
     '/css/page.css',
     '/js/doc-theme.js',
@@ -96,6 +97,7 @@ const STATIC_FILES = [
     '/js/i18n.js',
     '/js/tags-calendar.js',
     '/js/date-utils.js',
+    '/js/editor-pro.js',
     '/js/editor-integration.js',
     '/js/markdown.js',
     '/js/import-formats.js',

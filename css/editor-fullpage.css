@@ -1,0 +1,273 @@
+/*
+ * Local Notes — Editor: always full-page layout, mobile polish, and styles
+ * for the "Pro" editor features (dictation, writing sprint, draft recovery).
+ *
+ * Loaded after editor-modal.css / apple.css and before office2024.css; selectors
+ * are prefixed with `html[data-theme] body #editModal#editModal` (+ !important where the older sheets
+ * use it) so this file wins on every viewport.
+ */
+
+/* ── 1. FULL PAGE on every screen size ─────────────────────────────────────── */
+html[data-theme] body #editModal#editModal.modal {
+    background: var(--modal-bg, #1a1a1a) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    animation: lnEdOpen .16s ease-out;
+}
+@keyframes lnEdOpen { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce), (max-width: 768px) {
+    html[data-theme] body #editModal#editModal.modal { animation: none; }
+}
+
+html[data-theme] body #editModal#editModal .modal-content {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: var(--lne-vvt, 0px) !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: env(safe-area-inset-top, 0px) 0 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: var(--modal-bg, #1a1a1a);
+    display: grid !important;
+    grid-template-rows: minmax(0, 1fr) auto !important;
+    grid-template-areas: "editor" "actions" !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+    /* height stack: vh → dvh → real visual viewport (keeps the action bar above the on-screen keyboard) */
+    height: 100vh !important;
+    height: 100dvh !important;
+    height: var(--lne-vvh, 100dvh) !important;
+    max-height: none !important;
+}
+html[data-theme] body #editModal#editModal .modal-content::before { display: none !important; }
+
+html[data-theme] body #editModal#editModal .lne-editor-wrapper {
+    padding: 0 !important;
+    background: transparent !important;
+    max-height: none !important;
+}
+html[data-theme] body #editModal#editModal .lne-wrapper {
+    border-radius: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    height: 100%;
+}
+html[data-theme] body #editModal#editModal .lne-wrapper:focus-within { box-shadow: none !important; border: 0 !important; }
+html[data-theme] body #editModal#editModal .lne-toolbar { border-radius: 0 !important; clip-path: none !important; }
+
+/* Desktop: paper column centred on a wide canvas (width itself comes from office2024.css) */
+@media (min-width: 769px) {
+    html[data-theme] body #editModal#editModal .lne-body { padding: 24px clamp(16px, 4vw, 64px) 40px !important; }
+    html[data-theme] body #editModal#editModal .lne-body .lne-editor { width: min(100%, max(var(--ox-w, 210mm), 920px)) !important; max-width: 100% !important; margin-inline: auto !important; }
+}
+
+/* Action bar — slim, aligned with the paper column */
+html[data-theme] body #editModal#editModal .modal-buttons-container {
+    padding: 8px clamp(12px, 3vw, 28px) 8px !important;
+    gap: 8px !important;
+    border-top: 1px solid var(--border-color, #272727);
+    background: var(--modal-bg, #1a1a1a) !important;
+    box-shadow: none !important;
+}
+html[data-theme] body #editModal#editModal .modal-buttons-container button {
+    min-height: 40px !important;
+    border-radius: 10px !important;
+    font-weight: 600;
+}
+html[data-theme] body #editModal#editModal #saveNoteButton,
+html[data-theme] body #editModal#editModal #cancelNoteButton { min-width: 120px; }
+
+/* ── 2. MOBILE editor design ───────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    html[data-theme] body #editModal#editModal .modal-content { background: var(--modal-bg, #1a1a1a); }
+
+    /* Toolbar: one swipeable row, big touch targets, snap */
+    html[data-theme] body #editModal#editModal .lne-toolbar { border-bottom: 1px solid var(--border-color, #272727); }
+    html[data-theme] body #editModal#editModal .lne-toolbar-scroll {
+        scroll-snap-type: x proximity;
+        scroll-padding-inline: 12px;
+        -webkit-overflow-scrolling: touch;
+    }
+    html[data-theme] body #editModal#editModal .lne-toolbar .lne-grp { scroll-snap-align: start; }
+    html[data-theme] body #editModal#editModal .lne-toolbar .lne-btn { min-width: 40px; min-height: 40px; border-radius: 10px; }
+    html[data-theme] body #editModal#editModal .lne-toolbar .lne-btn i { font-size: 19px; }
+
+    /* Writing surface: comfortable measure and reading size */
+    html[data-theme] body #editModal#editModal .lne-body { padding: 0 !important; background: var(--modal-bg, #1a1a1a) !important; }
+    html[data-theme] body #editModal#editModal .lne-body .lne-editor {
+        padding: 18px max(18px, env(safe-area-inset-right, 0px)) 140px max(18px, env(safe-area-inset-left, 0px)) !important;
+        font-size: 17px;
+        line-height: 1.7;
+        box-shadow: none !important;
+        background: transparent !important;
+    }
+
+    /* Bottom action bar: [settings] [cancel] [SAVE — primary, wide] */
+    html[data-theme] body #editModal#editModal .modal-buttons-container {
+        display: grid !important;
+        grid-template-columns: 44px minmax(0, 1fr) minmax(0, 1.7fr);
+        align-items: center;
+        padding: 8px max(12px, env(safe-area-inset-right, 0px)) max(10px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px)) !important;
+        gap: 8px !important;
+    }
+    html[data-theme] body #editModal#editModal #noteSettingsBtn { grid-column: 1; grid-row: 1; width: 44px !important; min-width: 44px !important; margin: 0 !important; padding: 0 !important; }
+    html[data-theme] body #editModal#editModal #cancelNoteButton { grid-column: 2; grid-row: 1; min-width: 0 !important; width: 100%; }
+    html[data-theme] body #editModal#editModal #saveNoteButton { grid-column: 3; grid-row: 1; min-width: 0 !important; width: 100%; font-size: 15px !important; box-shadow: 0 6px 16px rgba(9, 139, 56, .25) !important; }
+
+    /* Keyboard is open: reclaim space */
+    html[data-theme] body #editModal#editModal.lne-kb-open .modal-buttons-container {
+        padding-top: 6px !important;
+        padding-bottom: 6px !important;
+    }
+    html[data-theme] body #editModal#editModal.lne-kb-open .lne-statusbar { display: none !important; }
+    html[data-theme] body #editModal#editModal.lne-kb-open .lne-body .lne-editor { padding-bottom: 48px !important; }
+}
+@media (max-width: 380px) {
+    html[data-theme] body #editModal#editModal .modal-buttons-container { grid-template-columns: 42px minmax(0, 1fr) minmax(0, 1.5fr); }
+    html[data-theme] body #editModal#editModal .modal-buttons-container button { font-size: 12px !important; padding-inline: 8px !important; }
+}
+@media (max-width: 900px) and (orientation: landscape) and (pointer: coarse) {
+    html[data-theme] body #editModal#editModal .lne-body .lne-editor { padding-bottom: 60px !important; font-size: 16px; }
+    html[data-theme] body #editModal#editModal .modal-buttons-container button { min-height: 36px !important; }
+}
+
+/* ── 3. PRO FEATURES ───────────────────────────────────────────────────────── */
+/* live caption while dictating */
+.lne-pro-live {
+    position: absolute;
+    left: 50%;
+    bottom: 14px;
+    transform: translateX(-50%);
+    z-index: 30;
+    max-width: min(560px, calc(100% - 24px));
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 14px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--modal-bg, #1a1a1a) 88%, #fff 12%);
+    color: var(--text-color, #eee);
+    border: 1px solid color-mix(in srgb, var(--border-color, #333) 60%, #e5484d 40%);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, .35);
+    font-size: 13px;
+    line-height: 1.3;
+}
+.lne-pro-live[hidden] { display: none; }
+.lne-pro-live .lne-pro-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: #e5484d; animation: lnProPulse 1.2s ease-in-out infinite; }
+.lne-pro-live .lne-pro-live-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .85; }
+.lne-pro-live button { flex: none; border: 0; background: transparent; color: inherit; cursor: pointer; padding: 2px 4px; font-size: 16px; }
+@keyframes lnProPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.5); opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .lne-pro-live .lne-pro-dot { animation: none; } }
+
+/* floating mic (touch devices only) */
+.lne-pro-fab {
+    display: none;
+    position: absolute;
+    right: max(14px, env(safe-area-inset-right, 0px));
+    bottom: 16px;
+    z-index: 25;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: 0;
+    background: var(--primary-color, #098b38);
+    color: #fff;
+    font-size: 22px;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, .35);
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+.lne-pro-fab.active { background: #e5484d; }
+@media (pointer: coarse) { .lne-pro-fab.lne-pro-fab-on { display: inline-flex; } }
+#editModal.lne-kb-open .lne-pro-fab { bottom: 10px; width: 44px; height: 44px; font-size: 19px; }
+.lne-btn.lne-pro-active, .lne-btn.lne-pro-active i { color: #e5484d !important; }
+
+/* writing sprint chip (status bar) + popover */
+.lne-pro-sprint {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 1px 9px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 11px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.lne-pro-sprint:hover { background: color-mix(in srgb, currentColor 12%, transparent); }
+.lne-pro-sprint.running { background: var(--primary-color, #098b38); border-color: transparent; color: #fff; font-variant-numeric: tabular-nums; }
+.lne-pro-sprint .lne-pro-bar { display: none; width: 38px; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, .3); overflow: hidden; }
+.lne-pro-sprint.running .lne-pro-bar { display: inline-block; }
+.lne-pro-sprint .lne-pro-bar i { display: block; height: 100%; width: 0; background: #fff; }
+
+.lne-pro-pop {
+    position: fixed;
+    z-index: 100000;
+    min-width: 170px;
+    padding: 6px;
+    border-radius: 12px;
+    background: var(--modal-bg, #1f1f1f);
+    color: var(--text-color, #eee);
+    border: 1px solid var(--border-color, #333);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, .4);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.lne-pro-pop button {
+    border: 0;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font: inherit;
+    font-size: 14px;
+    cursor: pointer;
+}
+.lne-pro-pop button:hover, .lne-pro-pop button:focus-visible { background: color-mix(in srgb, currentColor 12%, transparent); outline: none; }
+.lne-pro-pop .danger { color: #e5484d; }
+
+/* draft recovery banner */
+.lne-pro-draft {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 35;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    max-width: min(620px, calc(100% - 20px));
+    padding: 10px 12px 10px 14px;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--modal-bg, #1a1a1a) 86%, var(--primary-color, #098b38) 14%);
+    color: var(--text-color, #eee);
+    border: 1px solid color-mix(in srgb, var(--border-color, #333) 55%, var(--primary-color, #098b38) 45%);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+    font-size: 13px;
+}
+.lne-pro-draft[hidden] { display: none; }
+.lne-pro-draft > span { flex: 1 1 200px; }
+.lne-pro-draft button { border: 0; border-radius: 8px; padding: 7px 12px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; min-height: 34px; }
+.lne-pro-draft .lne-pro-restore { background: var(--primary-color, #098b38); color: #fff; }
+.lne-pro-draft .lne-pro-discard { background: transparent; color: inherit; border: 1px solid color-mix(in srgb, currentColor 30%, transparent); }
+
+@media (max-width: 768px) {
+    .lne-pro-sprint { order: -1; }
+    .lne-pro-fab { bottom: 44px; }
+    .lne-pro-live { bottom: 108px; }
+}
