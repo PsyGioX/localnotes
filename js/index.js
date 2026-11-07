@@ -3071,6 +3071,14 @@ function buildNoteCardElement(note, allTags) {
                 item.style.setProperty('--cl-accent', item.dataset.clColor);
             });
 
+            // Комментарии из редактора: в карточке курсор «справка» без подсказки — показываем автора и текст
+            notePreview.querySelectorAll('.lne-comment[data-comment]').forEach(c => {
+                if (!c.getAttribute('title')) {
+                    const au = c.getAttribute('data-author');
+                    c.setAttribute('title', (au ? au + ': ' : '') + c.getAttribute('data-comment'));
+                }
+            });
+
             // Remove any stale video touch overlays saved in note content
             notePreview.querySelectorAll('.lne-video-touch-overlay').forEach(ov => ov.remove());
 
@@ -5276,3 +5284,21 @@ window.encryption = encryption;
 window.exportNote = exportNote;
 window.importNotesWithFormat = importNotesWithFormat;
 window.getCurrentNoteId = () => currentNoteId;
+
+// Оглавление из редактора в карточках заметок: клик по пункту прокручивает к заголовку ЭТОЙ заметки
+// (в редакторе то же делает office-ext.js; в карточке обработчика не было, пункты выглядели кликабельными, но молчали).
+document.addEventListener('click', function (e) {
+    const item = e.target.closest && e.target.closest('.noteContent .lne-toc-item');
+    if (!item) return;
+    const content = item.closest('.noteContent');
+    const id = item.getAttribute('data-target');
+    if (!content || !id) return;
+    let h = null;
+    try { h = content.querySelector('#' + (window.CSS && CSS.escape ? CSS.escape(id) : id)); } catch (err) { /* некорректный id */ }
+    if (!h) {   // id заголовка потерян — ищем по тексту пункта
+        const txt = (item.querySelector('.lne-toc-text') || item).textContent.trim();
+        h = Array.from(content.querySelectorAll('h1,h2,h3,h4,h5,h6')).find(x => !x.closest('.lne-toc') && x.textContent.trim() === txt) || null;
+    }
+    e.preventDefault(); e.stopPropagation();
+    if (h) h.scrollIntoView({ block: 'start', behavior: 'smooth' });
+}, true);

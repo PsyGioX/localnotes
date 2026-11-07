@@ -21,6 +21,15 @@
 @media (max-width: 768px) {
     html[data-theme] body .lne-body .lne-editor[data-ox-page] { background: var(--ox-bg, var(--paper-bg)); color: var(--ox-fg, var(--text-color)); }
 }
+/* Цвет страницы на смартфонах/планшетах-портрет и в альбомной ориентации телефона: editor-fullpage.css и office2024.css
+   принудительно (!important) делают фон редактора и контейнера прозрачным/цветом темы — цвет страницы не был виден.
+   Правила включаются только когда цвет задан (атрибут data-ox-color ставит _oxApplyMeta). */
+@media (max-width: 900px) {
+    html[data-theme] body #editModal#editModal .lne-body[data-ox-color],
+    html[data-theme] body .lne-body[data-ox-color] { background: var(--ox-bg) !important; }
+    html[data-theme] body #editModal#editModal .lne-body .lne-editor[data-ox-color],
+    html[data-theme] body .lne-body .lne-editor[data-ox-page][data-ox-color] { background: var(--ox-bg) !important; color: var(--ox-fg) !important; }
+}
 .lne-editor .lne-toc, .lne-editor .lne-fnlist, .lne-editor .lne-pagebreak, .lne-editor .lne-textbox, .lne-editor table { column-span: none; }
 .lne-editor .lne-toc { break-inside: avoid; }
 
@@ -55,7 +64,10 @@
     .lne-editor[data-ox-page] .lne-pagebreak { margin-left: calc(-1 * var(--ox-pl, 25.4mm)); margin-right: calc(-1 * var(--ox-pr, 25.4mm)); }
 }
 /* Автоматическая разбивка на страницы: границы рисует фон листа, явный разрыв — компактная метка в конце страницы */
-.lne-editor.lne-ox-paged .lne-pagebreak { height: 0; min-height: 0; margin: 0; padding: 0; background: transparent; box-shadow: none; clip-path: none; overflow: visible; }
+.lne-editor.lne-ox-paged .lne-pagebreak { height: 0; min-height: 0; margin: 0; padding: 0; background: transparent; box-shadow: none; clip-path: none; overflow: visible;
+    /* flow-root: нулевая высота + пустое содержимое иначе даёт «схлопывание сквозь элемент» — отступы соседних абзацев сливаются,
+       разрыв оказывается не там, где его считает _oxPaginate, и линия/подпись съезжают из серой щели (особенно при нескольких разрывах подряд) */
+    display: flow-root; }
 /* сам элемент невидим и не занимает места на листе; кликается и подсвечивается подпись в щели */
 .lne-editor.lne-ox-paged .lne-pagebreak.lne-pb-sel, .lne-editor.lne-ox-paged .lne-pagebreak:hover { outline: 0; }
 .lne-editor.lne-ox-paged .lne-pagebreak::before { pointer-events: none; }

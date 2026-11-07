@@ -31,6 +31,43 @@
 
     function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
     function lang() { return (window.LNLang && window.LNLang.htmlLang(window.currentLang)) || document.documentElement.lang || 'en'; }
+    // BCP-47 с регионом для озвучки (у голосов язык вида "uk-UA"; голый "uk" на части платформ голос не находит)
+    var TTS_TAG = { en: 'en-US', ru: 'ru-RU', uk: 'uk-UA', pl: 'pl-PL', cs: 'cs-CZ', sk: 'sk-SK', bg: 'bg-BG', hr: 'hr-HR', sr: 'sr-RS', bs: 'bs-BA', mk: 'mk-MK', sl: 'sl-SI' };
+    // если голоса нужного языка нет — ближайшие по языку (читается понятно, лучше чем молчание или английский голос)
+    var TTS_NEAR = { en: ['en'], ru: ['ru'], uk: ['uk', 'ru'], pl: ['pl'], cs: ['cs', 'sk'], sk: ['sk', 'cs'], bg: ['bg', 'mk', 'ru'], hr: ['hr', 'bs', 'sr'], bs: ['bs', 'hr', 'sr'], sr: ['sr', 'hr', 'bs'], mk: ['mk', 'bg', 'sr', 'ru'], sl: ['sl', 'hr'] };
+    // язык текста по письменности: кириллица при латинском языке интерфейса (и наоборот) читалась бы/проверялась не тем языком
+    function textLang(text, pref) {
+        var smp = String(text || '').slice(0, 3000), cy = (smp.match(/[\u0400-\u04FF]/g) || []).length, la = (smp.match(/[A-Za-z\u00C0-\u024F]/g) || []).length;
+        if (cy + la < 3) return pref;
+        var prefCy = /^(ru|uk|bg|mk|sr)$/.test(pref);
+        if (cy > la) {
+            if (prefCy) return pref;
+            if (/[іїєґ]/i.test(smp)) return 'uk'; if (/[ђћџљњ]/i.test(smp)) return 'sr'; if (/[ѓќѕ]/i.test(smp)) return 'mk';
+            return 'ru';
+        }
+        return (prefCy && pref !== 'sr') ? 'en' : pref;
+    }
+    function pickVoice(ss, lg) {
+        var vs = [], i, j; try { vs = ss.getVoices() || []; } catch (e) {}
+        if (!vs.length) return { voice: null, any: false };
+        var prim = String(lg).toLowerCase().split('-')[0], chain = TTS_NEAR[prim] || [prim];
+        var norm = function (v) { return String(v.lang || '').toLowerCase().replace(/_/g, '-'); };
+        for (i = 0; i < chain.length; i++) {
+            var cands = vs.filter(function (v) { return norm(v).split('-')[0] === chain[i]; });
+            if (!cands.length) continue;
+            var want = (TTS_TAG[chain[i]] || chain[i]).toLowerCase();
+            var best = cands.filter(function (v) { return norm(v) === want; })[0] || cands.filter(function (v) { return v.default; })[0] || cands.filter(function (v) { return v.localService; })[0] || cands[0];
+            return { voice: best, any: true };
+        }
+        return { voice: null, any: true };
+    }
+    function whenVoices(ss, cb) {
+        var done = false, fin = function () { if (done) return; done = true; try { ss.removeEventListener('voiceschanged', fin); } catch (e) {} cb(); };
+        var have = false;
+        try { have = (ss.getVoices() || []).length > 0; if (!have) ss.addEventListener('voiceschanged', fin); } catch (e) {}
+        if (have) { fin(); return; }
+        setTimeout(fin, 1500);   // на некоторых платформах список голосов пуст, но озвучка по lang работает
+    }
     function isTouch() { return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0); }
     function T(ed, k, fb) { return ed._(k, fb); }
 
@@ -49,6 +86,14 @@
 
     P._oxMeta = function () { if (!this._docMeta) this._docMeta = defMeta(); return this._docMeta; };
 
+    // Язык проверки орфографии: явный язык документа, иначе язык интерфейса; если текст на другой письменности
+    // (русский текст при английском интерфейсе и т.п.) — язык по тексту, иначе орфография проверялась бы не тем словарём
+    P._oxSyncLang = function () {
+        var ed = this.ed; if (!ed) return;
+        var m = this._oxMeta(), want = m.lang || textLang(ed.textContent, lang()), base = (document.documentElement.getAttribute('lang') || '').toLowerCase();
+        if (m.lang || (want && want.toLowerCase() !== base)) { if (ed.getAttribute('lang') !== want) ed.setAttribute('lang', want); }
+        else if (ed.hasAttribute('lang')) ed.removeAttribute('lang');
+    };
     P._oxApplyMeta = function () {
         var m = this._oxMeta(), ed = this.ed, st = ed.style, body = this.body;
         var d = window.LNDocx ? window.LNDocx.pageDims(m) : [210, 297];
@@ -58,13 +103,19 @@
         st.setProperty('--ox-pl', m.margins.l + 'mm'); st.setProperty('--ox-pr', m.margins.r + 'mm');
         if (m.pageColor) { st.setProperty('--ox-bg', m.pageColor); st.setProperty('--ox-fg', luminance(m.pageColor) > 0.55 ? '#1b1b1b' : '#f2f2f2'); }
         else { st.removeProperty('--ox-bg'); st.removeProperty('--ox-fg'); }
+        // метка «задан цвет страницы» нужна мобильному CSS: там фон редактора/контейнера принудительно прозрачный (!important)
+        ed.toggleAttribute('data-ox-color', !!m.pageColor);
+        if (body) {
+            body.toggleAttribute('data-ox-color', !!m.pageColor);
+            if (m.pageColor) body.style.setProperty('--ox-bg', m.pageColor); else body.style.removeProperty('--ox-bg');
+        }
         // подпись разрыва страницы — из текущего языка интерфейса (у импортированных разрывов нет data-label)
         st.setProperty('--ox-pb-label', JSON.stringify(this._('oxPageBreak', 'Page break')));
         ed.setAttribute('data-ox-page', '1');
         ed.classList.toggle('lne-ox-border', !!m.border);
         ed.classList.toggle('lne-ox-landscape', m.orient === 'landscape');
         st.hyphens = m.hyphen ? 'auto' : ''; st.webkitHyphens = m.hyphen ? 'auto' : '';
-        if (m.lang) ed.setAttribute('lang', m.lang); else ed.removeAttribute('lang');
+        this._oxSyncLang();
         if (body) {
             if (m.header) body.setAttribute('data-ox-hdr', m.header); else body.removeAttribute('data-ox-hdr');
             var f = (m.footer || '') + (m.pageNum ? (m.footer ? '  ·  ' : '') + '#' : '');
@@ -124,7 +175,7 @@
 
         // — FILE
         var file = panel('file',
-            G(_('oxGrpImport', 'Open'), [BL('oxImport', 'bi bi-file-earmark-word', _('oxImportTip', 'Import a Word document (.docx, .doc), RTF or HTML'), _('oxImport', 'Import Word'))]) +
+            G(_('oxGrpImport', 'Open'), [BL('oxImport', 'bi bi-file-earmark-word', _('oxImportTip', 'Import a Word document (.docx, .doc) or RTF'), _('oxImport', 'Import Word'))]) +
             G(_('oxGrpExport', 'Save as'), [
                 BL('oxExportDocx', 'bi bi-file-earmark-word-fill', _('oxExportDocxTip', 'Export as Word document (.docx)'), 'DOCX') +
                 BL('oxExportDoc', 'bi bi-file-earmark-text', _('oxExportDocTip', 'Export as Word 97–2003 compatible document (.doc)'), 'DOC') +
@@ -703,20 +754,34 @@
     };
     CMD.oxRead = function () {
         var self = this, ss = window.speechSynthesis;
-        if (!ss) { this._oxToast(this._('oxNoSpeech', 'Speech is not supported in this browser')); return; }
-        if (this._oxSpeaking) { ss.cancel(); this._oxSpeaking = false; this._oxSyncButtons(); return; }
+        if (!ss || typeof SpeechSynthesisUtterance === 'undefined') { this._oxToast(this._('oxNoSpeech', 'Speech is not supported in this browser')); return; }
+        var stop = function () { self._oxSpeakId = (self._oxSpeakId || 0) + 1; self._oxSpeaking = false; self._oxUtts = null; try { ss.cancel(); } catch (e) {} self._oxSyncButtons(); };
+        if (this._oxSpeaking) { stop(); return; }
         var sel = window.getSelection(), text = (sel && !sel.isCollapsed && this.ed.contains(sel.anchorNode)) ? sel.toString() : this.ed.innerText;
-        text = text.replace(/​/g, '').trim(); if (!text) return;
+        text = text.replace(/\u200b/g, '').trim(); if (!text) return;
         var chunks = text.match(/[^.!?\n]+[.!?]*\s*|\n/g) || [text], q = [], cur = '';
-        chunks.forEach(function (c) { if ((cur + c).length > 180) { if (cur) q.push(cur); cur = c; } else cur += c; }); if (cur.trim()) q.push(cur);
+        chunks.forEach(function (c) { if ((cur + c).length > 180) { if (cur.trim()) q.push(cur); cur = c; } else cur += c; }); if (cur.trim()) q.push(cur);
+        var id = this._oxSpeakId = (this._oxSpeakId || 0) + 1;
         this._oxSpeaking = true; this._oxSyncButtons();
-        var i = 0, lg = this._oxMeta().lang || lang();
-        var next = function () {
-            if (!self._oxSpeaking || i >= q.length) { self._oxSpeaking = false; self._oxSyncButtons(); return; }
-            var u = new SpeechSynthesisUtterance(q[i++]); u.lang = lg; u.onend = next; u.onerror = function () { self._oxSpeaking = false; self._oxSyncButtons(); };
-            ss.speak(u);
-        };
-        ss.cancel(); next();
+        var m = this._oxMeta(), prim = String(m.lang || textLang(text, lang())).toLowerCase().split('-')[0];
+        try { ss.cancel(); } catch (e) {}
+        setTimeout(function () { whenVoices(ss, function () {   // пауза после cancel(): иначе Chrome отбрасывает следующий speak()
+            if (self._oxSpeakId !== id || !self._oxSpeaking) return;
+            var pv = pickVoice(ss, prim);
+            if (pv.any && !pv.voice) { stop(); self._oxToast(self._('oxNoVoice', 'No installed voice found for this language. Add one in your device\'s speech settings.')); return; }
+            var tag = pv.voice ? pv.voice.lang : (TTS_TAG[prim] || prim), i = 0;
+            self._oxUtts = [];
+            var next = function () {
+                if (self._oxSpeakId !== id || !self._oxSpeaking) return;
+                if (i >= q.length) { self._oxSpeaking = false; self._oxUtts = null; self._oxSyncButtons(); return; }
+                var u = new SpeechSynthesisUtterance(q[i++]); u.lang = tag; if (pv.voice) { try { u.voice = pv.voice; } catch (e) {} }
+                u.onend = next;
+                u.onerror = function (ev) { if (ev && (ev.error === 'interrupted' || ev.error === 'canceled')) return; if (self._oxSpeakId === id) stop(); };
+                self._oxUtts.push(u);   // ссылка не даёт сборщику мусора убить объект речи (Chrome перестаёт вызывать onend)
+                try { ss.speak(u); } catch (e) { stop(); }
+            };
+            next();
+        }); }, 70);
     };
     CMD.oxA11y = function () {
         var self = this, issues = [], ed = this.ed, add = function (el, msg) { issues.push({ el: el, msg: msg }); };
@@ -964,7 +1029,8 @@
             if (u.kind === 'pb') {
                 var kb = pageOf(y1);
                 // подпись и линия разрыва рисуются в серой щели МЕЖДУ листами: смещение от верха элемента до середины щели
-                rules.push(u.sel + '{--pb-top:' + (kb * U + P0 + PG_GAP / 2 - y1).toFixed(2) + 'px}');
+                u.pbTop = kb * U + P0 + PG_GAP / 2 - y1;
+                rules.push(u.sel + '{--pb-top:' + u.pbTop.toFixed(2) + 'px}');
                 minTop = topOf(kb + 1);
             }
         });
@@ -977,6 +1043,15 @@
         rules.unshift(base + '.lne-ox-paged{min-height:' + minH.toFixed(2) + 'px !important;background-image:repeating-linear-gradient(to bottom,transparent 0,transparent ' + P0.toFixed(2) + 'px,' +
             sh + ' ' + P0.toFixed(2) + 'px,' + cv + ' ' + (P0 + 7).toFixed(2) + 'px,' + cv + ' ' + (U - 7).toFixed(2) + 'px,' + sh + ' ' + U.toFixed(2) + 'px) !important}');
         st.textContent = rules.join('\n');
+        // страховка: линию и подпись разрыва ставим по РЕАЛЬНОЙ позиции элемента (а не по расчётной) — любое расхождение
+        // раскладки (схлопывание отступов, шрифты, зум) больше не уводит их из серой щели между листами
+        var fix = [];
+        units.forEach(function (u) {
+            if (u.kind !== 'pb' || !u.el.isConnected) return;
+            var ay = Y(u.el.getBoundingClientRect().top), kb = pageOf(ay), want = kb * U + P0 + PG_GAP / 2 - ay;
+            if (Math.abs(want - (u.pbTop === undefined ? want + 99 : u.pbTop)) > 0.5) fix.push(u.sel + '{--pb-top:' + want.toFixed(2) + 'px}');
+        });
+        if (fix.length) st.textContent += '\n' + fix.join('\n');
         this._oxPgPages = N; this._oxPgN = ed.querySelectorAll(PG_SEL).length;
         var nav = ed.querySelector('.lne-toc'); if (nav) this._oxTocRefreshPages(nav);
     };
@@ -1045,7 +1120,7 @@
         if (window.ResizeObserver) { var lw = 0; try { new ResizeObserver(function () { var w = Math.round(self.ed.offsetWidth); if (w !== lw) { lw = w; self._oxPgSchedule(60); } }).observe(this.ed); } catch (e) {} }
         if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { self._oxPgSchedule(0); });
         this.ed.addEventListener('input', function () {
-            clearTimeout(tmr); tmr = setTimeout(function () { if (self.ed.querySelector('.lne-toc') && self._oxAutoToc()) self._oxPgSchedule(60); if (self.ed.querySelector('sup.lne-fn') || self.ed.querySelector('.lne-fnlist')) self._oxRenumberFootnotes(true); if (self._oxNavEl) self._oxRefreshNav(); }, 500);
+            clearTimeout(tmr); tmr = setTimeout(function () { try { self._oxSyncLang(); } catch (e) {} if (self.ed.querySelector('.lne-toc') && self._oxAutoToc()) self._oxPgSchedule(60); if (self.ed.querySelector('sup.lne-fn') || self.ed.querySelector('.lne-fnlist')) self._oxRenumberFootnotes(true); if (self._oxNavEl) self._oxRefreshNav(); }, 500);
         });
         this.ed.addEventListener('click', function (e) {
             var toc = e.target.closest && e.target.closest('.lne-toc-item');
