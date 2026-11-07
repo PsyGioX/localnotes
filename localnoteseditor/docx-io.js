@@ -1368,7 +1368,7 @@
             if (styled || !w.document) return; styled = true;
             var st = w.document.createElement('style');
             st.textContent =
-                '.ln-busy{position:fixed;inset:0;z-index:99990;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.38);opacity:0;transition:opacity .2s ease;cursor:progress}' +
+                '.ln-busy{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.38);opacity:0;transition:opacity .2s ease;cursor:progress}' +
                 '.ln-busy.on{opacity:1}' +
                 '.ln-busy-card{min-width:240px;max-width:min(86vw,380px);padding:20px 24px 18px;border-radius:12px;background:var(--modal-bg,var(--paper-bg,#fff));color:var(--text-color,#222);box-shadow:0 12px 40px rgba(0,0,0,.35);text-align:center;font:500 14px/1.4 var(--font-ui,system-ui,sans-serif);transform:translateY(8px) scale(.97);transition:transform .22s ease}' +
                 '.ln-busy.on .ln-busy-card{transform:none}' +
@@ -1388,14 +1388,31 @@
         }
         function show() {
             if (el || !w.document || !w.document.body) return; addStyle();
+            var G = '#12ae44';
             el = w.document.createElement('div'); el.className = 'ln-busy'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite');
-            el.innerHTML = '<div class="ln-busy-card"><div class="ln-busy-ring" aria-hidden="true"></div><div class="ln-busy-lbl"></div><div class="ln-busy-sub"></div><div class="ln-busy-bar" aria-hidden="true"></div></div>';
+            // inline-стили: оверлей не зависит ни от внешнего CSS, ни от z-index страницы
+            el.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;max-width:none;max-height:none;margin:0;padding:0;border:0;box-sizing:border-box;overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45);z-index:2147483000;cursor:progress;pointer-events:auto;opacity:0;transition:opacity .2s ease';
+            el.innerHTML =
+                '<div class="ln-busy-card" style="min-width:240px;max-width:min(86vw,380px);box-sizing:border-box;padding:20px 24px 18px;border-radius:12px;background:var(--modal-bg,var(--paper-bg,#fff));color:var(--text-color,#222);box-shadow:0 12px 40px rgba(0,0,0,.35);text-align:center;font:500 14px/1.4 var(--font-ui,system-ui,sans-serif)">' +
+                '<div class="ln-busy-ring" aria-hidden="true" style="width:34px;height:34px;margin:0 auto 12px;box-sizing:border-box;border-radius:50%;border:3px solid rgba(128,128,128,.3);border-top-color:' + G + '"></div>' +
+                '<div class="ln-busy-lbl"></div>' +
+                '<div class="ln-busy-sub" style="margin-top:4px;font-weight:400;font-size:12.5px;opacity:.65;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>' +
+                '<div class="ln-busy-bar" aria-hidden="true" style="position:relative;height:3px;margin-top:14px;border-radius:3px;overflow:hidden;background:rgba(128,128,128,.25)"><span style="position:absolute;top:0;bottom:0;left:0;width:38%;border-radius:3px;background:' + G + '"></span></div>' +
+                '</div>';
             w.document.body.appendChild(el); paint(); shownAt = Date.now();
-            void el.offsetWidth; el.classList.add('on');
+            // top layer: поверх любых модалок/<dialog>/fullscreen независимо от z-index
+            try { if (el.showPopover) { el.setAttribute('popover', 'manual'); el.showPopover(); } } catch (e) {}
+            // анимации через WAAPI — работают, даже если стили страницы не применились
+            try {
+                var ring = el.querySelector('.ln-busy-ring'), bar = el.querySelector('.ln-busy-bar span');
+                if (ring && ring.animate) ring.animate([{ transform: 'rotate(0deg)' }, { transform: 'rotate(360deg)' }], { duration: 800, iterations: Infinity });
+                if (bar && bar.animate) bar.animate([{ transform: 'translateX(-100%)' }, { transform: 'translateX(270%)' }], { duration: 1200, iterations: Infinity, easing: 'ease-in-out' });
+            } catch (e) {}
+            void el.offsetWidth; el.classList.add('on'); el.style.opacity = '1';
         }
         function hide() {
             tHide = null; if (!el || n > 0) return;
-            var e = el; el = null; e.classList.remove('on'); setTimeout(function () { if (e.parentNode) e.parentNode.removeChild(e); }, 230);
+            var e = el; el = null; e.classList.remove('on'); e.style.opacity = '0'; setTimeout(function () { if (e.parentNode) e.parentNode.removeChild(e); }, 230);
         }
         return {
             begin: function (label, sub) {

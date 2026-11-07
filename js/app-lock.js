@@ -130,7 +130,7 @@
     // CryptoKey is written to session/local storage), so — unlike the old
     // PIN-only screen-lock — a fresh page load always needs a real
     // PIN/file entry again, not just a leftover sessionStorage flag.
-    function isUnlocked() { return db().vaultReady; }
+    function isUnlocked() { const d = db(); return !!(d && d.vaultReady); }
 
     function touchActivity() {
         sessionStorage.setItem(KEY_LAST_ACTIVITY, String(Date.now()));
@@ -147,7 +147,7 @@
         localStorage.setItem(KEY_IDLE_MINUTES, String(n));
         if (isUnlocked()) touchActivity();
     }
-    function isPasswordMode() { return db().vaultMode === 'password'; }
+    function isPasswordMode() { const d = db(); return !!(d && d.vaultMode === 'password'); }
     function isIdleExpired() {
         const minutes = getIdleMinutes();
         if (minutes === 0) return false; // "never"
@@ -1046,7 +1046,7 @@
         ensureUnlocked,
         openSettings: openAppLockSettings,
         isEnabled: () => isUnlocked() && isPasswordMode(),
-        mode: () => db().vaultMode,
+        mode: () => (db() || {}).vaultMode,
         getIdleMinutes,
         setIdleMinutes,
         isUnlocked,
